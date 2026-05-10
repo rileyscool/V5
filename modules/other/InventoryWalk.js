@@ -1,6 +1,14 @@
 import { TypingState } from '../../gui/Utils';
 import { ModuleBase } from '../../utils/ModuleBase';
-import { ClickSlotC2S, CommonPingS2C, OpenScreenS2C } from '../../utils/Packets';
+import {
+    ClickSlotC2S,
+    CommonPingS2C,
+    InventoryS2C,
+    OpenScreenS2C,
+    ScreenHandlerSlotUpdateS2C,
+    SetCursorItemS2C,
+    SetPlayerInventoryS2C,
+} from '../../utils/Packets';
 import { ScheduleTask } from '../../utils/ScheduleTask';
 
 class InventoryWalk extends ModuleBase {
@@ -14,23 +22,22 @@ class InventoryWalk extends ModuleBase {
 
         this.clicked = false;
         this.time = 0;
-        this.lastPing = Date.now();
-        const options = Client.getMinecraft().options;
-        this.keybinds = [options.forwardKey, options.leftKey, options.rightKey, options.backKey, options.jumpKey, options.sprintKey, options.sneakKey].map(
-            (keybind) => ({
-                getKeyCode: () => (typeof keybind.getKeyCode === 'function' ? keybind.getKeyCode() : (keybind.boundKey?.code ?? -1)),
-                setState: (down) => {
-                    if (typeof keybind.setState === 'function') keybind.setState(!!down);
-                    else if (typeof keybind.setPressed === 'function') keybind.setPressed(!!down);
-                },
-            })
-        );
+        this.lastPacketTime = Date.now();
+        this.keybinds = [
+            new KeyBind(Client.getMinecraft().options.forwardKey),
+            new KeyBind(Client.getMinecraft().options.leftKey),
+            new KeyBind(Client.getMinecraft().options.rightKey),
+            new KeyBind(Client.getMinecraft().options.backKey),
+            new KeyBind(Client.getMinecraft().options.jumpKey),
+            new KeyBind(Client.getMinecraft().options.sprintKey),
+            new KeyBind(Client.getMinecraft().options.sneakKey),
+        ];
 
         this.on('tick', () => {
             if (!Client.isInGui()) this.clicked = false;
             if (Client.isInChat() || (Client.isInGui() && TypingState.isTyping)) return;
-            let sincePing = Date.now() - this.lastPing;
-            if ((!this.clicked && sincePing < 125) || Date.now() > this.time + 325 + sincePing) {
+            let sincePing = Date.now() - this.lastPacketTime;
+            if ((!this.clicked && sincePing < 100) || Date.now() > this.time + 350 + sincePing) {
                 ScheduleTask(0, () => {
                     this.keybinds.forEach((keybind) => {
                         let down = Keyboard.isKeyDown(keybind.getKeyCode());
@@ -63,8 +70,8 @@ class InventoryWalk extends ModuleBase {
         }).setFilteredClass(OpenScreenS2C);
 
         this.on('packetReceived', (packet) => {
-            this.lastPing = Date.now();
-        }).setFilteredClass(CommonPingS2C);
+            this.lastPacketTime = Date.now();
+        });
     }
 
     onDisable() {
