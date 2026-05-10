@@ -141,7 +141,7 @@ class Finder {
             Chat.messagePathfinder(`Path from &a${start[0]}, ${start[1]}, ${start[2]}&f to &c${endStr}`);
         }
 
-        if (!Swift.SwiftPath(starts, end, isFly, this.pathVariantSeed)) {
+        if (!Swift.SwiftPath(starts, end, isFly, this.pathVariantSeed, PathConfig.PATHFINDER_MAX_COMPUTE)) {
             showNotification('Pathfinding Failed', Swift.getLastError() || 'Failed to start', 'ERROR', 5000);
             this.callCallback(false);
             return;

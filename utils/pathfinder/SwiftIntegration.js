@@ -44,10 +44,11 @@ class SwiftIntegration {
         return javaArray;
     }
 
-    SwiftPath(startPoints, endPoints, isFly = false, variantSeed = 0) {
+    SwiftPath(startPoints, endPoints, isFly = false, variantSeed = 0, maxCompute = 500000) {
         this.cachedResult = null;
 
         const fly = isFly === true;
+        const computeLimit = Math.max(1, Math.floor(Number(maxCompute)) || 500000);
         const startsValid = Array.isArray(startPoints) && startPoints.length > 0 && Array.isArray(startPoints[0]);
         const endsValid = Array.isArray(endPoints) && endPoints.length > 0 && Array.isArray(endPoints[0]);
 
@@ -61,10 +62,10 @@ class SwiftIntegration {
             this.setSearchVariantSeed(variantSeed);
 
             if (fly) {
-                return this.pathManager.findFlyPath(startArray, endArray);
+                return this.pathManager.findFlyPath(startArray, endArray, computeLimit);
             }
 
-            return this.pathManager.findPath(startArray, endArray);
+            return this.pathManager.findPath(startArray, endArray, computeLimit);
         } catch (e) {
             console.error('SwiftPath Error: ' + e);
             return false;

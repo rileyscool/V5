@@ -21,6 +21,7 @@ class PathFindingConfig extends ModuleBase {
         this.RENDER_LOOK_POINTS = false;
         this.WALKER_AOTE_ENABLED = false;
         this.WALKER_AOTE_COOLDOWN_TICKS = 12;
+        this.PATHFINDER_MAX_COMPUTE = 500_000;
 
         this.addDirectToggle(
             'Pathfinding Debug',
@@ -81,6 +82,18 @@ class PathFindingConfig extends ModuleBase {
                 this.WALKER_AOTE_COOLDOWN_TICKS = Math.max(0, Math.floor(value));
             },
             'Ticks between AOTE/AOTV right clicks.',
+            'Pathfinding'
+        );
+
+        this.addDirectSlider(
+            'Pathfinder Max Compute',
+            500_000,
+            5_000_000,
+            500_000,
+            (value) => {
+                this.PATHFINDER_MAX_COMPUTE = Number(value);
+            },
+            'Maximum native pathfinder iterations before giving up.',
             'Pathfinding'
         );
 
