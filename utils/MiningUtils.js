@@ -77,6 +77,7 @@ class MiningStatsCollector {
     constructor() {
         this.stats = Utils.getConfigFile('miningstats.json') || {};
         this.isCollecting = false;
+        this.checkedThisSession = false;
         this.statsFile = 'miningstats.json';
         this.collectedData = {};
     }
@@ -84,13 +85,13 @@ class MiningStatsCollector {
     beginCollection() {
         if (this.isCollecting) {
             Chat.message('Already collecting stats. Wait a moment.');
-            return;
+            return false;
         }
 
         let toolData = ToolFinder.findBest();
         if (!toolData) {
             Chat.message('No mining tool found!');
-            return;
+            return false;
         }
 
         this.isCollecting = true;
@@ -103,6 +104,7 @@ class MiningStatsCollector {
             if (!this.waitForItem('Mining Stats')) return this.timeout();
             Thread.sleep(100);
             this.collectedData = {};
+            this.collectedData.drill = this.getToolName(toolData);
             this.collectedData.speed = this.extractNumericFromSlot(15, /Mining\s+Speed[:\s]*([\d,]+)/i);
 
             ChatLib.command('hotm');
@@ -138,9 +140,11 @@ class MiningStatsCollector {
 
             Guis.closeInv();
             this.finishCollection();
+            return true;
         } catch (e) {
             Chat.message('Error collecting stats: ' + e);
             console.error('V5 Caught error' + e + e.stack);
+            return false;
         } finally {
             this.isCollecting = false;
         }
@@ -192,8 +196,28 @@ class MiningStatsCollector {
         this.saveAndDisplay();
     }
 
+    refreshIfNeeded() {
+        let toolData = ToolFinder.findBest();
+        if (!toolData) return;
+
+        let currentDrillName = this.getToolName(toolData);
+        let storedDrillName = this.stats?.drill || null;
+
+        if (storedDrillName !== currentDrillName) {
+            return this.beginCollection('Drill changed');
+        }
+
+        if (!this.checkedThisSession) {
+            return this.beginCollection('First check this session');
+        }
+
+        this.checkedThisSession = true;
+        return false;
+    }
+
     saveAndDisplay() {
         let finalStats = {
+            drill: this.collectedData.drill || this.getCurrentHeldToolName(),
             speed: this.collectedData.speed || 0,
             professional: this.collectedData.professional || 0,
             lapidary: this.collectedData.lapidary || 0,
@@ -206,7 +230,9 @@ class MiningStatsCollector {
 
         Utils.writeConfigFile(this.statsFile, finalStats);
         this.stats = finalStats;
+        this.checkedThisSession = true;
 
+        Chat.message('Drill: &e' + (finalStats.drill || 'Unknown'));
         Chat.message('Speed: &6' + finalStats.speed + ' Mining Speed');
         Chat.message('Lapidary: &6+' + finalStats.lapidary + ' Mining Speed');
         Chat.message('Professional: &6+' + finalStats.professional + ' Mining Speed');
@@ -247,6 +273,18 @@ class MiningStatsCollector {
     checkSlotForBlock(container, slot, blockId) {
         let item = container?.getStackInSlot(slot);
         return item && item.type?.getRegistryName() === blockId;
+    }
+
+    getToolName(toolData) {
+        let item = toolData?.item;
+        if (!item) return null;
+        return ChatLib.removeFormatting(item.getName());
+    }
+
+    getCurrentHeldToolName() {
+        let heldItem = Player.getHeldItem();
+        if (!heldItem) return null;
+        return ChatLib.removeFormatting(heldItem.getName());
     }
 
     getStoredStats() {
@@ -1003,6 +1041,13 @@ export const MiningUtils = {
     },
     getBlockInfo: function (registryName) {
         return lookupBlock(registryName);
+    },
+    refreshMiningStatsIfNeeded: function (callback = null) {
+        Executor.execute(() => {
+            let refreshed = false;
+            refreshed = miningStatsCollector.refreshIfNeeded();
+            if (callback) Client.scheduleTask(0, () => callback(refreshed));
+        });
     },
     getDrills: function () {
         let bestTool = ToolFinder.findBest();

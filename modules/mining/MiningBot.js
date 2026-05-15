@@ -81,6 +81,8 @@ class Bot extends ModuleBase {
         this.speedBoost = false;
         this.nukedBlock = false;
         this.scanning = false;
+        this.refreshingMiningStats = false;
+        this.miningStatsRefreshToken = 0;
         this.FOVPenalty = true;
         this.abilityFromChat = false;
         this.lastUse = 0;
@@ -260,6 +262,11 @@ class Bot extends ModuleBase {
 
         this.on('tick', () => {
             if (!this.enabled) return;
+            if (this.refreshingMiningStats) {
+                this.stopMiningControls(true);
+                Keybind.setKey('rightclick', false);
+                return;
+            }
             if (Client.isInGui()) {
                 Keybind.unpressKeys();
                 return;
@@ -276,7 +283,7 @@ class Bot extends ModuleBase {
         });
 
         manager.subscribe('abilityready', () => {
-            if (!this.enabled) return;
+            if (!this.enabled || this.refreshingMiningStats) return;
             this.resetTickCounters();
             this.abilityFromChat = true;
             this.state = this.STATES.ABILITY;
@@ -1534,7 +1541,9 @@ class Bot extends ModuleBase {
             return;
         }
 
-        this.loadAbilitySetting();
+        this.refreshingMiningStats = true;
+        const refreshToken = ++this.miningStatsRefreshToken;
+        this.state = this.STATES.WAITING;
         this.fakeLookModeName = this.getEnabledOptionName(this.FAKELOOK, 'Off');
         this.selectedTypeName = this.getEnabledOptionName(this.TYPE, this.selectedTypeName);
         this.lastSneakCommand = Player.isSneaking();
@@ -1547,7 +1556,12 @@ class Bot extends ModuleBase {
         }
         this.allowScan = true;
         this.FOVPenalty = true;
-        this.state = this.STATES.ABILITY;
+        MiningUtils.refreshMiningStatsIfNeeded(() => {
+            if (!this.enabled || refreshToken !== this.miningStatsRefreshToken) return;
+            this.loadAbilitySetting();
+            this.refreshingMiningStats = false;
+            this.state = this.STATES.ABILITY;
+        });
         this.normalRender.register();
     }
 
@@ -1571,6 +1585,8 @@ class Bot extends ModuleBase {
         this.manualScan = false;
         this.allowScan = false;
         this.scanning = false;
+        this.refreshingMiningStats = false;
+        this.miningStatsRefreshToken++;
         this.nukedBlock = false;
         this.mineTickCount = 0;
         this.tickCount = 0;
