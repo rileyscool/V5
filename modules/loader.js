@@ -45,6 +45,7 @@ import './skills/StridersurferMacro';
 import './skills/JerryBoxMacro';
 import './skills/MinionCollector';
 import './skills/RouteWalker';
+import './skills/WynnProfessionMacro';
 
 /* OTHER */
 import './other/AutoBeg';

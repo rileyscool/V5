@@ -94,6 +94,7 @@ const manifest = {
         'Gifs',
         'Clips',
         'OverlayPositions',
+        'WynnProfession',
     ],
 
     jsonFiles: {
@@ -111,6 +112,7 @@ const manifest = {
         'developerMode.json': { enabled: false },
         'AuthCache/do_not_share_this_file': [],
         'responseMessages.json': responseMessages,
+        'WynnProfession/route.json': {},
     },
 };
 

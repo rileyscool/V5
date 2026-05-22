@@ -90,6 +90,7 @@ const v5Logic = () => {
         Chat.message('&7/v5 etherwarp <x> <y> <z> &f- Test etherwarp pathfinding');
         Chat.message('&7/v5 farming set <start|end> &f- Configure Garden warps');
         Chat.message('&7/v5 routes <action> [movement] [index] &f- Route Walker routes');
+        Chat.message('&7/v5 wynn <add|remove|list|clear|start|stop> ... &f- Wynn profession macro');
         Chat.message('&7/v5 dr ... or /v5 dungeonroutes ...');
         Chat.message('&7/v5 debug <blockinfo|istranslucent|packetinfo> ...');
     };
@@ -264,6 +265,11 @@ const v5Logic = () => {
     literal('routes', () => {
         exec(() => usage('/v5 routes <add|remove|clear> [movement] [index]'));
         argument('args', greedyString(), () => exec(({ args }) => run('routewalker', args)));
+    });
+
+    literal('wynn', () => {
+        exec(() => usage('/v5 wynn <add|remove|list|clear|start|stop> [left|right] [index]'));
+        argument('args', greedyString(), () => exec(({ args }) => run('wynn', args)));
     });
 
     // rdbt hasn't pushed dungeonroutes yet, commenting out rn.
