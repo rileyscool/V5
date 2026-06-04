@@ -38,9 +38,10 @@ class Failsafes extends ModuleBase {
             const lowerText = fullText?.toLowerCase();
 
             if (this.isBanReason(lowerText)) {
-                const lastMacro = MacroState.getLastActiveMacro() || 'None';
+                const lastMacros = MacroState.getLastActiveMacros();
+                const lastMacro = lastMacros.join(', ') || 'None';
 
-                const lastMacroMeta = MacroState.getLastDisableMeta(lastMacro);
+                const lastMacroMeta = MacroState.getLastDisableMeta(lastMacros[0]);
                 const lastDisableTimestamp = lastMacroMeta?.timestamp;
                 const within5Minutes = typeof lastDisableTimestamp === 'number' && Date.now() - lastDisableTimestamp <= 5 * 60 * 1000;
                 const currentlyMacroing = MacroState.isMacroRunning() || within5Minutes;

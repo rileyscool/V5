@@ -11,7 +11,7 @@ class MacroStateClass {
 
         this.modules = new Map();
         this.lastDisableMeta = new Map();
-        this.lastActiveMacro = null;
+        this.lastActiveMacros = [];
 
         this.lastMacroToggleKey = null;
         this.hasBoundLastMacroToggleKey = false;
@@ -19,7 +19,11 @@ class MacroStateClass {
     }
 
     getLastActiveMacro() {
-        return this.lastActiveMacro;
+        return this.lastActiveMacros[0] || null;
+    }
+
+    getLastActiveMacros() {
+        return this.lastActiveMacros;
     }
 
     registerModule(module) {
@@ -80,7 +84,7 @@ class MacroStateClass {
 
         this.running = true;
         this.activeMacro = moduleName;
-        this.lastActiveMacro = moduleName;
+        this.trackLastActiveMacro(moduleName);
     }
 
     onModuleDisabled(moduleName, context = 'user') {
@@ -110,6 +114,11 @@ class MacroStateClass {
             context: context || 'user',
             timestamp: Date.now(),
         };
+    }
+
+    trackLastActiveMacro(moduleName) {
+        this.lastActiveMacros = this.lastActiveMacros.filter((name) => name !== moduleName);
+        this.lastActiveMacros.unshift(moduleName);
     }
 
     setupLastMacroToggleKey() {
