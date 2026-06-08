@@ -24,6 +24,7 @@ class ModuleHistoryTracker {
         this.history.sessions.forEach((session) => {
             if (!session || !session.active) return;
 
+            session.minuteData = session.minuteData || [];
             const lastPoint = session.minuteData[session.minuteData.length - 1];
             const endedAtMs = lastPoint?.timestampMs || session.enabledAtMs;
 
@@ -32,6 +33,14 @@ class ModuleHistoryTracker {
             session.disabledAt = this.toIso(endedAtMs);
             session.durationMs = Math.max(0, endedAtMs - (session.enabledAtMs || endedAtMs));
             session.endReason = 'startup_recovery';
+            session.minuteData.push({
+                type: 'end',
+                minute: Math.floor(endedAtMs / SAMPLE_INTERVAL_MS),
+                timestampMs: endedAtMs,
+                timestamp: session.disabledAt,
+                elapsedMs: session.durationMs,
+                overlayData: session.overlayData,
+            });
             changed = true;
         });
 
@@ -39,7 +48,7 @@ class ModuleHistoryTracker {
     }
 
     startSession(moduleName, options = {}) {
-        if (!moduleName) return;
+        if (!moduleName || !options.isMacro) return;
 
         if (this.activeSessions[moduleName]) {
             this.endSession(moduleName, 'restart');
@@ -71,7 +80,7 @@ class ModuleHistoryTracker {
             nextSampleAt: now,
         };
 
-        this.recordSample(moduleName, now);
+        this.recordSample(moduleName, now, 'start');
         this.activeSessions[moduleName].nextSampleAt = now + SAMPLE_INTERVAL_MS;
         this.saveHistory();
     }
@@ -84,7 +93,7 @@ class ModuleHistoryTracker {
             const active = this.activeSessions[moduleName];
             if (!active || now < active.nextSampleAt) return;
 
-            this.recordSample(moduleName, now);
+            this.recordSample(moduleName, now, 'minute');
             active.nextSampleAt = Math.floor(now / SAMPLE_INTERVAL_MS) * SAMPLE_INTERVAL_MS + SAMPLE_INTERVAL_MS;
             changed = true;
         });
@@ -97,7 +106,7 @@ class ModuleHistoryTracker {
         if (!active) return;
 
         const now = Date.now();
-        this.recordSample(moduleName, now);
+        this.recordSample(moduleName, now, 'end');
 
         const session = active.session;
         session.active = false;
@@ -114,7 +123,7 @@ class ModuleHistoryTracker {
         Object.keys(this.activeSessions).forEach((moduleName) => this.endSession(moduleName, reason));
     }
 
-    recordSample(moduleName, timestampMs = Date.now()) {
+    recordSample(moduleName, timestampMs = Date.now(), type = 'minute') {
         const active = this.activeSessions[moduleName];
         if (!active) return;
 
@@ -123,6 +132,7 @@ class ModuleHistoryTracker {
         session.overlayData = overlayData;
         session.durationMs = Math.max(0, timestampMs - session.enabledAtMs);
         session.minuteData.push({
+            type,
             minute: Math.floor(timestampMs / SAMPLE_INTERVAL_MS),
             timestampMs,
             timestamp: this.toIso(timestampMs),

@@ -16,7 +16,6 @@ import {
 } from './Utils';
 import { GuiState, Overlays } from './core/GuiState';
 import { ServerInfo } from '../utils/player/ServerInfo';
-import { ModuleHistory } from '../utils/ModuleHistory';
 
 const { loadSettings } = require('./GuiSave');
 
@@ -208,8 +207,6 @@ class OverlayUtils {
     }
 
     resetAll() {
-        ModuleHistory.endAllSessions('game_unload');
-
         this.ids = [];
         this.animations = {};
         this.startTimes = {};

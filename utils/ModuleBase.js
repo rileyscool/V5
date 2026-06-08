@@ -161,14 +161,16 @@ export class ModuleBase {
                 OverlayManager.startTime(this.oid, this.isMacro);
             }
 
-            ModuleHistory.startSession(this.name, {
-                overlayId: this.oid,
-                category: this.subcategory,
-                isMacro: this.isMacro,
-                parentManaged: this.isParentManaged,
-                toggleContext,
-                getOverlayData: () => (this.oid ? OverlayManager.getSessionSnapshot(this.oid) : null),
-            });
+            if (this.isMacro) {
+                ModuleHistory.startSession(this.name, {
+                    overlayId: this.oid,
+                    category: this.subcategory,
+                    isMacro: this.isMacro,
+                    parentManaged: this.isParentManaged,
+                    toggleContext,
+                    getOverlayData: () => (this.oid ? OverlayManager.getSessionSnapshot(this.oid) : null),
+                });
+            }
 
             try {
                 this.onEnable();
@@ -183,7 +185,9 @@ export class ModuleBase {
                 Mixin.set('macroEnabled', MacroState.isMacroRunning());
             }
 
-            ModuleHistory.endSession(this.name, toggleContext);
+            if (this.isMacro) {
+                ModuleHistory.endSession(this.name, toggleContext);
+            }
 
             if (this.oid) {
                 if (this.isMacro) {
