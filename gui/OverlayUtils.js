@@ -16,6 +16,7 @@ import {
 } from './Utils';
 import { GuiState, Overlays } from './core/GuiState';
 import { ServerInfo } from '../utils/player/ServerInfo';
+import { ModuleHistory } from '../utils/ModuleHistory';
 
 const { loadSettings } = require('./GuiSave');
 
@@ -207,6 +208,8 @@ class OverlayUtils {
     }
 
     resetAll() {
+        ModuleHistory.endAllSessions('game_unload');
+
         this.ids = [];
         this.animations = {};
         this.startTimes = {};
@@ -305,6 +308,26 @@ class OverlayUtils {
     incrementTrackedValue(idName, key, amount = 1) {
         const current = Number(this.getTrackedValue(idName, key, 0)) || 0;
         return this.setTrackedValue(idName, key, current + amount);
+    }
+
+    getSessionSnapshot(idName) {
+        const overlay = this.ids.find((id) => id.name === idName);
+        const sections = (overlay?.sections || []).map((section) => {
+            const data = {};
+            Object.entries(section.data || {}).forEach(([key, value]) => {
+                data[key] = typeof value === 'function' ? value() : value;
+            });
+
+            return {
+                title: section.title,
+                data,
+            };
+        });
+
+        return {
+            trackedValues: { ...this.resolveTrackedValues(idName) },
+            sections,
+        };
     }
 
     getSessionElapsedMs(idName) {

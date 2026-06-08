@@ -4,6 +4,7 @@ import { Categories } from '../gui/categories/CategorySystem';
 import { Chat } from './Chat';
 import { KeyBindUtils } from './Constants';
 import { MacroState } from './MacroState';
+import { ModuleHistory } from './ModuleHistory';
 import { Mixin } from './MixinManager';
 import { ScheduleTask } from './ScheduleTask';
 import { manager } from './SkyblockEvents';
@@ -160,6 +161,15 @@ export class ModuleBase {
                 OverlayManager.startTime(this.oid, this.isMacro);
             }
 
+            ModuleHistory.startSession(this.name, {
+                overlayId: this.oid,
+                category: this.subcategory,
+                isMacro: this.isMacro,
+                parentManaged: this.isParentManaged,
+                toggleContext,
+                getOverlayData: () => (this.oid ? OverlayManager.getSessionSnapshot(this.oid) : null),
+            });
+
             try {
                 this.onEnable();
             } catch (e) {
@@ -172,6 +182,8 @@ export class ModuleBase {
                 MacroState.onModuleDisabled(this.name, toggleContext);
                 Mixin.set('macroEnabled', MacroState.isMacroRunning());
             }
+
+            ModuleHistory.endSession(this.name, toggleContext);
 
             if (this.oid) {
                 if (this.isMacro) {
