@@ -76,11 +76,13 @@ class InterfaceHandler {
 
     terminateGui() {
         const player = Player.getPlayer();
-        if (!player || !Player.getContainer()) return;
+        if (!player) return;
 
         try {
             const syncId = Client.getMinecraft().player.currentScreenHandler.syncId;
-            Client.sendPacket(new CloseHandledScreenC2S(syncId));
+            if (syncId) {
+                Client.sendPacket(new CloseHandledScreenC2S(syncId));
+            }
 
             if (Client.currentGui) {
                 Client.currentGui.close();
