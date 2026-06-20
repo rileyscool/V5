@@ -1,4 +1,3 @@
-
 class SwiftIntegration {
     constructor() {
         this.pathManager = PathManager;

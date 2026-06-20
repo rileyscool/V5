@@ -14,7 +14,6 @@ import {
     updateSettingMap as _updateSettingMap,
 } from './GuiSave';
 
-
 const warmupTrigger = register('renderOverlay', () => {
     try {
         const width = Renderer.screen.getWidth();

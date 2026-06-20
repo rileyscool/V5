@@ -312,7 +312,13 @@ class Finder {
                 this.render = register('postRenderWorld', () => {
                     if (PathConfig.RENDER_KEY_NODES && result.keynodes?.length >= 2) {
                         result.keynodes.forEach((node) => {
-                            RenderUtils.drawStyledBox(new Vec3d(node.x, node.y, node.z), new RenderColor(0, 100, 200, 120), new RenderColor(0, 100, 200, 255), 4, true);
+                            RenderUtils.drawStyledBox(
+                                new Vec3d(node.x, node.y, node.z),
+                                new RenderColor(0, 100, 200, 120),
+                                new RenderColor(0, 100, 200, 255),
+                                4,
+                                true
+                            );
                         });
                     }
 
