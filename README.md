@@ -25,56 +25,6 @@ V5 is split across two repositories:
 - **JavaScript module (V5):** https://github.com/V5-Client/V5  
   Contains macros/scripts used by the client.
 
-## Working on the Fabric Mod ([V5Loader](https://github.com/V5-Client/V5Loader))
-
-Run these commands from the `V5Loader` repository root.
-
-### Build outputs
-
-- `NativeSrc/build/V5PathJNI.so` (Linux)
-- `NativeSrc/build/V5PathJNI.dylib` (macOS)
-- `NativeSrc/build/Release/V5PathJNI.dll` or `NativeSrc/build/V5PathJNI.dll` (Windows)
-
-### Bundle output into V5Loader
-
-Copy the built library into:
-
-- `src/main/resources/assets/v5/`
-
-For production release commits, this copy step is handled automatically by GitHub Actions.
-
-### Quick dev commands
-
-Each command compiles native code, copies the output, runs API dump, then builds Kotlin.
-
-- **Linux:**
-
-```bash
-cmake -S NativeSrc -B NativeSrc/build -DCMAKE_BUILD_TYPE=Release && cmake --build NativeSrc/build --config Release -j && cp ./NativeSrc/build/V5PathJNI.so ./src/main/resources/assets/v5/V5PathJNI.so && ./gradlew apiDump && ./gradlew build
-```
-
-- **macOS:**
-
-```bash
-cmake -S NativeSrc -B NativeSrc/build -DCMAKE_BUILD_TYPE=Release && cmake --build NativeSrc/build --config Release -j && cp ./NativeSrc/build/V5PathJNI.dylib ./src/main/resources/assets/v5/V5PathJNI.dylib && ./gradlew apiDump && ./gradlew build
-```
-
-- **Windows (PowerShell):**
-
-```powershell
-cmake -S NativeSrc -B NativeSrc/build -DCMAKE_BUILD_TYPE=Release; cmake --build NativeSrc/build --config Release --parallel; if (Test-Path .\NativeSrc\build\Release\V5PathJNI.dll) { Copy-Item .\NativeSrc\build\Release\V5PathJNI.dll .\src\main\resources\assets\v5\V5PathJNI.dll -Force } else { Copy-Item .\NativeSrc\build\V5PathJNI.dll .\src\main\resources\assets\v5\V5PathJNI.dll -Force }; .\gradlew apiDump; .\gradlew build
-```
-
-### Install built mod
-
-After building, place the jar at:
-
-- `.minecraft/V5/V5-Loader.jar`
-
-You must have the [V5ModLoader.jar](https://rdbt.top/docs/getting-started) in your mods folder for it to work.
-
-The V5ModLoader simply handles V5 user accounts to prevent abuse.
-
 ## Working on the JavaScript Module ([V5](https://github.com/V5-Client/V5))
 
 1. In-game, run `/V5 developerMode true`.

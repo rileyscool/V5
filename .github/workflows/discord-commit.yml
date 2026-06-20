@@ -101,7 +101,11 @@ jobs:
 
                   cp -a . "$source_dir"/
                   rm -rf "$source_dir/.git" "$source_dir/.github" "$source_dir/.vscode"
-                  rm -f "$source_dir/.gitignore"
+                  rm -f \
+                    "$source_dir/.gitignore" \
+                    "$source_dir/.prettierrc.json" \
+                    "$source_dir/jsconfig.json" \
+                    "$source_dir/typings.d.ts"
 
                   (
                     cd "$source_dir"
