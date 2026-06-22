@@ -49,7 +49,7 @@ class NukerClass extends ModuleBase {
         this.lastUse = 0;
         this.ABILITY_COOLDOWN_MS = 200000;
 
-        v5Command('nukeradd', () => {
+        v5Command('nuker add', () => {
             let block = Player.lookingAt();
             if (block?.getClass() === Block) {
                 const newBlock = { name: block.type.getName(), id: block.type.getID() };
@@ -64,14 +64,19 @@ class NukerClass extends ModuleBase {
             }
         });
 
-        v5Command('nukerremove', (id) => {
-            if (id === undefined) return this.message('Usage: /v5 nuker remove <id>');
-            let initialLength = this.customBlockList.length;
-            this.customBlockList = this.customBlockList.filter((block) => !(block.id === Number.parseInt(id)));
-            if (this.customBlockList.length < initialLength) this.message('Removed block(s).');
-        });
+        v5Command(
+            'nuker remove',
+            (id) => {
+                if (id === undefined) return this.message('Usage: /v5 nuker remove <id>');
+                let initialLength = this.customBlockList.length;
+                this.customBlockList = this.customBlockList.filter((block) => block.id !== id);
+                if (this.customBlockList.length < initialLength) return this.message('Removed block.');
+                else this.message('Block ID not found');
+            },
+            ['integer']
+        );
 
-        v5Command('nukerlist', () => {
+        v5Command('nuker list', () => {
             if (this.customBlockList.length === 0) {
                 return this.message('List is currently empty.');
             }
@@ -83,7 +88,7 @@ class NukerClass extends ModuleBase {
             this.message('&7----------------------');
         });
 
-        v5Command('nukerclear', () => {
+        v5Command('nuker clear', () => {
             this.customBlockList = [];
             this.message('Cleared Nuker list.');
         });

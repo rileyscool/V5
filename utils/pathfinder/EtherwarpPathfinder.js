@@ -58,7 +58,7 @@ class EtherwarpPathHandler {
     constructor() {
         this.resetState();
 
-        v5Command('etherwarp', (x, y, z) => this.test(x, y, z));
+        v5Command('etherwarp', (x, y, z) => this.test(x, y, z), ['greedyString']);
 
         register('step', () => {
             this.pollSearch();

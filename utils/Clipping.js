@@ -94,13 +94,9 @@ class ClippingManager extends ModuleBase {
             'Clipping'
         );
 
-        v5Command('clip', (...args) => {
-            if (args && args[0] && args[0].toLowerCase() === 'compress') {
-                this.compressLatestClip();
-            } else {
-                this.saveClip();
-            }
-        });
+        v5Command('clip', () => this.saveClip());
+        v5Command('clip save', () => this.saveClip());
+        v5Command('clip compress-latest', () => this.compressLatestClip());
 
         register('gameUnload', () => {
             this.isUnloading = true;

@@ -211,9 +211,12 @@ register('packetSent', (packet, event) => {
     cancel(event);
 }).setFilteredClass(ChatMessageC2S);
 
-v5Command('reconnectIRC', () => {
+const reconnectIRC = () => {
     reconnectAttempts = 0;
     attemptReconnect();
-});
+};
+
+v5Command('irc', reconnectIRC);
+v5Command('irc reconnect', reconnectIRC);
 
 connectWebSocket();

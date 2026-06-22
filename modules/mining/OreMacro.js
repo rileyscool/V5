@@ -99,48 +99,52 @@ class OreMacro extends ModuleBase {
             },
         ]);
 
-        v5Command('ore', (action, arg1, indexArg) => {
-            if (!action) return this.message('&cUsage: /v5 mining ore <add|remove|clear> [type] [index]');
+        v5Command(
+            'mining ore',
+            (action, arg1, indexArg) => {
+                if (!action) return this.message('&cUsage: /v5 mining ore <add|remove|clear> [type] [index]');
 
-            const actionUpper = action.toUpperCase();
-            let movementType = undefined;
-            let finalIndex = undefined;
+                const actionUpper = action.toUpperCase();
+                let movementType = undefined;
+                let finalIndex = undefined;
 
-            if (arg1 !== undefined) {
-                const parsedArg1 = Number.parseInt(arg1, 10);
+                if (arg1 !== undefined) {
+                    const parsedArg1 = Number.parseInt(arg1, 10);
 
-                if (!Number.isNaN(parsedArg1)) {
-                    finalIndex = parsedArg1;
-                } else {
-                    movementType = arg1.toUpperCase();
+                    if (!Number.isNaN(parsedArg1)) {
+                        finalIndex = parsedArg1;
+                    } else {
+                        movementType = arg1.toUpperCase();
 
-                    if (indexArg !== undefined) {
-                        finalIndex = Number.parseInt(indexArg, 10);
+                        if (indexArg !== undefined) {
+                            finalIndex = Number.parseInt(indexArg, 10);
+                        }
                     }
                 }
-            }
 
-            const allowedTypes = ['WALK', 'MINEABLE'];
-            if (movementType && !allowedTypes.includes(movementType)) {
-                return this.message(`&cInvalid type! Use: ${allowedTypes.join(', ')}`);
-            }
+                const allowedTypes = ['WALK', 'MINEABLE'];
+                if (movementType && !allowedTypes.includes(movementType)) {
+                    return this.message(`&cInvalid type! Use: ${allowedTypes.join(', ')}`);
+                }
 
-            const isMineable = movementType === 'MINEABLE';
+                const isMineable = movementType === 'MINEABLE';
 
-            this.route = Router.Edit(
-                actionUpper,
-                this.route,
-                `OreRoutes/${this.loadedFile}`,
-                Number.isNaN(finalIndex) ? undefined : finalIndex,
-                !!movementType,
-                allowedTypes,
-                movementType,
-                isMineable
-            );
+                this.route = Router.Edit(
+                    actionUpper,
+                    this.route,
+                    `OreRoutes/${this.loadedFile}`,
+                    Number.isNaN(finalIndex) ? undefined : finalIndex,
+                    !!movementType,
+                    allowedTypes,
+                    movementType,
+                    isMineable
+                );
 
-            this.updateRouteMeta();
-            this.message(`&aRoute updated: ${actionUpper} ${movementType || ''}`);
-        });
+                this.updateRouteMeta();
+                this.message(`&aRoute updated: ${actionUpper} ${movementType || ''}`);
+            },
+            ['greedyString']
+        );
 
         this.when(
             () => {

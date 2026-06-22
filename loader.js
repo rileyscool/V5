@@ -2,7 +2,7 @@ Config.setAutoUpdateModules(false);
 Config.setOpenConsoleOnError(true);
 
 /* COMMANDS */
-import './utils/V5Commands';
+import { registerV5Commands } from './utils/V5Commands';
 
 /* GUI */
 import './gui/GUI';
@@ -33,6 +33,7 @@ import './utils/SkyblockEvents';
 import './modules/loader';
 
 import { loadSettings } from './gui/GuiSave';
+registerV5Commands();
 MacroState.setupLastMacroToggleKey();
 loadSettings();
 

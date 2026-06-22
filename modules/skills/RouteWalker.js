@@ -46,42 +46,46 @@ class RouteWalkerer extends ModuleBase {
 
         this.action = this.ACTIONS.WALK;
 
-        v5Command('routewalker', (action, arg1, indexArg) => {
-            let indexNum = undefined;
+        v5Command(
+            'routes',
+            (action, arg1, indexArg) => {
+                let indexNum = undefined;
 
-            const actionUpper = action?.toUpperCase();
-            if (actionUpper === 'ADD' && !arg1) return this.message('Movement type required! e.g /v5 routes add WALK/ETHERWARP');
-            if (actionUpper === 'CREATE') {
-                const createdRouteId = `${Date.now()}`;
-                const createdRouteName = `${createdRouteId}.json`;
-                const createdRoutePath = `RoutewalkerRoutes/${createdRouteName}`;
+                const actionUpper = action?.toUpperCase();
+                if (actionUpper === 'ADD' && !arg1) return this.message('Movement type required! e.g /v5 routes add WALK/ETHERWARP');
+                if (actionUpper === 'CREATE') {
+                    const createdRouteId = `${Date.now()}`;
+                    const createdRouteName = `${createdRouteId}.json`;
+                    const createdRoutePath = `RoutewalkerRoutes/${createdRouteName}`;
 
-                if (!Router.saveRouteToFile(createdRoutePath, [])) return;
+                    if (!Router.saveRouteToFile(createdRoutePath, [])) return;
 
-                this.loadedFile = createdRouteName;
-                this.route = [];
-                this.refreshRoutesToggle();
-                RouteState.setRoute(this.route, 'Route Walker');
-                this.message(`&aCreated route: &f${createdRouteName}`);
-                return;
-            }
+                    this.loadedFile = createdRouteName;
+                    this.route = [];
+                    this.refreshRoutesToggle();
+                    RouteState.setRoute(this.route, 'Route Walker');
+                    this.message(`&aCreated route: &f${createdRouteName}`);
+                    return;
+                }
 
-            if (indexArg !== undefined) {
-                let parsedNum = Number.parseInt(indexArg);
+                if (indexArg !== undefined) {
+                    let parsedNum = Number.parseInt(indexArg);
 
-                if (!Number.isNaN(parsedNum) && parsedNum >= 1) indexNum = parsedNum;
-            }
+                    if (!Number.isNaN(parsedNum) && parsedNum >= 1) indexNum = parsedNum;
+                }
 
-            this.route = Router.Edit(
-                actionUpper,
-                this.route,
-                'RoutewalkerRoutes/' + this.loadedFile,
-                indexNum,
-                true,
-                ['WALK', 'ETHERWARP'],
-                [arg1?.toUpperCase()]
-            );
-        });
+                this.route = Router.Edit(
+                    actionUpper,
+                    this.route,
+                    'RoutewalkerRoutes/' + this.loadedFile,
+                    indexNum,
+                    true,
+                    ['WALK', 'ETHERWARP'],
+                    [arg1?.toUpperCase()]
+                );
+            },
+            ['greedyString']
+        );
 
         this.when(
             () => this.RENDERPOINTS,

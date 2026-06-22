@@ -61,13 +61,11 @@ class RotationController {
         this.curveSeed = 0;
         this.callbacks = [];
 
-        v5Command('rotateTo', (yaw, pitch) => {
-            this.lookAtAngles(yaw, pitch);
-        });
+        v5Command('rotations rotateTo', (yaw, pitch) => this.lookAtAngles(yaw, pitch), ['float', 'float']);
 
-        v5Command('stopRotation', () => {
-            this.stop();
-        });
+        v5Command('rotations rotateTo random', () => this.lookAtAngles(Math.random() * 360 - 180, Math.random() * 180 - 90));
+
+        v5Command('rotations stop', () => this.stop());
 
         register('renderWorld', () => this.update());
     }

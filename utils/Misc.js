@@ -2,7 +2,7 @@ import { Chat } from './Chat';
 import { MiningUtils } from './MiningUtils';
 import { v5Command } from './V5Commands';
 
-v5Command('info', () => {
+v5Command('debug info', () => {
     let target = Player.lookingAt();
     if (!target) {
         Chat.message('You are not looking at anything');
@@ -32,7 +32,7 @@ v5Command('info', () => {
     }
 });
 
-v5Command('istranslucent', () => {
+v5Command('debug istranslucent', () => {
     const block = Player.lookingAt();
     if (!block) {
         Chat.message('You are not looking at a block');
@@ -42,71 +42,75 @@ v5Command('istranslucent', () => {
 });
 
 // gemini made it for me :)
-v5Command('packetinfo', (args) => {
-    if (!args || args.length === 0) return Chat.message('no packet');
+v5Command(
+    'debug packetinfo',
+    (args) => {
+        if (!args || args.length === 0) return Chat.message('no packet');
 
-    const fullClassPath = args;
-    let loadedClass = null;
+        const fullClassPath = args;
+        let loadedClass = null;
 
-    try {
-        loadedClass = Java.type(fullClassPath);
-    } catch (e) {
-        return Chat.message('Packet not found');
-    }
+        try {
+            loadedClass = Java.type(fullClassPath);
+        } catch (e) {
+            return Chat.message('Packet not found');
+        }
 
-    if (!loadedClass || !loadedClass.class) return Chat.message('class not found');
+        if (!loadedClass || !loadedClass.class) return Chat.message('class not found');
 
-    const simplePacketName = fullClassPath.substring(fullClassPath.lastIndexOf('.') + 1);
+        const simplePacketName = fullClassPath.substring(fullClassPath.lastIndexOf('.') + 1);
 
-    let output = `\nPacket Checked: §6${simplePacketName}§r\n`;
+        let output = `\nPacket Checked: §6${simplePacketName}§r\n`;
 
-    const fields = loadedClass.class.getDeclaredFields();
-    output += '\n§b§nFields & Enums §r\n';
+        const fields = loadedClass.class.getDeclaredFields();
+        output += '\n§b§nFields & Enums §r\n';
 
-    if (fields.length === 0) {
-        output += '§8No public fields found.\n';
-    } else {
-        fields.forEach((field) => {
-            const fieldType = field.getType();
-            const fieldName = field.getName();
+        if (fields.length === 0) {
+            output += '§8No public fields found.\n';
+        } else {
+            fields.forEach((field) => {
+                const fieldType = field.getType();
+                const fieldName = field.getName();
 
-            if (fieldType.isEnum() && fieldType.getName().includes('$')) {
-                const enumSimpleName = fieldType.getSimpleName();
-                output += `\n§aEnum: §e${enumSimpleName} §7(Field: ${fieldName})`;
+                if (fieldType.isEnum() && fieldType.getName().includes('$')) {
+                    const enumSimpleName = fieldType.getSimpleName();
+                    output += `\n§aEnum: §e${enumSimpleName} §7(Field: ${fieldName})`;
 
-                const constants = Array.from(fieldType.getEnumConstants())
-                    .map((constant) => `\n  - §9${constant.name()}§r`)
-                    .join('');
+                    const constants = Array.from(fieldType.getEnumConstants())
+                        .map((constant) => `\n  - §9${constant.name()}§r`)
+                        .join('');
 
-                output += `\n  §7Constants: ${constants}`;
-            } else {
-                output += `\n§fField: §f${fieldName} §7(Type: §d${fieldType.getSimpleName()}§7)`;
-            }
-        });
-    }
+                    output += `\n  §7Constants: ${constants}`;
+                } else {
+                    output += `\n§fField: §f${fieldName} §7(Type: §d${fieldType.getSimpleName()}§7)`;
+                }
+            });
+        }
 
-    const methods = loadedClass.class.getMethods();
-    output += '\n\n§b§nPublic Methods §r\n\n';
+        const methods = loadedClass.class.getMethods();
+        output += '\n\n§b§nPublic Methods §r\n\n';
 
-    if (methods.length === 0) {
-        output += '§8No public methods found.';
-    } else {
-        const sortedMethods = Array.from(methods).sort((a, b) => a.getName().localeCompare(b.getName()));
+        if (methods.length === 0) {
+            output += '§8No public methods found.';
+        } else {
+            const sortedMethods = Array.from(methods).sort((a, b) => a.getName().localeCompare(b.getName()));
 
-        sortedMethods.forEach((method) => {
-            const methodName = method.getName();
-            const returnType = method.getReturnType().getSimpleName();
+            sortedMethods.forEach((method) => {
+                const methodName = method.getName();
+                const returnType = method.getReturnType().getSimpleName();
 
-            const paramTypes = Array.from(method.getParameterTypes())
-                .map((p) => `§d${p.getSimpleName()}§r`)
-                .join('§7, ');
+                const paramTypes = Array.from(method.getParameterTypes())
+                    .map((p) => `§d${p.getSimpleName()}§r`)
+                    .join('§7, ');
 
-            output += `§f${methodName}§7(${paramTypes}§7) §8-> §c${returnType}\n`;
-        });
-    }
+                output += `§f${methodName}§7(${paramTypes}§7) §8-> §c${returnType}\n`;
+            });
+        }
 
-    Chat.message(output);
+        Chat.message(output);
 
-    const consoleOutput = output.replace(/§[0-9a-fk-or]/g, '');
-    Chat.log(consoleOutput);
-});
+        const consoleOutput = output.replace(/§[0-9a-fk-or]/g, '');
+        Chat.log(consoleOutput);
+    },
+    ['greedyString']
+);

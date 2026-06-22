@@ -294,11 +294,7 @@ class MiningStatsCollector {
 
 const miningStatsCollector = new MiningStatsCollector();
 
-v5Command('getminingstats', () => {
-    Executor.execute(() => {
-        miningStatsCollector.beginCollection();
-    });
-});
+v5Command('mining stats', () => Executor.execute(() => miningStatsCollector.beginCollection()));
 
 class ToolFinder {
     static findBest() {
@@ -1019,7 +1015,7 @@ const timeCalc = new MineTimeCalculations(miningStatsCollector);
 const refueler = new RefuelService();
 const explorer = new ExplorerUpgrade(miningStatsCollector);
 
-v5Command('refueldrill', () => {
+v5Command('mining refuel', () => {
     refueler.refuel((success) => {
         if (success) {
             Chat.message('Refueling completed');
@@ -1082,7 +1078,7 @@ export const MiningUtils = {
     },
 };
 
-v5Command('maxge', () => {
+v5Command('mining maxge', () => {
     MiningUtils.MaxGreatExplorer((success) => {
         if (success) {
             Chat.message('Great Explorer upgrade completed');

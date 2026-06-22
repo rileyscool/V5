@@ -139,7 +139,7 @@ class FarmingMacro extends ModuleBase {
     }
 
     initCommands() {
-        v5Command('setstart', () => {
+        v5Command('farming set start', () => {
             // if (Utils.area() !== 'Garden') return this.message('&cNot in garden!');
             this.points.start = {
                 x: Math.floor(Player.getX()),
@@ -151,7 +151,7 @@ class FarmingMacro extends ModuleBase {
             this.message('&aStart point saved!');
         });
 
-        v5Command('setend', () => {
+        v5Command('farming set end', () => {
             // if (Utils.area() !== 'Garden') return this.message('&cNot in garden!');
             this.points.end = {
                 x: Math.floor(Player.getX()),

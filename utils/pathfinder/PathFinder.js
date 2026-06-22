@@ -56,25 +56,33 @@ class Finder {
         this.cachedWalkSplinePath = null;
         this.cachedWalkSplineResult = null;
 
-        v5Command('path', (...args) => {
-            const end = this.parseGoalCoordinates(args, 'Usage: /v5 path goto <x> <y> <z> [x2 y2 z2...]');
-            if (!end) return;
+        v5Command(
+            'path goto',
+            (...args) => {
+                const end = this.parseGoalCoordinates(args, 'Usage: /v5 path goto <x> <y> <z> [x2 y2 z2...]');
+                if (!end) return;
 
-            this.resetPath();
-            this.calledFromFile = true;
-            this.findPath(end);
-        });
+                this.resetPath();
+                this.calledFromFile = true;
+                this.findPath(end);
+            },
+            ['greedyString']
+        );
 
-        v5Command('flypath', (...args) => {
-            const end = this.parseGoalCoordinates(args, 'Usage: /v5 path fly <x> <y> <z> [x2 y2 z2...]', true);
-            if (!end) return;
+        v5Command(
+            'path fly',
+            (...args) => {
+                const end = this.parseGoalCoordinates(args, 'Usage: /v5 path fly <x> <y> <z> [x2 y2 z2...]', true);
+                if (!end) return;
 
-            this.resetPath();
-            this.calledFromFile = true;
-            this.findPath(end, null, true);
-        });
+                this.resetPath();
+                this.calledFromFile = true;
+                this.findPath(end, null, true);
+            },
+            ['greedyString']
+        );
 
-        v5Command('stopPath', () => {
+        v5Command('path stop', () => {
             this.resetPath();
             PathExecutor.destroy();
         });
