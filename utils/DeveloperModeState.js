@@ -52,9 +52,9 @@ function warnDeveloper() {
         if (!World.isLoaded()) {
             warnDeveloper();
         } else {
-            Chat.message("&cDeveloper Mode is enabled. Run '/V5 developerMode false' to disable.");
-            Chat.message('&cDeveloper Mode is UAYOR and disables auto updates.');
-            Chat.message('&cSupport is not provided for developer mode macros as they are unfinished AND DONT WORK.');
+            ChatLib.chat("&cDeveloper Mode is enabled. Run '/V5 developerMode false' to disable.");
+            ChatLib.chat('&cDeveloper Mode is UAYOR and disables auto updates.');
+            ChatLib.chat('&cSupport is not provided for developer mode macros as they are unfinished AND DONT WORK.');
         }
     }, 7000);
 }

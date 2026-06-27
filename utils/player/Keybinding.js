@@ -65,6 +65,16 @@ class ControlSystem {
             return true;
         }
 
+        if (action === 'rightclick') {
+            const useKey = mc.options.useKey;
+
+            ScheduleTask(() => {
+                useKey.setPressed(!!isPressed);
+            });
+
+            return true;
+        }
+
         if (guiOpen && isPressed) return false;
 
         const options = mc.options;
