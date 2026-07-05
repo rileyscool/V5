@@ -24,8 +24,7 @@ class UngrabManager {
             mc.mouseHandler.releaseMouse();
 
             if (isLinux) {
-                // Todo: fix broken due to 26.1
-                //GLFW.glfwSetInputMode(mc.getWindow().getHandle(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
+                GLFW.glfwSetInputMode(mc.getWindow().handle(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
             }
         }
     }
@@ -42,8 +41,7 @@ class UngrabManager {
         const mc = Client.getMinecraft();
         if (mc.screen == null) {
             mc.mouseHandler.grabMouse();
-            // Todo: fix broken due to 26.1
-            //GLFW.glfwSetInputMode(mc.getWindow().getHandle(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
+            GLFW.glfwSetInputMode(mc.getWindow().handle(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
         }
     }
 }
