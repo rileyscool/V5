@@ -735,7 +735,8 @@ class Combat extends ModuleBase {
     isTargetInvalid(target) {
         try {
             const entity = target.toMC ? target.toMC() : target;
-            if (entity.isDead()) {
+            const isDead = entity.isDeadOrDying() || entity.isRemoved();
+            if (isDead) {
                 if (this.target && target === this.target) {
                     const pos = this.getTargetPosition(target);
                     if (pos) this.rememberMobPosition(pos);
