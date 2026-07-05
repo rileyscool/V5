@@ -1,6 +1,6 @@
 import { Chat } from '../../utils/Chat';
 import { MacroState } from '../../utils/MacroState';
-import { PlayerInteractItemC2S, PlayerPositionLookS2C, CommandExecutionC2S } from '../../utils/Packets';
+import { ServerboundUseItemPacket, ClientboundPlayerPositionPacket, ServerboundChatCommandPacket } from '../../utils/Packets';
 import PathConfig from '../../utils/pathfinder/PathConfig';
 import { Failsafe } from '../Failsafe';
 import FailsafeUtils from '../FailsafeUtils';
@@ -32,7 +32,7 @@ class TeleportFailsafe extends Failsafe {
         register('packetSent', () => {
             if (!MacroState.isFailsafeMacroRunning()) return;
             lastRightClickTime = Date.now();
-        }).setFilteredClass(PlayerInteractItemC2S);
+        }).setFilteredClass(ServerboundUseItemPacket);
 
         register('packetSent', (packet) => {
             if (!MacroState.isFailsafeMacroRunning()) return;
@@ -47,7 +47,7 @@ class TeleportFailsafe extends Failsafe {
                     pendingWarpIgnoreTimer = null;
                 }, WARP_IGNORE_TIMEOUT_MS);
             }
-        }).setFilteredClass(CommandExecutionC2S);
+        }).setFilteredClass(ServerboundChatCommandPacket);
     }
 
     shouldIgnoreWarpTeleport(x, y, z) {
@@ -135,9 +135,9 @@ class TeleportFailsafe extends Failsafe {
             const change = packet.change();
             const pos = change.position();
 
-            const newX = pos.x;
-            const newY = pos.y;
-            const newZ = pos.z;
+            const newX = Number(pos.x());
+            const newY = Number(pos.y());
+            const newZ = Number(pos.z());
 
             const dx = newX - fromX;
             const dy = newY - fromY;
@@ -147,8 +147,8 @@ class TeleportFailsafe extends Failsafe {
 
             const data = {
                 distance,
-                yaw: change.yaw(),
-                pitch: change.pitch(),
+                yaw: Number(change.yRot()),
+                pitch: Number(change.xRot()),
                 currYaw: Player.getYaw(),
                 currPitch: Player.getPitch(),
                 lastRightClickTime,
@@ -180,7 +180,7 @@ class TeleportFailsafe extends Failsafe {
                 if (this.disabled || !MacroState.isFailsafeMacroRunning() || scheduledAt < this._disabledUntil || this._shouldDisableTeleport(data)) return;
                 this.onTrigger(fromX, fromY, fromZ, newX, newY, newZ, distance);
             }, this._getReactionDelay(this.settings));
-        }).setFilteredClass(PlayerPositionLookS2C);
+        }).setFilteredClass(ClientboundPlayerPositionPacket);
     }
 
     handleNullPacket(x, y, z) {
