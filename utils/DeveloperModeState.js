@@ -6,7 +6,7 @@ let loadedFromDisk = false;
 
 const saveDeveloperModeState = () => {
     try {
-        FileLib.write(CONFIG_ROOT, STATE_FILE, JSON.stringify({ enabled: developerModeEnabled }, null, 2));
+        FileLib.write(CONFIG_ROOT, STATE_FILE, JSON.stringify({ enabled: developerModeEnabled }, null, 2), true);
     } catch (e) {
         console.error('V5 developer mode state write failed:', e);
     }
