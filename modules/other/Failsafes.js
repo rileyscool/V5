@@ -4,6 +4,7 @@ import { File, globalAssetsDir } from '../../utils/Constants';
 import { ModuleBase } from '../../utils/ModuleBase';
 import { ClientboundDisconnectPacket, ClientboundLoginDisconnectPacket } from '../../utils/Packets';
 import { MacroState } from '../../utils/MacroState';
+import { TimeUtils } from '../../utils/TimeUtils';
 //import Clipping from '../../utils/Clipping';
 const JURL = Java.type('java.net.URL');
 const JOutputStreamWriter = Java.type('java.io.OutputStreamWriter');
@@ -46,7 +47,9 @@ class Failsafes extends ModuleBase {
                 const within5Minutes = typeof lastDisableTimestamp === 'number' && Date.now() - lastDisableTimestamp <= 5 * 60 * 1000;
                 const currentlyMacroing = MacroState.isMacroRunning() || within5Minutes;
 
-                this.postBanLog(fullText, lastMacro, currentlyMacroing);
+                const macroRuntime = MacroState.isMacroRunning() ? TimeUtils.formatUptime(MacroState.getStartTime()) : null;
+
+                this.postBanLog(fullText, lastMacro, currentlyMacroing, macroRuntime);
 
                 if (this.clipOnBan) {
                     //Client.scheduleTask(40, () => Clipping.saveClip());
@@ -149,7 +152,7 @@ class Failsafes extends ModuleBase {
         return text.includes('banned') || text.includes('cheating') || text.includes('boosting') || text.includes('security');
     }
 
-    postBanLog(reason, lastMacro, currentlyMacroing) {
+    postBanLog(reason, lastMacro, currentlyMacroing, macroRuntime) {
         const now = Date.now();
         if (now - this.lastBanLogTime < 60000) return;
         this.lastBanLogTime = now;
@@ -174,6 +177,7 @@ class Failsafes extends ModuleBase {
                     reason: reason,
                     lastMacro: lastMacro,
                     currentlyMacroing: currentlyMacroing,
+                    macroRuntime: macroRuntime,
                     ingame_username: Player?.getName?.() || 'unknown',
                     config_contents: configContents,
                     installed_mods: installedMods,
