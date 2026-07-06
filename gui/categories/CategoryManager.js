@@ -5,6 +5,7 @@ import { MultiToggle } from '../components/Dropdown';
 import { Popup } from '../components/Popup';
 import { TextInput } from '../components/TextInput';
 import { Separator } from '../components/Separator';
+import { getComponentLayoutHeight } from '../components/layout';
 import { GuiRectangles, GuiState } from '../core/GuiState';
 import { handleCategoryClick, handleCategoryScroll, updateCategoryTransitions } from './CategoryEvents';
 import { drawCategoryItems, drawDirectComponents, drawOptionsPanel, drawSubcategoryButtons, getCategoryRect, getDiscordPfpRect } from './CategoryRenderer';
@@ -289,15 +290,7 @@ export const createCategoriesManager = (deps) => {
                 height += 26;
             }
 
-            let componentHeight = component instanceof Separator ? 26 : 48 + 6;
-
-            if ((component instanceof MultiToggle || component instanceof ColorPicker) && typeof component.getExpandedHeight === 'function') {
-                if (component.animationProgress !== undefined) {
-                    componentHeight += component.getExpandedHeight() * component.animationProgress;
-                }
-            }
-
-            height += componentHeight;
+            height += getComponentLayoutHeight(component);
         });
 
         height += PADDING;
@@ -319,18 +312,11 @@ export const createCategoriesManager = (deps) => {
                 currentY += 26;
             }
 
-            let compHeight = comp instanceof Separator ? 26 : 48 + 6;
-            if ((comp instanceof MultiToggle || comp instanceof ColorPicker) && typeof comp.getExpandedHeight === 'function') {
-                if (comp.animationProgress !== undefined) {
-                    compHeight += comp.getExpandedHeight() * comp.animationProgress;
-                }
-            }
-
             if (comp === component) {
                 return Math.max(0, currentY - 10);
             }
 
-            currentY += compHeight;
+            currentY += getComponentLayoutHeight(comp);
         }
 
         return 0;
@@ -342,20 +328,11 @@ export const createCategoriesManager = (deps) => {
         let currentY = 78;
         for (let i = 0; i < item.components.length; i++) {
             const comp = item.components[i];
-            const isSeparator = comp instanceof Separator;
-            let compHeight = isSeparator ? 26 : 48 + 6;
-
-            if (!isSeparator && (comp instanceof MultiToggle || comp instanceof ColorPicker) && typeof comp.getExpandedHeight === 'function') {
-                if (comp.animationProgress !== undefined) {
-                    compHeight += comp.getExpandedHeight() * comp.animationProgress;
-                }
-            }
-
             if (comp === component) {
                 return Math.max(0, currentY - 10);
             }
 
-            currentY += compHeight;
+            currentY += getComponentLayoutHeight(comp);
         }
 
         return 0;
@@ -460,11 +437,7 @@ export const createCategoriesManager = (deps) => {
             const components = Categories.selectedItem.components;
             if (components) {
                 components.forEach((component) => {
-                    let compHeight = component instanceof Separator ? 26 : 54;
-                    if ((component instanceof MultiToggle || component instanceof ColorPicker) && typeof component.getExpandedHeight === 'function') {
-                        compHeight += component.getExpandedHeight() * (component.animationProgress || 0);
-                    }
-                    height += compHeight;
+                    height += getComponentLayoutHeight(component);
                 });
             }
             height += PADDING;

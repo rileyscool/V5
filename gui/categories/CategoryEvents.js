@@ -1,5 +1,5 @@
 import { Popup } from '../components/Popup';
-import { Separator } from '../components/Separator';
+import { getComponentLayoutHeight } from '../components/layout';
 import { GuiRectangles } from '../core/GuiState';
 import { OverlayManager } from '../OverlayUtils';
 import { easeInOutQuad, FontSizes, getTextWidth, isInside, PADDING, playClickSound, SUBCATEGORY_BUTTON_HEIGHT, SUBCATEGORY_BUTTON_SPACING } from '../Utils';
@@ -65,12 +65,7 @@ export const handleDirectComponentsClick = (mouseX, mouseY, panel, scrollY, cate
         }
 
         if (component instanceof Popup && typeof component.handleButtonClick === 'function') {
-            let componentHeight = 54;
-            let expansionHeight = 0;
-            if (typeof component.getExpandedHeight === 'function' && component.animationProgress !== undefined) {
-                expansionHeight = component.getExpandedHeight() * component.animationProgress;
-            }
-            componentHeight += expansionHeight;
+            const componentHeight = getComponentLayoutHeight(component);
 
             const clickableArea = {
                 x: panelX + PADDING,
@@ -95,16 +90,11 @@ export const handleDirectComponentsClick = (mouseX, mouseY, panel, scrollY, cate
         }
 
         if (typeof component.handleClick !== 'function') {
-            currentY += component instanceof Separator ? 26 : 54;
+            currentY += getComponentLayoutHeight(component);
             continue;
         }
 
-        let componentHeight = 48;
-        let expansionHeight = 0;
-        if (typeof component.getExpandedHeight === 'function' && component.animationProgress !== undefined) {
-            expansionHeight = component.getExpandedHeight() * component.animationProgress;
-        }
-        componentHeight += expansionHeight;
+        const componentHeight = getComponentLayoutHeight(component);
 
         const clickableArea = {
             x: panelX + PADDING,
@@ -124,7 +114,7 @@ export const handleDirectComponentsClick = (mouseX, mouseY, panel, scrollY, cate
             }
         }
 
-        currentY += 48 + 6 + expansionHeight;
+        currentY += componentHeight;
     }
 
     return false;
@@ -212,14 +202,7 @@ export const handleCategoryClick = (
 
                 component.x = optionX + 10;
 
-                let componentHeight = 54;
-                let expansionHeight = 0;
-
-                if (typeof component.getExpandedHeight === 'function') {
-                    expansionHeight =
-                        component.animationProgress !== undefined ? component.getExpandedHeight() * component.animationProgress : component.getExpandedHeight();
-                }
-                componentHeight += expansionHeight;
+                const componentHeight = getComponentLayoutHeight(component, true);
 
                 let clickableArea = {
                     x: optionX,
@@ -245,12 +228,7 @@ export const handleCategoryClick = (
             }
 
             if (typeof component.handleClick !== 'function') {
-                let expansionHeight = 0;
-                if (typeof component.getExpandedHeight === 'function') {
-                    expansionHeight =
-                        component.animationProgress !== undefined ? component.getExpandedHeight() * component.animationProgress : component.getExpandedHeight();
-                }
-                currentDrawnCompY += (component instanceof Separator ? 26 : 54) + expansionHeight;
+                currentDrawnCompY += getComponentLayoutHeight(component, true);
                 continue;
             }
 
@@ -259,14 +237,7 @@ export const handleCategoryClick = (
 
             component.x = optionX + 10;
 
-            let componentHeight = 48;
-            let expansionHeight = 0;
-
-            if (typeof component.getExpandedHeight === 'function') {
-                expansionHeight =
-                    component.animationProgress !== undefined ? component.getExpandedHeight() * component.animationProgress : component.getExpandedHeight();
-            }
-            componentHeight += expansionHeight;
+            const componentHeight = getComponentLayoutHeight(component, true);
 
             let clickableArea = {
                 x: optionX,
@@ -287,7 +258,7 @@ export const handleCategoryClick = (
 
             if (handled) return;
 
-            currentDrawnCompY += 54 + expansionHeight;
+            currentDrawnCompY += getComponentLayoutHeight(component, true);
         }
     }
 
@@ -482,10 +453,7 @@ export const handleCategoryScroll = (
                     componentY += 26;
                 }
 
-                let compHeight = component instanceof Separator ? 26 : 54;
-                if (typeof component.getExpandedHeight === 'function' && component.animationProgress !== undefined) {
-                    compHeight += component.getExpandedHeight() * component.animationProgress;
-                }
+                const compHeight = getComponentLayoutHeight(component);
                 const compRect = {
                     x: panel.x + PADDING + 10,
                     y: componentY - rightPanelScrollY,
@@ -523,12 +491,7 @@ export const handleCategoryScroll = (
         let componentY = optionY + 78;
         if (components) {
             components.forEach((component) => {
-                let expansionHeight = 0;
-                if (typeof component.getExpandedHeight === 'function') {
-                    expansionHeight =
-                        component.animationProgress !== undefined ? component.getExpandedHeight() * component.animationProgress : component.getExpandedHeight();
-                }
-                let compHeight = (component instanceof Separator ? 26 : 54) + expansionHeight;
+                const compHeight = getComponentLayoutHeight(component, true);
                 const compRect = {
                     x: optionX + 10,
                     y: componentY - Categories.optionsScrollY,

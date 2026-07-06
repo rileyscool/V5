@@ -23,10 +23,9 @@ import {
     resetScissor,
     scissor,
 } from '../Utils';
-import { ColorPicker } from '../components/ColorPicker';
-import { MultiToggle } from '../components/Dropdown';
 import { Popup } from '../components/Popup';
 import { Separator } from '../components/Separator';
+import { getComponentLayoutHeight, getComponentXOffset } from '../components/layout';
 import { GuiRectangles } from '../core/GuiState';
 import { setTooltip } from '../core/GuiTooltip';
 import { SearchBar } from './CategorySearchBar';
@@ -211,7 +210,7 @@ export const drawDirectComponents = (panel, panelX, yOffset, mouseX, mouseY, scr
 
         const isPopup = component instanceof Popup;
         if (typeof component.draw === 'function' || isPopup) {
-            const xOffset = component instanceof Separator ? 0 : 10;
+            const xOffset = getComponentXOffset(component);
             component.x = panelX + PADDING + xOffset;
             component.y = currentY;
             component.optionPanelWidth = panelWidth;
@@ -222,16 +221,7 @@ export const drawDirectComponents = (panel, panelX, yOffset, mouseX, mouseY, scr
                 component.draw(mouseX, mouseY);
             }
 
-            let componentHeight = 48 + 6;
-
-            if (component instanceof Separator) {
-                componentHeight = 26;
-            } else if ((component instanceof MultiToggle || component instanceof ColorPicker) && typeof component.getExpandedHeight === 'function') {
-                if (component.animationProgress !== undefined) {
-                    componentHeight += component.getExpandedHeight() * component.animationProgress;
-                }
-            }
-            currentY += componentHeight;
+            currentY += getComponentLayoutHeight(component);
         }
     });
 
@@ -282,8 +272,7 @@ export const drawOptionsPanel = (panel, mouseX, mouseY, macroToggleButton = null
         const isPopup = component instanceof Popup;
         if (!isPopup && typeof component.draw !== 'function') return;
 
-        const isSeparator = component instanceof Separator;
-        const xOffset = isSeparator ? 0 : 10;
+        const xOffset = getComponentXOffset(component);
         component.x = optionX + xOffset;
         component.y = drawnCompY;
         component.optionPanelWidth = panel.width;
@@ -293,14 +282,7 @@ export const drawOptionsPanel = (panel, mouseX, mouseY, macroToggleButton = null
         } else {
             component.draw(mouseX, mouseY);
         }
-        let thisHeight = isSeparator ? 26 : 48 + 6;
-
-        if (!isSeparator && (component instanceof MultiToggle || component instanceof ColorPicker) && typeof component.getExpandedHeight === 'function') {
-            if (component.animationProgress !== undefined) {
-                thisHeight += component.getExpandedHeight() * component.animationProgress;
-            }
-        }
-        drawnCompY += thisHeight;
+        drawnCompY += getComponentLayoutHeight(component);
     });
 };
 

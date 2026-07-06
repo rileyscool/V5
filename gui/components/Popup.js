@@ -14,9 +14,7 @@ import {
     THEME,
 } from '../Utils';
 import { Button } from './Button';
-import { ColorPicker } from './ColorPicker';
-import { MultiToggle } from './Dropdown';
-import { Separator } from './Separator';
+import { getComponentLayoutHeight } from './layout';
 
 const CLOSE_TEXT = '×';
 const ANIMATION_DURATION = 350;
@@ -88,16 +86,7 @@ export class Popup {
         let height = 0;
         if (this.statusText) height += 20; // Significantly reduced from 40 to 20
         this.components.forEach((component) => {
-            let compHeight = component instanceof Separator ? 26 : 48 + 6;
-            if (component instanceof Button && component.title === component.buttonText) {
-                compHeight = 36 + 10;
-            }
-            if ((component instanceof MultiToggle || component instanceof ColorPicker) && typeof component.getExpandedHeight === 'function') {
-                if (component.animationProgress !== undefined) {
-                    compHeight += component.getExpandedHeight() * component.animationProgress;
-                }
-            }
-            height += compHeight;
+            height += getComponentLayoutHeight(component);
         });
         height += 10;
         return height;
@@ -298,20 +287,13 @@ export class Popup {
                 return;
             }
 
-            const isSeparator = component instanceof Separator;
             component.x = contentX;
             component.y = currentY;
             component.optionPanelWidth = contentWidth + this.windowPadding * 2;
             component.optionPanelHeight = contentHeight;
             component.draw(mouseX, mouseY);
 
-            let componentHeight = isSeparator ? 26 : 48 + 6;
-            if (!isSeparator && (component instanceof MultiToggle || component instanceof ColorPicker) && typeof component.getExpandedHeight === 'function') {
-                if (component.animationProgress !== undefined) {
-                    componentHeight += component.getExpandedHeight() * component.animationProgress;
-                }
-            }
-            currentY += componentHeight;
+            currentY += getComponentLayoutHeight(component);
         });
 
         NVG.resetScissor();
@@ -377,16 +359,11 @@ export class Popup {
             }
 
             if (typeof component.handleClick !== 'function') {
-                currentY += component instanceof Separator ? 26 : 54;
+                currentY += getComponentLayoutHeight(component);
                 continue;
             }
 
-            let componentHeight = 48;
-            let expansionHeight = 0;
-            if (typeof component.getExpandedHeight === 'function' && component.animationProgress !== undefined) {
-                expansionHeight = component.getExpandedHeight() * component.animationProgress;
-            }
-            componentHeight += expansionHeight;
+            const componentHeight = getComponentLayoutHeight(component);
 
             const clickableArea = {
                 x: contentX,
@@ -409,7 +386,7 @@ export class Popup {
                 }
             }
 
-            currentY += componentHeight + 6;
+            currentY += componentHeight;
         }
 
         return true;
@@ -445,7 +422,7 @@ export class Popup {
             }
 
             if (typeof component.handleMouseDrag !== 'function') {
-                currentY += component instanceof Separator ? 26 : 54;
+                currentY += getComponentLayoutHeight(component);
                 return;
             }
 
@@ -453,13 +430,7 @@ export class Popup {
             component.y = currentY;
             component.optionPanelWidth = contentWidth + this.windowPadding * 2;
 
-            let componentHeight = 48;
-            let expansionHeight = 0;
-            if (typeof component.getExpandedHeight === 'function' && component.animationProgress !== undefined) {
-                expansionHeight = component.getExpandedHeight() * component.animationProgress;
-            }
-            componentHeight += expansionHeight;
-            currentY += componentHeight + 6;
+            currentY += getComponentLayoutHeight(component);
 
             component.handleMouseDrag(mouseX, mouseY);
         });
