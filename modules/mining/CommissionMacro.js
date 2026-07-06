@@ -13,6 +13,7 @@ import { Utils } from '../../utils/Utils';
 import { CombatBot } from '../combat/CombatBot';
 import { COMMISSION_DATA, EMISSARY_LOCATIONS, MOB_CONFIGS, TRASH_ITEMS } from './CommissionData';
 import { MiningBot } from './MiningBot';
+import { ScheduleTask } from '../../utils/ScheduleTask';
 
 const STATES = {
     IDLE: 'Idle',
@@ -648,12 +649,14 @@ class CommissionMacro extends ModuleBase {
                 const token = ++this.npcRotationToken;
                 Rotations.lookAtVector(adjustedTarget);
                 Rotations.onComplete(() => {
-                    if (Pathfinder.isPathing()) return;
-                    if (!this.npcRotationPending || this.npcRotationToken !== token) return;
-                    this.npcRotationPending = false;
-                    if (this.emissariesUnlocked && !this.checkEmissaryUnlocked()) return;
-                    Keybind.rightClick();
-                    this.delay(10);
+                    ScheduleTask(5, () => {
+                        if (Pathfinder.isPathing()) return;
+                        if (!this.npcRotationPending || this.npcRotationToken !== token) return;
+                        this.npcRotationPending = false;
+                        if (this.emissariesUnlocked && !this.checkEmissaryUnlocked()) return;
+                        Keybind.rightClick();
+                        this.delay(10);
+                    });
                 });
             }
             return;
