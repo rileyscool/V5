@@ -81,12 +81,10 @@ function handleIncomingMessage(raw) {
         } else {
             handleIRCMessage(data);
             if (isIrcEnabled() && isAutoMeowEnabled() && data.type === 'message' && `${data.msg ?? ''}`.trim().toLowerCase() === 'meow') {
-                if (!isRandomChoiceMeowEnabled()) sendChatMessage('meow!');
-                if (isRandomChoiceMeowEnabled()) {
-                    const meows = ['meow!', 'mrrp!', 'mreow!', 'mroew!', 'mew!', 'mrow!', 'nya!', 'prrrt!', 'mraow!', 'mrrow!'];
-                    const randmeow = meows[Math.floor(Math.random() * meows.length)];
-                    sendChatMessage(randmeow);
-                }
+                const meows = isRandomChoiceMeowEnabled()
+                    ? ['meow!', 'mrrp!', 'mreow!', 'mroew!', 'mew!', 'mrow!', 'nya!', 'prrrt!', 'mraow!', 'mrrow!']
+                    : ['meow!'];
+                sendChatMessage(meows[Math.floor(Math.random() * meows.length)]);
             }
         }
     } catch (e) {
