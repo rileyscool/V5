@@ -54,7 +54,7 @@ class ESP extends ModuleBase {
                 if (player.getUUID().version() !== 4) continue;
 
                 const entity = player.toMC();
-                const distanceSq = self.squaredDistanceTo(entity);
+                const distanceSq = self.distanceToSqr(entity);
 
                 if (distanceSq <= disableEspWithinDistanceSq) continue;
 
@@ -62,7 +62,7 @@ class ESP extends ModuleBase {
 
                 if (!this.showNames) continue;
 
-                const canSee = self.canSee(entity);
+                const canSee = self.hasLineOfSight(entity);
                 const maxDefaultNametagDistance = canSee ? 64 : 32;
                 const maxDefaultNametagDistanceSq = maxDefaultNametagDistance * maxDefaultNametagDistance;
 
