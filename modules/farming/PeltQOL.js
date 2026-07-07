@@ -50,8 +50,7 @@ class PeltQOL extends ModuleBase {
         this.addToggle(
             'Rezar Abicase Accessory',
             (value) => (this.rezarAbicaseAccessory = !!value),
-            'Use the shorter Trevor recall delay when the Rezar Abicase Accessory is equipped.',
-            true
+            'Use the shorter Trevor recall delay when the Rezar Abicase Accessory is equipped.'
         );
         this.addToggle('ESP', (value) => (this.renderESP = !!value), 'ESP to Trevor animals.', true);
 
