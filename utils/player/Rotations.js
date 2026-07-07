@@ -154,18 +154,19 @@ class RotationController {
         }
 
         const targetYaw = RotationGCD.aimModulo360(current.yaw, this.targetAngles.yaw);
+        const targetPitch = RotationGCD.clampPitch(this.targetAngles.pitch);
         const deltaYaw = targetYaw - current.yaw;
-        const deltaPitch = RotationGCD.clampPitch(this.targetAngles.pitch) - current.pitch;
+        const deltaPitch = targetPitch - current.pitch;
         const distance = Math.hypot(deltaYaw, deltaPitch);
 
         if (distance <= this.getPrecision()) {
-            RotationGCD.applyToPlayer(targetYaw, this.targetAngles.pitch);
+            RotationGCD.applyToPlayer(targetYaw, targetPitch);
             this.onReachedTarget();
             return;
         }
 
         if (RotationModule.rotationMode === 'Instant') {
-            RotationGCD.applyToPlayer(targetYaw, this.targetAngles.pitch);
+            RotationGCD.applyToPlayer(targetYaw, targetPitch);
             this.onReachedTarget();
             return;
         }
@@ -280,6 +281,12 @@ class RotationController {
     getStepRatio(distance, deltaTime) {
         if (distance <= 0) return 0;
 
+        if (this.request?.type === 'entity') {
+            const speed = RotationModule.ROTATION_SPEED * (this.request?.speedMultiplier ?? 1);
+            const step = speed * deltaTime;
+            return Math.min(distance, step) / distance;
+        }
+
         const timeAlive = this.startTime > 0 ? (Date.now() - this.startTime) / 1000 : 0;
         const warmup = this.request?.type === 'angles' ? 1 : Math.min(timeAlive * 4, 1);
         const damping = Math.min(distance / RotationModule.DAMPING_DIST, 1);
@@ -309,7 +316,8 @@ class RotationController {
 
     onReachedTarget() {
         if (this.request?.type === 'entity') {
-            this.resetTiming();
+            this.curveSeed = Math.random() * Math.PI * 2;
+            this.lastTime = Date.now();
             return;
         }
 
