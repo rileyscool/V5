@@ -14,9 +14,7 @@ import { ServerInfo } from '../../utils/player/ServerInfo';
 import { TabListUtils } from '../../utils/TabListUtils';
 import { Mouse } from '../../utils/Ungrab';
 
-const BFS_DIR_X = [1, -1, 0, 0, 0, 0];
-const BFS_DIR_Y = [0, 0, 1, -1, 0, 0];
-const BFS_DIR_Z = [0, 0, 0, 0, 1, -1];
+
 const ORTHO_FACE_AXES = {
     x: ['y', 'z'],
     y: ['x', 'z'],
@@ -116,20 +114,6 @@ class Bot extends ModuleBase {
         this.movementReevalCooldownUntil = 0;
         this.movementReevalCooldownMs = 300;
         this.lastSneakCommand = false;
-        this._scanWorkspace = {
-            capacity: 0,
-            visitMark: 0,
-            visited: null,
-            queueX: null,
-            queueY: null,
-            queueZ: null,
-            candidateX: null,
-            candidateY: null,
-            candidateZ: null,
-            candidateTargetCost: null,
-            candidateCheapCost: null,
-            candidateBlockName: null,
-        };
         this.initCosts();
         this.bindToggleKey();
         this.initEventHandlers();
@@ -302,35 +286,6 @@ class Bot extends ModuleBase {
     resetTickCounters() {
         this.mineTickCount = 0;
         this.tickCount = 0;
-    }
-
-    ensureScanWorkspace(requiredCapacity) {
-        const workspace = this._scanWorkspace;
-        if (workspace.capacity < requiredCapacity) {
-            let nextCapacity = workspace.capacity || 256;
-            while (nextCapacity < requiredCapacity) nextCapacity *= 2;
-
-            workspace.capacity = nextCapacity;
-            workspace.visited = new Int32Array(nextCapacity);
-            workspace.queueX = new Int32Array(nextCapacity);
-            workspace.queueY = new Int32Array(nextCapacity);
-            workspace.queueZ = new Int32Array(nextCapacity);
-            workspace.candidateX = new Int32Array(nextCapacity);
-            workspace.candidateY = new Int32Array(nextCapacity);
-            workspace.candidateZ = new Int32Array(nextCapacity);
-            workspace.candidateTargetCost = new Int32Array(nextCapacity);
-            workspace.candidateCheapCost = new Float64Array(nextCapacity);
-            workspace.candidateBlockName = new Array(nextCapacity);
-            workspace.visitMark = 0;
-        }
-
-        workspace.visitMark++;
-        if (workspace.visitMark >= 2147483647) {
-            workspace.visited = new Int32Array(workspace.capacity);
-            workspace.visitMark = 1;
-        }
-
-        return workspace;
     }
 
     initSettings() {
@@ -622,7 +577,7 @@ class Bot extends ModuleBase {
             : '';
         if (allowStickyTarget && this.currentTarget && !this.isAirOrBedrock(currentName) && this.refreshCurrentTargetAimPoint()) return;
 
-        this.scanForBlock(this.COSTTYPE, null, this.currentTarget);
+        this.scanForBlock(this.COSTTYPE, this.currentTarget);
         this.allowScan = false;
     }
 
@@ -717,7 +672,7 @@ class Bot extends ModuleBase {
 
             this.movementReevalCooldownUntil = Math.max(this.movementReevalCooldownUntil, now + this.movementReevalCooldownMs);
             this.stopMiningControls(true);
-            this.scanForBlock(this.COSTTYPE, null, this.currentTarget);
+            this.scanForBlock(this.COSTTYPE, this.currentTarget);
             this.allowScan = false;
         }
 
@@ -765,52 +720,23 @@ class Bot extends ModuleBase {
         if (list.length > maxCount) list.pop();
     }
 
-    collectScanTargets(
-        targetCosts,
-        start,
-        eyePos,
-        lookVec,
-        scanReach,
-        excludedBlock = null,
-        collectReachableCandidates = true,
-        collectApproachTargets = false
-    ) {
+    collectScanTargets(targetCosts, eyePos, lookVec, scanReach, excludedBlock = null, collectReachableCandidates = true, collectApproachTargets = false) {
         const reachableCandidateReach = this.mineReach + this.bfsPad;
         const reachableCandidateReachSq = reachableCandidateReach * reachableCandidateReach;
         const approachReachSq = this.approachScanReach * this.approachScanReach;
-        const reachableCandidates = {
-            count: 0,
-            length: 0,
-            x: null,
-            y: null,
-            z: null,
-            cheapCost: null,
-            blockName: null,
-            targetCost: null,
-        };
         const approachTargets = [];
-        let head = 0;
 
         const reach = scanReach + this.bfsPad;
-        const minBx = Math.floor(eyePos.x() - reach) - 1,
-            dimX = Math.floor(eyePos.x() + reach) + 1 - minBx + 1;
-        const minBy = Math.floor(eyePos.y() - reach) - 1,
-            dimY = Math.floor(eyePos.y() + reach) + 1 - minBy + 1;
-        const minBz = Math.floor(eyePos.z() - reach) - 1,
-            dimZ = Math.floor(eyePos.z() + reach) + 1 - minBz + 1;
-        const maxQueueSize = dimX * dimY * dimZ;
-        const workspace = this.ensureScanWorkspace(maxQueueSize);
-        const visited = workspace.visited;
-        const queueX = workspace.queueX;
-        const queueY = workspace.queueY;
-        const queueZ = workspace.queueZ;
-        const candidateX = workspace.candidateX;
-        const candidateY = workspace.candidateY;
-        const candidateZ = workspace.candidateZ;
-        const candidateTargetCost = workspace.candidateTargetCost;
-        const candidateCheapCost = workspace.candidateCheapCost;
-        const candidateBlockName = workspace.candidateBlockName;
-        const visitMark = workspace.visitMark;
+        const minX = Math.floor(eyePos.x() - reach) - 1;
+        const minY = Math.floor(eyePos.y() - reach) - 1;
+        const minZ = Math.floor(eyePos.z() - reach) - 1;
+        const maxX = Math.floor(eyePos.x() + reach) + 1;
+        const maxY = Math.floor(eyePos.y() + reach) + 1;
+        const maxZ = Math.floor(eyePos.z() + reach) + 1;
+
+        const blockTypes = Object.keys(targetCosts).map((name) => new BlockType(name));
+        const blocks = World.getBlocksInBox(minX, minY, minZ, maxX, maxY, maxZ, blockTypes);
+
         const eyeX = eyePos.x();
         const eyeY = eyePos.y();
         const eyeZ = eyePos.z();
@@ -818,106 +744,51 @@ class Bot extends ModuleBase {
         const lookX = hasLookVec ? lookVec.x() : 0;
         const lookY = hasLookVec ? lookVec.y() : 0;
         const lookZ = hasLookVec ? lookVec.z() : 0;
-        let reachableCount = 0;
-        let tail = 1;
+        const scanReachSq = reach * reach;
 
-        if (!this.isWithinVisitedBounds(start.x, start.y, start.z, minBx, minBy, minBz, dimX, dimY, dimZ)) {
-            return null;
-        }
+        const reachableCandidates = [];
 
-        queueX[0] = start.x;
-        queueY[0] = start.y;
-        queueZ[0] = start.z;
-        visited[start.x - minBx + dimX * (start.y - minBy + dimY * (start.z - minBz))] = visitMark;
-
-        const bfsReachSq = reach * reach;
-
-        while (head < tail) {
-            const x = queueX[head];
-            const y = queueY[head];
-            const z = queueZ[head];
-            head++;
+        for (let i = 0; i < blocks.length; i++) {
+            const block = blocks[i];
+            const x = block.x;
+            const y = block.y;
+            const z = block.z;
 
             if (excludedBlock && x === excludedBlock.x && y === excludedBlock.y && z === excludedBlock.z) continue;
 
-            const block = World.getBlockAt(x, y, z);
-            if (!block || !block.type) continue;
-
             const blockName = block.type.getRegistryName();
             const targetCost = blockName ? targetCosts[blockName] : undefined;
-            if (blockName && targetCost !== undefined && targetCost !== null) {
-                const dx = x + 0.5 - eyeX;
-                const dy = y + 0.5 - eyeY;
-                const dz = z + 0.5 - eyeZ;
-                const distToCenterSq = dx * dx + dy * dy + dz * dz;
+            if (targetCost === undefined || targetCost === null) continue;
 
-                if (collectReachableCandidates && distToCenterSq <= reachableCandidateReachSq) {
-                    const distToCenter = Math.sqrt(distToCenterSq);
-                    const dotToCenter = hasLookVec && distToCenter > 0 ? (dx * lookX + dy * lookY + dz * lookZ) / distToCenter : 1;
-                    candidateX[reachableCount] = x;
-                    candidateY[reachableCount] = y;
-                    candidateZ[reachableCount] = z;
-                    candidateCheapCost[reachableCount] = this.calculateBlockCost(targetCost, distToCenter, dotToCenter);
-                    candidateBlockName[reachableCount] = blockName;
-                    candidateTargetCost[reachableCount] = targetCost;
-                    reachableCount++;
-                }
+            const dx = x + 0.5 - eyeX;
+            const dy = y + 0.5 - eyeY;
+            const dz = z + 0.5 - eyeZ;
+            const distToCenterSq = dx * dx + dy * dy + dz * dz;
 
-                if (collectApproachTargets && distToCenterSq <= approachReachSq) {
-                    const distToCenter = Math.sqrt(distToCenterSq);
-                    this.insertSortedCandidate(
-                        approachTargets,
-                        {
-                            x,
-                            y,
-                            z,
-                            cost: this.calculateApproachCost(targetCost, distToCenter),
-                            blockName,
-                            dist: distToCenter,
-                            targetMode: TARGET_MODES.APPROACH,
-                        },
-                        this.approachTargetBudget
-                    );
-                }
+            if (distToCenterSq > scanReachSq) continue;
+
+            if (collectReachableCandidates && distToCenterSq <= reachableCandidateReachSq) {
+                const distToCenter = Math.sqrt(distToCenterSq);
+                const dotToCenter = hasLookVec && distToCenter > 0 ? (dx * lookX + dy * lookY + dz * lookZ) / distToCenter : 1;
+                reachableCandidates.push({
+                    x, y, z,
+                    cheapCost: this.calculateBlockCost(targetCost, distToCenter, dotToCenter),
+                    blockName,
+                    targetCost,
+                });
             }
 
-            for (let i = 0; i < 6; i++) {
-                const nx = x + BFS_DIR_X[i],
-                    ny = y + BFS_DIR_Y[i],
-                    nz = z + BFS_DIR_Z[i];
-
-                if (!this.isWithinVisitedBounds(nx, ny, nz, minBx, minBy, minBz, dimX, dimY, dimZ)) continue;
-
-                const vIdx = nx - minBx + dimX * (ny - minBy + dimY * (nz - minBz));
-                if (visited[vIdx] !== visitMark) {
-                    const ddx = nx + 0.5 - eyeX;
-                    const ddy = ny + 0.5 - eyeY;
-                    const ddz = nz + 0.5 - eyeZ;
-                    if (ddx * ddx + ddy * ddy + ddz * ddz <= bfsReachSq) {
-                        visited[vIdx] = visitMark;
-                        queueX[tail] = nx;
-                        queueY[tail] = ny;
-                        queueZ[tail] = nz;
-                        tail++;
-                    }
-                }
+            if (collectApproachTargets && distToCenterSq <= approachReachSq) {
+                const distToCenter = Math.sqrt(distToCenterSq);
+                this.insertSortedCandidate(
+                    approachTargets,
+                    { x, y, z, cost: this.calculateApproachCost(targetCost, distToCenter), blockName, dist: distToCenter, targetMode: TARGET_MODES.APPROACH },
+                    this.approachTargetBudget
+                );
             }
         }
 
-        reachableCandidates.count = reachableCount;
-        reachableCandidates.length = reachableCount;
-        reachableCandidates.x = candidateX;
-        reachableCandidates.y = candidateY;
-        reachableCandidates.z = candidateZ;
-        reachableCandidates.cheapCost = candidateCheapCost;
-        reachableCandidates.blockName = candidateBlockName;
-        reachableCandidates.targetCost = candidateTargetCost;
-
-        return {
-            reachableCandidates,
-            approachTargets,
-            visitedCount: head,
-        };
+        return { reachableCandidates, approachTargets };
     }
 
     evaluateReachableCandidates(candidates, eyePos, lookVec, maxReachSq) {
@@ -984,33 +855,21 @@ class Bot extends ModuleBase {
         return visibleTargets;
     }
 
-    scanForBlock(targetCosts, startPos = null, excludedBlock = null) {
+    scanForBlock(targetCosts, excludedBlock = null) {
         if (!targetCosts) return this.message('No target specified, is cost type set?');
 
         this.scanning = true;
 
-        const pX = Player.getX(),
-            pY = Player.getY(),
-            pZ = Player.getZ();
         const eyePos = Player.getPlayer().getEyePosition();
         const lookVec = Player.asPlayerMP().getLookVector();
-
-        const start = startPos || { x: Math.floor(pX), y: Math.floor(pY), z: Math.floor(pZ) };
         const allowApproachTargets = this.MOVEMENT && !this.manualScan && this.approachScanReach > this.mineReach;
         const mineReachSq = this.mineReach * this.mineReach;
-        const reachableScan = this.collectScanTargets(targetCosts, start, eyePos, lookVec, this.mineReach, excludedBlock, true, false);
-        if (!reachableScan) {
-            this.scanning = false;
-            this.currentTarget = null;
-            this.foundLocations = [];
-            this.lowestCostBlockIndex = 0;
-            return;
-        }
 
-        let found = this.evaluateReachableCandidates(reachableScan.reachableCandidates, eyePos, lookVec, mineReachSq);
+        const scanned = this.collectScanTargets(targetCosts, eyePos, lookVec, this.mineReach, excludedBlock, true, false);
+
+        let found = this.evaluateReachableCandidates(scanned.reachableCandidates, eyePos, lookVec, mineReachSq);
         if (found.length === 0 && allowApproachTargets) {
-            const approachScan = this.collectScanTargets(targetCosts, start, eyePos, lookVec, this.approachScanReach, excludedBlock, false, true);
-            found = approachScan?.approachTargets || [];
+            found = this.collectScanTargets(targetCosts, eyePos, lookVec, this.approachScanReach, excludedBlock, false, true).approachTargets;
         }
 
         if (found.length > 0) {
@@ -1448,10 +1307,6 @@ class Bot extends ModuleBase {
         const ay = target.aimY != null ? target.aimY : target.y + 0.5;
         const az = target.aimZ != null ? target.aimZ : target.z + 0.5;
         return [ax, ay, az];
-    }
-
-    isWithinVisitedBounds(x, y, z, minBx, minBy, minBz, dimX, dimY, dimZ) {
-        return x >= minBx && x < minBx + dimX && y >= minBy && y < minBy + dimY && z >= minBz && z < minBz + dimZ;
     }
 
     setCost(cost) {
