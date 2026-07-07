@@ -14,7 +14,6 @@ import { ServerInfo } from '../../utils/player/ServerInfo';
 import { TabListUtils } from '../../utils/TabListUtils';
 import { Mouse } from '../../utils/Ungrab';
 
-
 const ORTHO_FACE_AXES = {
     x: ['y', 'z'],
     y: ['x', 'z'],
@@ -771,7 +770,9 @@ class Bot extends ModuleBase {
                 const distToCenter = Math.sqrt(distToCenterSq);
                 const dotToCenter = hasLookVec && distToCenter > 0 ? (dx * lookX + dy * lookY + dz * lookZ) / distToCenter : 1;
                 reachableCandidates.push({
-                    x, y, z,
+                    x,
+                    y,
+                    z,
                     cheapCost: this.calculateBlockCost(targetCost, distToCenter, dotToCenter),
                     blockName,
                     targetCost,
