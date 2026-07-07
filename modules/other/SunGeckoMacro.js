@@ -169,19 +169,16 @@ class SunGecko extends ModuleBase {
         const baseY = Math.floor(player.getY());
         const baseZ = Math.floor(player.getZ());
         const radius = 5;
-        let total = 0;
 
-        for (let x = baseX - radius; x <= baseX + radius; x++) {
-            for (let y = baseY - radius; y <= baseY + radius; y++) {
-                for (let z = baseZ - radius; z <= baseZ + radius; z++) {
-                    const block = World.getBlockAt(x, y, z);
-                    if (block?.type?.getRegistryName?.() !== registryName) continue;
-                    total++;
-                }
-            }
-        }
-
-        return total;
+        return World.getBlocksInBox(
+            baseX - radius,
+            baseY - radius,
+            baseZ - radius,
+            baseX + radius,
+            baseY + radius,
+            baseZ + radius,
+            (block) => block?.type?.getRegistryName?.() === registryName
+        ).length;
     }
 
     scheduleState(nextState, delay = 1) {

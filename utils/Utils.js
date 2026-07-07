@@ -182,17 +182,13 @@ class CollisionChecker {
             let yMax = Math.floor(expanded.maxY);
             let zMax = Math.floor(expanded.maxZ);
 
-            for (var x = xMin; x <= xMax; x++) {
-                for (var y = yMin; y <= yMax; y++) {
-                    for (var z = zMin; z <= zMax; z++) {
-                        let block = World.getBlockAt(x, y, z);
+            const blocks = World.getBlocksInBox(xMin, yMin, zMin, xMax, yMax, zMax);
+            for (let i = 0; i < blocks.length; i++) {
+                const block = blocks[i];
+                if (!block || !block.type || block.type.getID() === 0) continue;
 
-                        if (!block || !block.type || block.type.getID() === 0) continue;
-
-                        if (this.hasCollision(x, y, z)) {
-                            return true;
-                        }
-                    }
+                if (this.hasCollision(block.x, block.y, block.z)) {
+                    return true;
                 }
             }
 
@@ -295,36 +291,32 @@ class UtilsClass {
         let maxY = Math.floor(expandedBox.maxY);
         let maxZ = Math.floor(expandedBox.maxZ);
 
-        for (let x = minX; x <= maxX; x++) {
-            for (let y = minY; y <= maxY; y++) {
-                for (let z = minZ; z <= maxZ; z++) {
-                    let block = World.getBlockAt(x, y, z);
+        const blocks = World.getBlocksInBox(minX, minY, minZ, maxX, maxY, maxZ);
+        for (let i = 0; i < blocks.length; i++) {
+            const block = blocks[i];
+            if (!block || !block.type || block.type.getID() === 0) continue;
 
-                    if (!block || !block.type || block.type.getID() === 0) continue;
+            const blockPosNMS = new BP(block.x, block.y, block.z);
+            const blockState = world.getBlockState(blockPosNMS);
+            const registryName = block.type.getRegistryName()?.toLowerCase?.();
 
-                    const blockPosNMS = new BP(x, y, z);
-                    const blockState = world.getBlockState(blockPosNMS);
-                    const registryName = block.type.getRegistryName()?.toLowerCase?.();
+            if (!registryName || !blockState) continue;
 
-                    if (!registryName || !blockState) continue;
+            if (registryName.includes('carpet')) continue;
 
-                    if (registryName.includes('carpet')) continue;
+            if (shouldIgnoreBottomSlab) {
+                if (registryName.includes('farmland')) continue;
 
-                    if (shouldIgnoreBottomSlab) {
-                        if (registryName.includes('farmland')) continue;
-
-                        if (registryName.includes('slab')) {
-                            const stateString = blockState.toString();
-                            if (stateString.includes('type=bottom')) continue;
-                        }
-                    }
-
-                    const collisionShape = blockState.getCollisionShape(world, blockPosNMS);
-                    if (collisionShape.isEmpty()) continue;
-
-                    return true;
+                if (registryName.includes('slab')) {
+                    const stateString = blockState.toString();
+                    if (stateString.includes('type=bottom')) continue;
                 }
             }
+
+            const collisionShape = blockState.getCollisionShape(world, blockPosNMS);
+            if (collisionShape.isEmpty()) continue;
+
+            return true;
         }
 
         return false;
@@ -349,31 +341,28 @@ class UtilsClass {
         let maxY = Math.floor(expandedBox.maxY);
         let maxZ = Math.floor(expandedBox.maxZ);
 
-        for (let x = minX; x <= maxX; x++) {
-            for (let y = minY; y <= maxY; y++) {
-                for (let z = minZ; z <= maxZ; z++) {
-                    let block = World.getBlockAt(x, y, z);
-                    if (!block || !block.type || block.type.getID() === 0) continue;
+        const blocks = World.getBlocksInBox(minX, minY, minZ, maxX, maxY, maxZ);
+        for (let blockIndex = 0; blockIndex < blocks.length; blockIndex++) {
+            const block = blocks[blockIndex];
+            if (!block || !block.type || block.type.getID() === 0) continue;
 
-                    let blockPos = new BP(x, y, z);
-                    let blockState = mcWorld.getBlockState(blockPos);
-                    if (!blockState) continue;
-                    let voxelShape = blockState.getCollisionShape(mcWorld, blockPos);
+            let blockPos = new BP(block.x, block.y, block.z);
+            let blockState = mcWorld.getBlockState(blockPos);
+            if (!blockState) continue;
+            let voxelShape = blockState.getCollisionShape(mcWorld, blockPos);
 
-                    if (!voxelShape || voxelShape.isEmpty()) continue;
+            if (!voxelShape || voxelShape.isEmpty()) continue;
 
-                    let collisionBoxes = voxelShape.toAabbs();
+            let collisionBoxes = voxelShape.toAabbs();
 
-                    for (let i = 0; i < collisionBoxes.size(); i++) {
-                        let blockBox = collisionBoxes.get(i).move(x, y, z);
+            for (let i = 0; i < collisionBoxes.size(); i++) {
+                let blockBox = collisionBoxes.get(i).move(block.x, block.y, block.z);
 
-                        if (expandedBox.intersects(blockBox)) {
-                            if (blockBox.maxX <= playerBox.minX + 0.05) collisionSides.WEST = true;
-                            if (blockBox.minX >= playerBox.maxX - 0.05) collisionSides.EAST = true;
-                            if (blockBox.maxZ <= playerBox.minZ + 0.05) collisionSides.NORTH = true;
-                            if (blockBox.minZ >= playerBox.maxZ - 0.05) collisionSides.SOUTH = true;
-                        }
-                    }
+                if (expandedBox.intersects(blockBox)) {
+                    if (blockBox.maxX <= playerBox.minX + 0.05) collisionSides.WEST = true;
+                    if (blockBox.minX >= playerBox.maxX - 0.05) collisionSides.EAST = true;
+                    if (blockBox.maxZ <= playerBox.minZ + 0.05) collisionSides.NORTH = true;
+                    if (blockBox.minZ >= playerBox.maxZ - 0.05) collisionSides.SOUTH = true;
                 }
             }
         }

@@ -101,8 +101,6 @@ class NukerClass extends ModuleBase {
                 this.message('- /v5 nuker remove - removes block at crosshair');
                 this.message('- /v5 nuker clear - clear all targets');
                 this.message('- /v5 nuker list - list all targets');
-                this.toggle(false);
-                return;
             }
 
             if (Client.isInGui() && !Client.isInChat()) return;
@@ -219,23 +217,25 @@ class NukerClass extends ModuleBase {
         const maxY = pPos.y + Math.max(this.heightLimit, scanRadius);
         const minY = pPos.y - (this.nukeBelow ? 0 : scanRadius);
 
-        for (let x = pPos.x - scanRadius; x <= pPos.x + scanRadius; x++) {
-            for (let y = minY; y <= maxY; y++) {
-                for (let z = pPos.z - scanRadius; z <= pPos.z + scanRadius; z++) {
-                    const posKey = `${x},${y},${z}`;
-                    if (this.minedBlocks.has(posKey)) continue;
-                    if (this.distanceToBlockBox(pCords, [x, y, z]).distance > scanReach) continue;
+        const blocks = World.getBlocksInBox(
+            pPos.x - scanRadius,
+            minY,
+            pPos.z - scanRadius,
+            pPos.x + scanRadius,
+            maxY,
+            pPos.z + scanRadius
+        );
+        for (let i = 0; i < blocks.length; i++) {
+            const block = blocks[i];
+            const posKey = `${block.x},${block.y},${block.z}`;
+            if (this.minedBlocks.has(posKey)) continue;
+            if (this.distanceToBlockBox(pCords, [block.x, block.y, block.z]).distance > scanReach) continue;
+            if (!block?.type) continue;
 
-                    let blockPos = new BP(x, y, z);
-                    const block = World.getBlockAt(x, y, z);
-                    if (!block?.type) continue;
+            const id = block.type.getID();
+            const isValid = this.customBlockList.some((b) => b.id === id);
 
-                    const id = block.type.getID();
-                    const isValid = this.customBlockList.some((b) => b.id === id);
-
-                    if (isValid) validBlocks.push(blockPos);
-                }
-            }
+            if (isValid) validBlocks.push(new BP(block.x, block.y, block.z));
         }
 
         if (validBlocks.length === 0) return null;
