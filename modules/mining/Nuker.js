@@ -51,8 +51,8 @@ class NukerClass extends ModuleBase {
         v5Command('nuker add', () => {
             let block = Player.lookingAt();
             if (block?.getClass() === Block) {
-                const newBlock = { name: block.type.getName(), id: block.type.getID() };
-                if (!this.customBlockList.some((b) => b.id === newBlock.id)) {
+                const newBlock = { name: block.type.getName(), registryName: block.type.getRegistryName() };
+                if (!this.customBlockList.some((b) => b.registryName === newBlock.registryName)) {
                     this.customBlockList.push(newBlock);
                     this.message('Added ' + block.type.getName() + ' to Nuker list.');
                 } else {
@@ -65,12 +65,11 @@ class NukerClass extends ModuleBase {
 
         v5Command(
             'nuker remove',
-            (id) => {
-                if (id === undefined) return this.message('Usage: /v5 nuker remove <id>');
-                let initialLength = this.customBlockList.length;
-                this.customBlockList = this.customBlockList.filter((block) => block.id !== id);
-                if (this.customBlockList.length < initialLength) return this.message('Removed block.');
-                else this.message('Block ID not found');
+            (index) => {
+                if (index === undefined) return this.message('Usage: /v5 nuker remove <index>');
+                if (index < 1 || index > this.customBlockList.length) return this.message('Invalid index.');
+                this.customBlockList.splice(index - 1, 1);
+                this.message('Removed block.');
             },
             ['integer']
         );
@@ -82,7 +81,7 @@ class NukerClass extends ModuleBase {
 
             this.message('&7--- Custom Nuker List ---');
             this.customBlockList.forEach((block, index) => {
-                this.message(`&e${index + 1}. &f${block.name} &7(ID: ${block.id})`);
+                this.message(`&e${index + 1}. &f${block.name}`);
             });
             this.message('&7----------------------');
         });
@@ -98,7 +97,7 @@ class NukerClass extends ModuleBase {
             if (this.customBlockList.length === 0) {
                 this.message('Try setting targets with /v5 commands:');
                 this.message('- /v5 nuker add - adds block at crosshair');
-                this.message('- /v5 nuker remove - removes block at crosshair');
+                this.message('- /v5 nuker remove <index> - removes block by list index');
                 this.message('- /v5 nuker clear - clear all targets');
                 this.message('- /v5 nuker list - list all targets');
             }
@@ -217,18 +216,16 @@ class NukerClass extends ModuleBase {
         const maxY = pPos.y + Math.max(this.heightLimit, scanRadius);
         const minY = pPos.y - (this.nukeBelow ? 0 : scanRadius);
 
-        const blocks = World.getBlocksInBox(pPos.x - scanRadius, minY, pPos.z - scanRadius, pPos.x + scanRadius, maxY, pPos.z + scanRadius);
+        const targetTypes = this.customBlockList.map(b => new BlockType(b.registryName));
+
+        const blocks = World.getBlocksInBox(pPos.x - scanRadius, minY, pPos.z - scanRadius, pPos.x + scanRadius, maxY, pPos.z + scanRadius, targetTypes);
         for (let i = 0; i < blocks.length; i++) {
             const block = blocks[i];
             const posKey = `${block.x},${block.y},${block.z}`;
             if (this.minedBlocks.has(posKey)) continue;
             if (this.distanceToBlockBox(pCords, [block.x, block.y, block.z]).distance > scanReach) continue;
-            if (!block?.type) continue;
 
-            const id = block.type.getID();
-            const isValid = this.customBlockList.some((b) => b.id === id);
-
-            if (isValid) validBlocks.push(new BP(block.x, block.y, block.z));
+            validBlocks.push(new BP(block.x, block.y, block.z));
         }
 
         if (validBlocks.length === 0) return null;

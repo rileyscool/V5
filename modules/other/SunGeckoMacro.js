@@ -161,7 +161,7 @@ class SunGecko extends ModuleBase {
         OverlayManager.incrementTrackedValue(this.oid, 'essence', essenceAmount);
     }
 
-    countNearbyBlocks(registryName) {
+    countNearbyBlocks() {
         const player = Player.getPlayer();
         if (!player) return 0;
 
@@ -177,7 +177,7 @@ class SunGecko extends ModuleBase {
             baseX + radius,
             baseY + radius,
             baseZ + radius,
-            (block) => block?.type?.getRegistryName?.() === registryName
+            new BlockType('minecraft:red_terracotta')
         ).length;
     }
 
@@ -386,7 +386,7 @@ class SunGecko extends ModuleBase {
             return;
         }
 
-        const nearbyTerracotta = this.countNearbyBlocks('minecraft:red_terracotta');
+        const nearbyTerracotta = this.countNearbyBlocks();
         if (nearbyTerracotta > 10 && Date.now() >= this.terracottaClickCooldownUntil) {
             Keybind.rightClick();
             this.terracottaClickCooldownUntil = Date.now() + 5000;
