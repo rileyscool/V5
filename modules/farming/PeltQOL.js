@@ -2,6 +2,8 @@ import { Vec3d } from '../../utils/Constants';
 import { ModuleBase } from '../../utils/ModuleBase';
 import { ScheduleTask } from '../../utils/ScheduleTask';
 import { Utils } from '../../utils/Utils';
+import { Guis } from '../../utils/player/Inventory';
+import { Keybind } from '../../utils/player/Keybinding';
 
 const NAMES = new Set(['Cow', 'Pig', 'Sheep', 'Chicken', 'Rabbit', 'Horse', 'Mooshroom', 'Dinnerbone']);
 const HP = new Set([100, 200, 500, 1000, 2000, 5000, 10000, 1024, 20000, 30000, 60000]);
@@ -27,6 +29,15 @@ const RGB = {
 const FINISH = ['killing the animal rewarded you', 'your mob died randomly, you are rewarded'];
 const RETRY = ["[npc] trevor: i couldn't locate any animals. come back in a little bit!", "[npc] trevor: i'm currently hunting! don't call again!"];
 
+const ABIPHONE = {
+    IDLE: 0,
+    FIND_ABIPHONE: 1,
+    RIGHT_CLICK: 2,
+    FIND_TREVOR: 3,
+    CLICK_TREVOR: 4,
+    DONE: 5,
+};
+
 class PeltQOL extends ModuleBase {
     constructor() {
         super({
@@ -38,15 +49,28 @@ class PeltQOL extends ModuleBase {
         });
 
         this.autoAcceptQuest = true;
-        this.autoCallTrevor = true;
+        this.callMode = '/call';
         this.rezarAbicaseAccessory = true;
         this.renderESP = true;
         this.animals = [];
         this.huntCompleted = false;
         this.rarityRgb = WHITE;
+        this.abiphoneState = ABIPHONE.IDLE;
+        this.abiphoneWait = 0;
+        this.abiphoneSlot = -1;
+        this.trevorSlot = -1;
 
         this.addToggle('Auto Accept Quest', (value) => (this.autoAcceptQuest = !!value), "Automatically clicks Trevor's YES prompt to start a hunt.", true);
-        this.addToggle('Auto Call Trevor', (value) => (this.autoCallTrevor = !!value), 'Automatically runs /call trevor when a hunt completes.', true);
+        this.addMultiToggle(
+            'Call Mode',
+            ['Disabled', '/call', 'Abiphone'],
+            true,
+            (options) => {
+                this.callMode = options.find((o) => o.enabled)?.name || '/call';
+            },
+            'How to call Trevor when a hunt completes.',
+            '/call'
+        );
         this.addToggle(
             'Rezar Abicase Accessory',
             (value) => (this.rezarAbicaseAccessory = !!value),
@@ -55,7 +79,10 @@ class PeltQOL extends ModuleBase {
         this.addToggle('ESP', (value) => (this.renderESP = !!value), 'ESP to Trevor animals.', true);
 
         this.on('chat', ({ message }) => this.handleChat(message));
-        this.on('tick', () => this.scan());
+        this.on('tick', () => {
+            this.scan();
+            this.tick();
+        });
         this.on('worldUnload', () => this.reset());
         this.when(
             () => this.enabled && this.renderESP && Utils.area() === 'The Farming Islands' && this.animals.length,
@@ -70,7 +97,6 @@ class PeltQOL extends ModuleBase {
 
     ensureForceEnabled() {
         this.autoAcceptQuest = true;
-        this.autoCallTrevor = true;
         this.renderESP = true;
         this.toggle(true);
     }
@@ -79,6 +105,8 @@ class PeltQOL extends ModuleBase {
         this.animals = [];
         this.huntCompleted = false;
         this.rarityRgb = WHITE;
+        this.abiphoneState = ABIPHONE.IDLE;
+        this.abiphoneWait = 0;
     }
 
     run(command, delay = 0) {
@@ -101,6 +129,75 @@ class PeltQOL extends ModuleBase {
         }
     }
 
+    callTrevor() {
+        if (this.callMode === '/call') this.run('call trevor');
+        else if (this.callMode === 'Abiphone') this.startAbiphoneCall();
+    }
+
+    startAbiphoneCall() {
+        this.abiphoneState = ABIPHONE.FIND_ABIPHONE;
+        this.abiphoneWait = 0;
+    }
+
+    tick() {
+        if (this.abiphoneState === ABIPHONE.IDLE) return;
+        if (this.abiphoneWait > 0) {
+            this.abiphoneWait--;
+            return;
+        }
+
+        switch (this.abiphoneState) {
+            case ABIPHONE.FIND_ABIPHONE: {
+                const inv = Player.getInventory();
+                this.abiphoneSlot = -1;
+                for (let i = 0; i < 9; i++) {
+                    const item = inv.getStackInSlot(i);
+                    if (item && item.getName().includes('Abiphone')) {
+                        this.abiphoneSlot = i;
+                        break;
+                    }
+                }
+                if (this.abiphoneSlot !== -1) {
+                    Guis.setItemSlot(this.abiphoneSlot);
+                    this.abiphoneWait = 5;
+                    this.abiphoneState = ABIPHONE.RIGHT_CLICK;
+                    return;
+                }
+                ChatLib.chat('Abiphone not found in hotbar!');
+                this.abiphoneState = ABIPHONE.IDLE;
+                break;
+            }
+            case ABIPHONE.RIGHT_CLICK: {
+                Keybind.rightClick();
+                this.abiphoneWait = 10;
+                this.abiphoneState = ABIPHONE.FIND_TREVOR;
+                break;
+            }
+            case ABIPHONE.FIND_TREVOR: {
+                if (Guis.guiName()?.includes('Abiphone')) {
+                    this.trevorSlot = Guis.findFirst(Player.getContainer(), 'Trevor');
+                    if (this.trevorSlot !== -1) {
+                        this.abiphoneWait = 5;
+                        this.abiphoneState = ABIPHONE.CLICK_TREVOR;
+                        return;
+                    }
+                }
+                this.abiphoneWait = 5;
+                break;
+            }
+            case ABIPHONE.CLICK_TREVOR: {
+                Guis.clickSlot(this.trevorSlot, false, 'LEFT');
+                this.abiphoneWait = 5;
+                this.abiphoneState = ABIPHONE.DONE;
+                break;
+            }
+            case ABIPHONE.DONE: {
+                this.abiphoneState = ABIPHONE.IDLE;
+                break;
+            }
+        }
+    }
+
     handleChat(message) {
         if (!this.enabled || Utils.area() !== 'The Farming Islands') return;
 
@@ -118,16 +215,27 @@ class PeltQOL extends ModuleBase {
         if (FINISH.some((hint) => lower.includes(hint))) {
             this.huntCompleted = true;
             this.animals = [];
-            if (this.autoCallTrevor) this.run('call trevor');
+            if (this.callMode === '/call') this.run('call trevor');
+            else if (this.callMode === 'Abiphone') this.startAbiphoneCall();
             return;
         }
 
-        if (this.autoCallTrevor && RETRY.some((hint) => lower.includes(hint))) return this.run('call trevor');
+        if (this.callMode === 'Disabled') return;
+        if (RETRY.some((hint) => lower.includes(hint))) {
+            if (this.callMode === '/call') this.run('call trevor');
+            else if (this.callMode === 'Abiphone') this.startAbiphoneCall();
+            return;
+        }
 
-        const cooldown = this.autoCallTrevor && lower.match(/\[npc\] trevor: try coming back in.*?(\d+)\s*s\b/);
+        const cooldown = lower.match(/\[npc\] trevor: try coming back in.*?(\d+)\s*s\b/);
         if (cooldown) {
-            const delayOffset = this.rezarAbicaseAccessory ? 40 : 80;
-            this.run('call trevor', Math.max(+cooldown[1] * 20 - delayOffset, 0));
+            const delay = Math.max(+cooldown[1] * 20 - 80, 0);
+            ChatLib.chat(delay);
+            if (this.callMode === '/call') this.run('call trevor', this.rezarAbicaseAccessory ? delay - 40 : delay);
+            else if (this.callMode === 'Abiphone')
+                ScheduleTask(delay - 20, () => {
+                    this.startAbiphoneCall();
+                });
         }
     }
 

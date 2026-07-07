@@ -219,7 +219,7 @@ class PeltMacro extends ModuleBase {
         this.pendingTrevorTarget = null;
         this.cancelTravelSequence();
         this.cancelRestartSequence();
-        ChatLib.command('call trevor');
+        PeltQOLModule.callTrevor();
     }
 
     handleTick() {
@@ -977,25 +977,25 @@ class PeltMacro extends ModuleBase {
         this.lastShotAt = 0;
         this.status = 'Restarting Hunt';
 
-        ScheduleTask(70, () => {
+        ScheduleTask(90, () => {
             if (!this.enabled || token !== this.restartToken) return;
             let area = Utils.area();
             if (area == 'unknown') {
                 ChatLib.command('play skyblock');
-                ScheduleTask(70, () => {
+                ScheduleTask(90, () => {
                     if (!this.enabled || token !== this.restartToken) return;
                     ChatLib.command('warp trapper');
-                    ScheduleTask(10, () => {
+                    ScheduleTask(20, () => {
                         if (!this.enabled || token !== this.restartToken) return;
-                        ChatLib.command('call trevor');
+                        PeltQOLModule.callTrevor();
                     });
                 });
             } else {
                 ChatLib.command('warp trapper');
-                ScheduleTask(10, () => {
+                ScheduleTask(20, () => {
                     if (!this.enabled || token !== this.restartToken) return;
 
-                    ChatLib.command('call trevor');
+                    PeltQOLModule.callTrevor();
                 });
             }
         });
