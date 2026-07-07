@@ -33,11 +33,10 @@ organizeFailsafeSounds();
 const CONFIG_ROOT = 'V5Config';
 const CONFIG_PATH = `./config/ChatTriggers/modules/${CONFIG_ROOT}`;
 
-function generate(path, type, payload = []) {
+function generateJson(path, payload = []) {
     if (FileLib.exists(CONFIG_ROOT, path) && (path.endsWith('.txt') || isValidJson(path))) return;
 
-    if (type === 'dir') new File(CONFIG_PATH, path).mkdir();
-    else FileLib.append(CONFIG_ROOT, path, JSON.stringify(payload, null, 4));
+    FileLib.append(CONFIG_ROOT, path, JSON.stringify(payload, null, 4));
 }
 
 function isValidJson(path) {
@@ -90,5 +89,5 @@ const manifest = {
     },
 };
 
-manifest.directories.forEach((dir) => generate(dir, 'dir'));
-Object.entries(manifest.jsonFiles).forEach(([path, data]) => generate(path, 'file', data));
+manifest.directories.forEach((dir) => new File(CONFIG_PATH, dir).mkdir());
+Object.entries(manifest.jsonFiles).forEach(([path, data]) => generateJson(path, data));

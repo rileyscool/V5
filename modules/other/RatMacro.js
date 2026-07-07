@@ -421,9 +421,7 @@ class RatMacro extends ModuleBase {
     createCandidate(entity, sortOrigin = this.getPathSortOrigin()) {
         const id = getRatId(entity);
         const position = this.getRatPosition(entity);
-        if (!id || !position) return null;
-
-        return this.createCandidateFromPosition(id, position, sortOrigin);
+        return id && position ? this.createCandidateFromPosition(id, position, sortOrigin) : null;
     }
 
     createCandidateFromCache(record, sortOrigin = this.getPathSortOrigin()) {
@@ -478,8 +476,7 @@ class RatMacro extends ModuleBase {
             return null;
         }
 
-        if (this.isBlacklistedRat(entity)) return null;
-        return entity;
+        return this.isBlacklistedRat(entity) ? null : entity;
     }
 
     isCandidateAvailable(candidate) {
@@ -488,8 +485,7 @@ class RatMacro extends ModuleBase {
         if (candidate.key && this.blacklistedRatKeys.has(candidate.key)) return false;
         if (this.isNearKilledRatZone(candidate.position)) return false;
         const assumedDeadKey = this.getRatAssumedDeadKey(candidate.position);
-        if (assumedDeadKey && this.assumedDeadRatKeys.has(assumedDeadKey)) return false;
-        return true;
+        return !(assumedDeadKey && this.assumedDeadRatKeys.has(assumedDeadKey));
     }
 
     isBlacklistedRat(entity) {
@@ -497,7 +493,7 @@ class RatMacro extends ModuleBase {
         if (id && this.blacklistedRatIds.has(id)) return true;
 
         const key = this.getRatKey(entity);
-        return Boolean(key && this.blacklistedRatKeys.has(key));
+        return !!key && this.blacklistedRatKeys.has(key);
     }
 
     blacklistRat(entity) {
@@ -521,13 +517,11 @@ class RatMacro extends ModuleBase {
     }
 
     getRatPositionKey(position) {
-        if (!position) return null;
-        return `${Math.floor(position.x)},${Math.floor(position.y)},${Math.floor(position.z)}`;
+        return position ? `${Math.floor(position.x)},${Math.floor(position.y)},${Math.floor(position.z)}` : null;
     }
 
     getRatAssumedDeadKey(position) {
-        if (!position) return null;
-        return `${Math.floor(position.x)},${Math.floor(position.z)}`;
+        return position ? `${Math.floor(position.x)},${Math.floor(position.z)}` : null;
     }
 
     markRatAssumedDead(entity) {
@@ -682,12 +676,13 @@ class RatMacro extends ModuleBase {
     }
 
     getRatPosition(entity) {
-        if (!entity) return null;
-        return {
-            x: entity.getX(),
-            y: entity.getY(),
-            z: entity.getZ(),
-        };
+        return entity
+            ? {
+                  x: entity.getX(),
+                  y: entity.getY(),
+                  z: entity.getZ(),
+              }
+            : null;
     }
 
     getDistanceToPlayer(position) {
@@ -798,12 +793,13 @@ class RatMacro extends ModuleBase {
         if (![goalX, goalY, goalZ].every(Number.isFinite)) return null;
 
         const center = PathManager.getEtherwarpLandingCenter(goalX, goalY, goalZ);
-        if (!center) return null;
-        return {
-            x: center[0],
-            y: center[1],
-            z: center[2],
-        };
+        return center
+            ? {
+                  x: center[0],
+                  y: center[1],
+                  z: center[2],
+              }
+            : null;
     }
 
     finishCurrentTargetCleared() {

@@ -15,17 +15,9 @@ Categories.addSettingsToggle(
     'Discord'
 );
 
-export function isAutoMeowEnabled() {
-    return autoMeowEnabled;
-}
-
-export function isIrcEnabled() {
-    return ircEnabled;
-}
-
-export function isRandomChoiceMeowEnabled() {
-    return randomChoiceMeow;
-}
+export const isAutoMeowEnabled = () => autoMeowEnabled;
+export const isIrcEnabled = () => ircEnabled;
+export const isRandomChoiceMeowEnabled = () => randomChoiceMeow;
 
 export function handleIRCMessage(data) {
     if (data.type === 'message') {

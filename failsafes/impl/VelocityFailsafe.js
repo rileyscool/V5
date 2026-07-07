@@ -78,9 +78,7 @@ class VelocityFailsafe extends Failsafe {
         const heldItem = Player.getHeldItem()?.getName()?.removeFormatting();
         if (heldItem?.includes('Grappling')) return true;
 
-        if (blockBelowName.includes('slime_block')) return true;
-
-        return false;
+        return blockBelowName.includes('slime_block');
     }
 
     onTrigger(speed) {

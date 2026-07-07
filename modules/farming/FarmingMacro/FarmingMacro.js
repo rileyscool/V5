@@ -236,10 +236,8 @@ class FarmingMacro extends ModuleBase {
     }
 
     hasRanchersBoots() {
-        let boots = Player.getInventory().getStackInSlot(36);
-        if (!boots) return false;
-
-        return boots.getName().removeFormatting().includes("Rancher's Boots");
+        const boots = Player.getInventory().getStackInSlot(36);
+        return !!boots?.getName().removeFormatting().includes("Rancher's Boots");
     }
 
     getCurrentSpeedCap() {
@@ -252,10 +250,7 @@ class FarmingMacro extends ModuleBase {
             .join(' ');
 
         let match = lore.match(/Current Speed Cap:\s*(\d+)/i);
-
-        if (match) return Number.parseInt(match[1], 10);
-
-        return null;
+        return match ? Number.parseInt(match[1], 10) : null;
     }
 
     message(msg, debug = false) {

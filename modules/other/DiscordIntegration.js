@@ -2,7 +2,6 @@ import { OverlayManager } from '../../gui/OverlayUtils';
 import { Categories } from '../../gui/categories/CategorySystem';
 import { MacroState } from '../../utils/MacroState';
 import { ModuleBase } from '../../utils/ModuleBase';
-import { TimeUtils } from '../../utils/TimeUtils';
 import { Webhook } from '../../utils/Webhooks';
 
 class DiscordIntegration extends ModuleBase {
@@ -123,18 +122,6 @@ class DiscordIntegration extends ModuleBase {
         this.lastSendTime = elapsedMs;
     }
 
-    getMacroDuration(macroName) {
-        const saved = OverlayManager.savedSessions && OverlayManager.savedSessions[macroName];
-        if (saved && typeof saved.elapsedMs === 'number') {
-            return TimeUtils.formatDurationMs(saved.elapsedMs);
-        }
-
-        const startTime = OverlayManager.startTimes && OverlayManager.startTimes[macroName];
-        if (startTime) return OverlayManager.formatUptime(startTime);
-
-        return '';
-    }
-
     trySendDisableEmbed(macroName) {
         const meta = MacroState.getLastDisableMeta(macroName);
         if (meta && meta.context === 'scheduler') return;
@@ -142,7 +129,7 @@ class DiscordIntegration extends ModuleBase {
     }
 
     sendDisableEmbed(macroName) {
-        const duration = this.getMacroDuration(macroName);
+        const duration = OverlayManager.getMacroDuration(macroName);
         Webhook.sendScreenshot(`Disabled ${macroName}`, duration);
     }
 

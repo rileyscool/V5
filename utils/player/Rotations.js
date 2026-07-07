@@ -333,8 +333,7 @@ class RotationController {
         this.clearRequest();
         RotationGCD.syncFromPlayer();
 
-        for (let i = 0; i < callbacks.length; i++) {
-            const action = callbacks[i];
+        for (const action of callbacks) {
             try {
                 action.callback();
             } catch (e) {

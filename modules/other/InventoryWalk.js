@@ -1,14 +1,6 @@
 import { TypingState } from '../../gui/Utils';
 import { ModuleBase } from '../../utils/ModuleBase';
-import {
-    ServerboundContainerClickPacket,
-    ClientboundPingPacket,
-    ClientboundContainerSetContentPacket,
-    ClientboundOpenScreenPacket,
-    ClientboundContainerSetSlotPacket,
-    ClientboundSetCursorItemPacket,
-    ClientboundSetPlayerInventoryPacket,
-} from '../../utils/Packets';
+import { ClientboundOpenScreenPacket, ServerboundContainerClickPacket } from '../../utils/Packets';
 import { ScheduleTask } from '../../utils/ScheduleTask';
 
 class InventoryWalk extends ModuleBase {

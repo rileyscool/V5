@@ -3,8 +3,6 @@ import { File } from './Constants';
 import { Utils } from './Utils';
 
 class Routes {
-    constructor() {}
-
     _toDisplayFileName(filePath) {
         if (!filePath || typeof filePath !== 'string') return 'unknown';
         const lastSlashIndex = filePath.lastIndexOf('/');
@@ -38,9 +36,7 @@ class Routes {
     }
 
     _canSaveRoute(fileName) {
-        if (!fileName || typeof fileName !== 'string') return false;
-        if (fileName.includes('/null') || fileName.includes('/undefined')) return false;
-        return true;
+        return !!fileName && typeof fileName === 'string' && !fileName.includes('/null') && !fileName.includes('/undefined');
     }
 
     /**

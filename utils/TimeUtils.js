@@ -18,8 +18,7 @@ export class Timer {
     }
 
     hasReachedDelay() {
-        if (this.running) return this.hasPassed(this.delayTarget);
-        else return false;
+        return this.running && this.hasPassed(this.delayTarget);
     }
 
     getTime() {
@@ -35,11 +34,7 @@ export class Timer {
     }
 
     getTimePassed() {
-        const now = Date.now();
-        if (this.pausedAt > 0) {
-            return this.pausedAt - this.epoch;
-        }
-        return now - this.epoch;
+        return (this.pausedAt > 0 ? this.pausedAt : Date.now()) - this.epoch;
     }
 
     pause() {

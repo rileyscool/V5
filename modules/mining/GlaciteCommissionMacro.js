@@ -522,23 +522,13 @@ class GlaciteCommissionMacro extends ModuleBase {
     commissionsEqual(a, b) {
         if (a === b) return true;
         if (!Array.isArray(a) || !Array.isArray(b)) return false;
-        if (a.length !== b.length) return false;
-
-        for (let i = 0; i < a.length; i++) {
-            if (a[i]?.name !== b[i]?.name || a[i]?.progress !== b[i]?.progress) return false;
-        }
-
-        return true;
+        return a.length === b.length && a.every((left, i) => left?.name === b[i]?.name && left?.progress === b[i]?.progress);
     }
 
     sameStringArrays(left, right) {
         if (left === right) return true;
         if (!Array.isArray(left) || !Array.isArray(right)) return false;
-        if (left.length !== right.length) return false;
-        for (let i = 0; i < left.length; i++) {
-            if (left[i] !== right[i]) return false;
-        }
-        return true;
+        return left.length === right.length && left.every((value, i) => value === right[i]);
     }
 
     notifyNoSupportedCommissions() {

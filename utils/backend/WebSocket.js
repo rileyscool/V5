@@ -12,23 +12,12 @@ let reconnectAttempts = 0;
 let gameUnload = false;
 let isConnected = false;
 let ws = null;
-let start = Date.now();
 let connectedAtMs = 0;
-let disconnectedSinceMs = Date.now();
 let reconnectScheduled = false;
 let nextSocketGeneration = 0;
 let activeSocketGeneration = 0;
-const DISCONNECT_GRACE_MS = 180000;
 const STABLE_CONNECTION_MS = 10000;
 const MAX_RECONNECT_DELAY_TICKS = 20 * 60;
-
-function markDisconnected() {
-    if (!disconnectedSinceMs) disconnectedSinceMs = Date.now();
-}
-
-function clearDisconnected() {
-    disconnectedSinceMs = 0;
-}
 
 function isCurrentSocket(socket, generation) {
     return ws === socket && generation === activeSocketGeneration;
@@ -41,7 +30,6 @@ function handleSocketDisconnect({ code, reason, exception }) {
     if (closeCode === 1000) {
         ws = null;
         connectedAtMs = 0;
-        clearDisconnected();
         return;
     }
 
@@ -51,7 +39,6 @@ function handleSocketDisconnect({ code, reason, exception }) {
         reconnectAttempts = 0;
     }
 
-    markDisconnected();
     if (exception) {
         console.error('WebSocket error:', exception);
         Chat.messageIrc('Connection error: ' + exception);
@@ -121,7 +108,6 @@ function connectWebSocket() {
 
     if (!token) {
         isConnected = false;
-        markDisconnected();
         return Chat.messageIrc('&cLoader has not authenticated. IRC is unavailable.');
     }
     returnDiscord(token);
@@ -143,8 +129,6 @@ function connectWebSocket() {
         reconnectScheduled = false;
         isConnected = true;
         connectedAtMs = Date.now();
-        clearDisconnected();
-        //sendChatMessage(`Time taken to connect: ${Date.now() - start}ms`);
     };
 
     socket.onMessage = (message) => {
@@ -184,7 +168,6 @@ function attemptReconnect() {
         if (gameUnload) return;
         if (isConnected) return Chat.messageIrc('Already connected to irc!');
         connectWebSocket();
-        start = Date.now();
     });
 }
 

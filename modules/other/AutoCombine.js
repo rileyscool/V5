@@ -76,17 +76,23 @@ class AutoCombine extends ModuleBase {
         this.setState(this.STATES.SEARCH_PAIR);
     }
 
+    getAnvilItems() {
+        const container = Player.getContainer();
+        return container?.getName() == '§rAnvil' ? container.getItems() : null;
+    }
+
     searchForNextPair() {
-        if (!Player.getContainer()) return this.timeout();
+        const container = Player.getContainer();
+        if (!container) return this.timeout();
         this.findNextCombinePair();
         if (!this.pendingPair) {
             this.message('No combineable pair found');
-            if (Player.getContainer()) Guis.closeInv();
+            Guis.closeInv();
             this.toggle(false);
             return;
         }
 
-        if (Player.getContainer()?.getName() != '§rAnvil') {
+        if (container.getName() != '§rAnvil') {
             this.setState(this.STATES.OPEN_ANVIL);
             return;
         }
@@ -95,8 +101,7 @@ class AutoCombine extends ModuleBase {
     }
 
     clickFirstBook() {
-        if (Player.getContainer()?.getName() != '§rAnvil') return this.timeout();
-        if (!Player.getContainer()?.getItems()[22]?.getLore()?.join('')?.includes('left and right')) return this.timeout();
+        if (!this.getAnvilItems()?.[22]?.getLore()?.join('')?.includes('left and right')) return this.timeout();
 
         const firstSlot = this.first?.slot;
         if (firstSlot === undefined || firstSlot === null) {
@@ -109,8 +114,7 @@ class AutoCombine extends ModuleBase {
     }
 
     clickSecondBook() {
-        if (Player.getContainer()?.getName() != '§rAnvil') return this.timeout();
-        if (!Player.getContainer()?.getItems()[22]?.getLore()?.join('')?.includes('left and right')) return this.timeout();
+        if (!this.getAnvilItems()?.[22]?.getLore()?.join('')?.includes('left and right')) return this.timeout();
 
         const secondSlot = this.second?.slot;
         if (secondSlot === undefined || secondSlot === null) {
@@ -123,7 +127,7 @@ class AutoCombine extends ModuleBase {
     }
 
     clickCombine() {
-        const items = Player.getContainer()?.getItems();
+        const items = this.getAnvilItems();
         if (!items) return this.timeout();
 
         const combineItem = items[22];
@@ -134,7 +138,7 @@ class AutoCombine extends ModuleBase {
     }
 
     clickExtractItem() {
-        const items = Player.getContainer()?.getItems();
+        const items = this.getAnvilItems();
         if (!items) return this.timeout();
 
         const extractItem = items[13];
@@ -156,11 +160,7 @@ class AutoCombine extends ModuleBase {
             const lore = item?.getLore?.();
             if (!lore?.length) continue;
 
-            let bookData = null;
-            for (let i = 0; i < lore.length; i++) {
-                bookData = this.getBookData(lore?.[i]?.toString?.() ?? lore?.[i]);
-                if (bookData) break;
-            }
+            const bookData = lore.map((line) => this.getBookData(line?.toString?.() ?? line)).find((data) => data);
             if (!bookData) continue;
 
             const key = `${bookData.type}|${bookData.level}`;
@@ -180,19 +180,9 @@ class AutoCombine extends ModuleBase {
 
             if (!fallbackPair) fallbackPair = { type: group.type, level: group.level, books: group.books.slice(0, 2) };
 
-            let candidate = null;
-            for (let i = 0; i < group.books.length; i++) {
-                for (let j = i + 1; j < group.books.length; j++) {
-                    const first = group.books[i];
-                    const second = group.books[j];
-                    if (blacklist.has(first.slot) || blacklist.has(second.slot)) continue;
-                    candidate = [first, second];
-                    break;
-                }
-                if (candidate) break;
-            }
+            const candidate = group.books.filter((book) => !blacklist.has(book.slot)).slice(0, 2);
 
-            if (candidate) {
+            if (candidate.length === 2) {
                 chosenPair = { type: group.type, level: group.level, books: candidate };
                 break;
             }
@@ -219,12 +209,12 @@ class AutoCombine extends ModuleBase {
         if (!match) return null;
 
         const type = match[1].trim();
-        if (!type) return null;
-
-        return {
-            type,
-            level: supportedLevels.indexOf(match[2]) + 1,
-        };
+        return type
+            ? {
+                  type,
+                  level: supportedLevels.indexOf(match[2]) + 1,
+              }
+            : null;
     }
 
     setState(state) {

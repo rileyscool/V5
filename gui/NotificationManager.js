@@ -392,9 +392,7 @@ class NotificationManager {
         }
     }
     handleClick(mouseX, mouseY) {
-        for (let i = 0; i < this.notifications.length; i++) {
-            if (this.notifications[i].handleClick(mouseX, mouseY)) break;
-        }
+        this.notifications.some((notification) => notification.handleClick(mouseX, mouseY));
     }
 
     resetAll() {

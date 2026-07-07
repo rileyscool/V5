@@ -5,8 +5,6 @@ import { Keybind } from './Keybinding';
 import { Rotations } from './Rotations';
 
 class ItemSearcher {
-    constructor() {}
-
     stripCodes(text) {
         if (!text || typeof text !== 'string') return text;
         return text.replace(/\u00A7[0-9A-FK-ORa-fk-or]/g, '');
@@ -54,8 +52,7 @@ class InterfaceHandler {
 
     getCurrentTitle() {
         const container = Player.getContainer();
-        if (!container) return null;
-        return ChatLib.removeFormatting(container.getName().toString());
+        return container ? ChatLib.removeFormatting(container.getName().toString()) : null;
     }
 
     performClick(slot, shift = false, button = 'LEFT') {
@@ -159,12 +156,7 @@ export const Guis = {
 
     clickItems: function (names, shift, button, displayName, exact) {
         if (!Array.isArray(names)) return false;
-        for (var i = 0; i < names.length; i++) {
-            if (this.clickItem(names[i], shift, button, displayName, exact)) {
-                return true;
-            }
-        }
-        return false;
+        return names.some((name) => this.clickItem(name, shift, button, displayName, exact));
     },
 
     setItemSlot: function (slot) {

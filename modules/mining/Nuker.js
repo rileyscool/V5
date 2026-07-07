@@ -219,8 +219,7 @@ class NukerClass extends ModuleBase {
         const targetTypes = this.customBlockList.map((b) => new BlockType(b.registryName));
 
         const blocks = World.getBlocksInBox(pPos.x - scanRadius, minY, pPos.z - scanRadius, pPos.x + scanRadius, maxY, pPos.z + scanRadius, targetTypes);
-        for (let i = 0; i < blocks.length; i++) {
-            const block = blocks[i];
+        for (const block of blocks) {
             const posKey = `${block.x},${block.y},${block.z}`;
             if (this.minedBlocks.has(posKey)) continue;
             if (this.distanceToBlockBox(pCords, [block.x, block.y, block.z]).distance > scanReach) continue;
@@ -295,8 +294,7 @@ class NukerClass extends ModuleBase {
 
     cords() {
         const eye = Player.getPlayer()?.getEyePosition();
-        if (!eye) return null;
-        return [eye.x(), eye.y(), eye.z()];
+        return eye ? [eye.x(), eye.y(), eye.z()] : null;
     }
 
     renderRGB(loc) {

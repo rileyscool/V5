@@ -89,9 +89,7 @@ export class ModuleBase {
         if (ModuleBase.conditionChecker) return;
 
         ModuleBase.conditionChecker = register('tick', () => {
-            for (let i = 0; i < ModuleBase.conditions.length; i++) {
-                const item = ModuleBase.conditions[i];
-
+            for (const item of ModuleBase.conditions) {
                 const shouldBeActive = !!item.condition();
 
                 if (shouldBeActive && !item.isRegistered) {

@@ -57,7 +57,7 @@ export const registerV5Commands = () => {
     const { buildCommand, exec, redirect, registerCommand } = Commands;
     const v5Node = buildCommand('v5', () => {
         exec(() => callCommand('gui'));
-        addCommands(Array.from(commandRegistry.entries()).map(([name, command]) => ({ name, parts: name.split(' '), ...command })));
+        addCommands(Array.from(commandRegistry.entries(), ([name, command]) => ({ name, parts: name.split(' '), ...command })));
     });
 
     v5Node.register();

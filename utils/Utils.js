@@ -88,8 +88,8 @@ class LocationDetector {
             let scoreLines = Scoreboard.getLines();
             if (!scoreLines) return this.currentSubArea;
 
-            for (var i = 0; i < scoreLines.length; i++) {
-                let lineStr = String(scoreLines[i]);
+            for (const line of scoreLines) {
+                let lineStr = String(line);
 
                 if (lineStr.indexOf('⏣') !== -1) {
                     let cleaned = this.stripFormatting(lineStr);
@@ -183,8 +183,7 @@ class CollisionChecker {
             let zMax = Math.floor(expanded.maxZ);
 
             const blocks = World.getBlocksInBox(xMin, yMin, zMin, xMax, yMax, zMax);
-            for (let i = 0; i < blocks.length; i++) {
-                const block = blocks[i];
+            for (const block of blocks) {
                 if (!block || !block.type || block.type.getID() === 0) continue;
 
                 if (this.hasCollision(block.x, block.y, block.z)) {
@@ -292,8 +291,7 @@ class UtilsClass {
         let maxZ = Math.floor(expandedBox.maxZ);
 
         const blocks = World.getBlocksInBox(minX, minY, minZ, maxX, maxY, maxZ);
-        for (let i = 0; i < blocks.length; i++) {
-            const block = blocks[i];
+        for (const block of blocks) {
             if (!block || !block.type || block.type.getID() === 0) continue;
 
             const blockPosNMS = new BP(block.x, block.y, block.z);
@@ -322,7 +320,6 @@ class UtilsClass {
         return false;
     }
 
-    // ik this is so ugly idgaf
     sidesOfCollision() {
         const player = Player.getPlayer();
         const mcWorld = World.getWorld();

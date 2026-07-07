@@ -694,7 +694,8 @@ class Combat extends ModuleBase {
         try {
             if (!target) return null;
             if (target.getUUID) return target.getUUID().toString();
-            if (target.toMC && target.toMC().getUUID) return target.toMC().getUUID().toString();
+            const mcTarget = target.toMC?.();
+            if (mcTarget?.getUUID) return mcTarget.getUUID().toString();
             return null;
         } catch (e) {
             console.error('V5 Caught error' + e + e.stack);

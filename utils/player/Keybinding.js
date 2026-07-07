@@ -139,17 +139,14 @@ class ControlSystem {
             { min: 112.5, max: 157.5, keys: ['s', 'd'] },
         ];
 
-        for (var i = 0; i < quadrants.length; i++) {
-            let q = quadrants[i];
+        for (const q of quadrants) {
             if (yaw >= q.min && yaw <= q.max) {
-                for (var j = 0; j < q.keys.length; j++) {
-                    this.updateKeyState(q.keys[j], true);
-                }
+                q.keys.forEach((key) => this.updateKeyState(key, true));
                 break;
             }
         }
 
-        shouldJump && Utils.playerIsCollided(!!ignoreBottomSlab) ? this.updateKeyState('space', true) : this.updateKeyState('space', false);
+        this.updateKeyState('space', shouldJump && Utils.playerIsCollided(!!ignoreBottomSlab));
     }
 
     setMovementToCoords(x, y, z, shouldJump, ignoreBottomSlab) {
@@ -167,9 +164,7 @@ class ControlSystem {
 
     haltMovement() {
         const keys = ['w', 'a', 's', 'd', 'space'];
-        for (var i = 0; i < keys.length; i++) {
-            this.updateKeyState(keys[i], false);
-        }
+        keys.forEach((key) => this.updateKeyState(key, false));
     }
 
     fullRelease() {

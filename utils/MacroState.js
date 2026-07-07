@@ -104,8 +104,7 @@ class MacroStateClass {
     }
 
     getLastDisableMeta(moduleName) {
-        if (!moduleName) return null;
-        return this.lastDisableMeta.get(moduleName) || null;
+        return moduleName ? this.lastDisableMeta.get(moduleName) || null : null;
     }
 
     captureDisableMeta(moduleName, context = 'user') {

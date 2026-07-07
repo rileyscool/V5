@@ -45,9 +45,7 @@ class AutoConversation extends ModuleBase {
             const commands = getAllClickEvents(event.message);
             if (commands.length === 0) return;
 
-            if (commands.length >= 2 && this.autoSelect) {
-                ScheduleTask(1, () => ChatLib.command(commands[0].replace(/^\//, '')));
-            } else if (commands.length === 1) {
+            if (commands.length === 1 || this.autoSelect) {
                 ScheduleTask(1, () => ChatLib.command(commands[0].replace(/^\//, '')));
             }
         });

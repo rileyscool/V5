@@ -48,8 +48,7 @@ class FailsafeUtils {
         const enabledMap = {};
         const enabledList = failsafesConfig['Enabled Failsafes'];
         if (Array.isArray(enabledList)) {
-            for (let i = 0; i < enabledList.length; i++) {
-                const entry = enabledList[i];
+            for (const entry of enabledList) {
                 if (!entry || !entry.name) continue;
                 enabledMap[entry.name] = !!entry.enabled;
             }
@@ -59,8 +58,7 @@ class FailsafeUtils {
         let pingOnCheckValue = DEFAULT_FAILSAFE_SETTINGS.pingOnCheck;
 
         if (Array.isArray(pingConfig)) {
-            for (let i = 0; i < pingConfig.length; i++) {
-                const option = pingConfig[i];
+            for (const option of pingConfig) {
                 if (option?.enabled) {
                     pingOnCheckValue = option.name ?? DEFAULT_FAILSAFE_SETTINGS.pingOnCheck;
                     break;
@@ -135,7 +133,7 @@ class FailsafeUtils {
                         timestamp: new Date().toISOString(),
                     },
                 ],
-                pingOnCheckValue === 'Ping' ? true : false
+                pingOnCheckValue === 'Ping'
             );
         } else if (pingOnCheckValue === 'Ping & Screenshot' || pingOnCheckValue === 'Screenshot Only') {
             Client.scheduleTask(5, () =>
@@ -144,7 +142,7 @@ class FailsafeUtils {
                     description,
                     color,
                     `V5 Failsafes`,
-                    pingOnCheckValue === 'Ping & Screenshot' ? true : false
+                    pingOnCheckValue === 'Ping & Screenshot'
                 )
             );
         }

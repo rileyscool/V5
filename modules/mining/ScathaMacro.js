@@ -251,9 +251,7 @@ class ScathaMacro extends ModuleBase {
         let currentBlock = World.getBlockAt(player.x, player.y, player.z);
         let id = currentBlock?.type?.getRegistryName();
 
-        if (id?.includes('pane') || id?.includes('glass')) return true;
-
-        return false;
+        return !!(id?.includes('pane') || id?.includes('glass'));
     }
 
     togglePerks(isEnabling) {

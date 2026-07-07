@@ -301,9 +301,7 @@ class RouteWalkerer extends ModuleBase {
     }
 
     checkPoint(point) {
-        if (point && typeof point.x === 'number' && typeof point.y === 'number' && typeof point.z === 'number') return true;
-
-        return false;
+        return !!(point && typeof point.x === 'number' && typeof point.y === 'number' && typeof point.z === 'number');
     }
 
     refreshRoutesToggle() {

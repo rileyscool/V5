@@ -56,10 +56,7 @@ const BLOCK_HARDNESS_DATA = {
 };
 
 function lookupBlock(registryName) {
-    if (!registryName) return null;
-    const data = BLOCK_HARDNESS_DATA[registryName];
-    if (!data) return null;
-    return data;
+    return registryName ? BLOCK_HARDNESS_DATA[registryName] || null : null;
 }
 
 const TOOL_PRIORITY_LIST = [
@@ -254,9 +251,8 @@ class MiningStatsCollector {
             }
 
             let lore = item.getLore();
-            for (var i = 0; i < lore.length; i++) {
-                // Chat.message(lore[i])
-                let cleanLine = ChatLib.removeFormatting(String(lore[i]));
+            for (const line of lore) {
+                let cleanLine = ChatLib.removeFormatting(String(line));
                 let match = cleanLine.match(pattern);
                 if (match) {
                     let value = match[1].replace(/,/g, '');
@@ -276,15 +272,12 @@ class MiningStatsCollector {
     }
 
     getToolName(toolData) {
-        let item = toolData?.item;
-        if (!item) return null;
-        return ChatLib.removeFormatting(item.getName());
+        return toolData?.item ? ChatLib.removeFormatting(toolData.item.getName()) : null;
     }
 
     getCurrentHeldToolName() {
-        let heldItem = Player.getHeldItem();
-        if (!heldItem) return null;
-        return ChatLib.removeFormatting(heldItem.getName());
+        const heldItem = Player.getHeldItem();
+        return heldItem ? ChatLib.removeFormatting(heldItem.getName()) : null;
     }
 
     getStoredStats() {
@@ -332,19 +325,14 @@ class ToolFinder {
     }
 
     static matchTool(name) {
-        for (var i = 0; i < TOOL_PRIORITY_LIST.length; i++) {
-            if (name.indexOf(TOOL_PRIORITY_LIST[i].match) !== -1) {
-                return TOOL_PRIORITY_LIST[i];
-            }
-        }
-        return null;
+        return TOOL_PRIORITY_LIST.find((tool) => name.indexOf(tool.match) !== -1) || null;
     }
 
     static checkBlueCheese(item) {
         try {
             let lore = item.getLore();
-            for (var i = 0; i < lore.length; i++) {
-                let clean = ChatLib.removeFormatting(String(lore[i]));
+            for (const line of lore) {
+                let clean = ChatLib.removeFormatting(String(line));
                 if (clean.indexOf('Blue Cheese') !== -1) {
                     return true;
                 }
@@ -896,8 +884,8 @@ class ScoreboardDebuffReader {
     static readDebuff(symbol) {
         let lines = Scoreboard.getLines();
 
-        for (var i = 0; i < lines.length; i++) {
-            let lineText = String(lines[i]);
+        for (const line of lines) {
+            let lineText = String(line);
             if (lineText.indexOf(symbol) !== -1) {
                 let clean = ChatLib.removeFormatting(lineText);
                 let pattern = new RegExp('(\\d+(?:\\.\\d+)?)\\s*' + symbol);
@@ -952,16 +940,8 @@ class CommissionParser {
 
         let realName = null;
 
-        for (let i = 0; i < lore.length; i++) {
-            const clean = ChatLib.removeFormatting(String(lore[i])).trim();
-            if (!clean) continue;
-
-            if (typeof isKnownCommission === 'function') {
-                if (isKnownCommission(clean)) {
-                    realName = clean;
-                    break;
-                }
-            }
+        if (typeof isKnownCommission === 'function') {
+            realName = lore.map((line) => ChatLib.removeFormatting(String(line)).trim()).find((line) => line && isKnownCommission(line)) || null;
         }
 
         if (!realName && lore.length > 4) {
@@ -978,8 +958,8 @@ class CommissionParser {
         if (lore.some((line) => String(line).indexOf('COMPLETED') !== -1)) {
             progress = 1;
         } else {
-            for (let i = 0; i < lore.length; i++) {
-                const clean = ChatLib.removeFormatting(String(lore[i])).trim();
+            for (const line of lore) {
+                const clean = ChatLib.removeFormatting(String(line)).trim();
                 if (!clean.endsWith('%')) continue;
                 const match = clean.match(/([\d.]+)%$/);
                 if (!match) continue;

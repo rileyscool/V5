@@ -167,9 +167,7 @@ export const drawText = (text, x, y, size, color, align = 17) => {
     NVG.text(text, x, y, size, c, NVG.getDefaultFont(), align);
 };
 
-export const getTextWidth = (text, size) => {
-    return NVG.textWidth(text, size, NVG.getDefaultFont());
-};
+export const getTextWidth = (text, size) => NVG.textWidth(text, size, NVG.getDefaultFont());
 
 export const drawCenteredText = (text, x, width, fontSize, color, yOffset) => {
     drawText(text, x + (width - getTextWidth(text, fontSize)) / 2, yOffset, fontSize, color);

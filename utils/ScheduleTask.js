@@ -8,8 +8,7 @@ register('tick', () => {
     const remaining = [];
     const due = [];
 
-    for (let i = 0; i < queuedTasks.length; i++) {
-        const entry = queuedTasks[i];
+    for (const entry of queuedTasks) {
         if (!entry || typeof entry.task !== 'function') continue;
         if (entry.runAtTick <= currentTick) due.push(entry.task);
         else remaining.push(entry);
@@ -17,9 +16,8 @@ register('tick', () => {
 
     queuedTasks = remaining;
 
-    for (let i = 0; i < due.length; i++) {
+    for (const callback of due) {
         try {
-            const callback = due[i];
             if (typeof callback !== 'function') continue;
             callback();
         } catch (e) {

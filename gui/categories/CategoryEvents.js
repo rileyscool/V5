@@ -270,14 +270,11 @@ export const handleCategoryClick = (
             OverlayManager.openPositionsGUI();
             return;
         } else {
-            Categories.getVisibleCategories().some((cat, i) => {
+            const clickedCategory = Categories.getVisibleCategories().find((cat, i) => {
                 const rect = getCategoryRect(i);
-                if (isInside(mouseX, mouseY, rect)) {
-                    clickedCategoryName = cat.name;
-                    return true;
-                }
-                return false;
+                return isInside(mouseX, mouseY, rect);
             });
+            clickedCategoryName = clickedCategory?.name || null;
             if (!clickedCategoryName && isInside(mouseX, mouseY, pfpButtonRect)) {
                 clickedCategoryName = 'Discord';
             }

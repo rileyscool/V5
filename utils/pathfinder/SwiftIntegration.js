@@ -59,11 +59,7 @@ class SwiftIntegration {
             if (!startArray || !endArray) return false;
             this.setSearchVariantSeed(variantSeed);
 
-            if (fly) {
-                return this.pathManager.findFlyPath(startArray, endArray, computeLimit);
-            }
-
-            return this.pathManager.findPath(startArray, endArray, computeLimit);
+            return fly ? this.pathManager.findFlyPath(startArray, endArray, computeLimit) : this.pathManager.findPath(startArray, endArray, computeLimit);
         } catch (e) {
             console.error('SwiftPath Error: ' + e);
             return false;
@@ -168,9 +164,7 @@ class SwiftIntegration {
         try {
             const arr = getter();
             if (!arr || typeof arr.length !== 'number') return [];
-            const out = new Array(arr.length);
-            for (let i = 0; i < arr.length; i++) out[i] = Number(arr[i]) || 0;
-            return out;
+            return Array.from(arr, (value) => Number(value) || 0);
         } catch (e) {
             return [];
         }

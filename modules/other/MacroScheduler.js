@@ -317,7 +317,7 @@ class MacroScheduler extends ModuleBase {
 
         this.trackedMacros.splice(index, 1);
 
-        const duration = this.getMacroDuration(macroName);
+        const duration = OverlayManager.getMacroDuration(macroName);
         Webhook.sendScreenshot(`Disabled ${macroName}`, duration);
 
         if (this.trackedMacros.length === 0) {
@@ -357,7 +357,7 @@ class MacroScheduler extends ModuleBase {
             if (!meta || meta.context !== 'scheduler') return;
 
             const macroLines = [];
-            const runtime = this.getMacroDuration(name);
+            const runtime = OverlayManager.getMacroDuration(name);
             if (runtime) macroLines.push(`Runtime: ${runtime}`);
 
             const stats = this.getMacroOverlayStats(name);
@@ -388,17 +388,6 @@ class MacroScheduler extends ModuleBase {
             ],
             false
         );
-    }
-
-    getMacroDuration(macroName) {
-        const saved = OverlayManager.savedSessions && OverlayManager.savedSessions[macroName];
-        if (saved && typeof saved.elapsedMs === 'number') {
-            return TimeUtils.formatDurationMs(saved.elapsedMs);
-        }
-
-        const startTime = OverlayManager.startTimes && OverlayManager.startTimes[macroName];
-        if (startTime) return OverlayManager.formatUptime(startTime);
-        return '';
     }
 
     getMacroOverlayStats(macroName) {
@@ -459,11 +448,7 @@ class MacroScheduler extends ModuleBase {
         const remaining = Math.max(0, this.timerEnd - Date.now());
         const timeStr = TimeUtils.formatDurationMs(remaining);
 
-        if (this.state === STATE.RETURNING) {
-            return `Returning (${timeStr})`;
-        }
-
-        return timeStr;
+        return this.state === STATE.RETURNING ? `Returning (${timeStr})` : timeStr;
     }
 
     getActiveMacroDisplay() {

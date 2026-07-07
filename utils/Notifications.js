@@ -18,12 +18,11 @@ class AlertManager {
         try {
             const tray = SystemTray.getSystemTray();
             const existingIcons = tray.getTrayIcons();
+            const existingIcon = Array.from(existingIcons).find((icon) => icon.getToolTip() === this.appName);
 
-            for (var i = 0; i < existingIcons.length; i++) {
-                if (existingIcons[i].getToolTip() === this.appName) {
-                    this.trayIcon = existingIcons[i];
-                    return;
-                }
+            if (existingIcon) {
+                this.trayIcon = existingIcon;
+                return;
             }
 
             const iconPath = new File(globalAssetsDir, 'icon.png').getPath();

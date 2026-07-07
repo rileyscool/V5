@@ -327,9 +327,7 @@ export class Popup {
         let currentY = contentY;
         if (this.statusText) currentY += 20;
 
-        for (let i = 0; i < this.components.length; i++) {
-            const component = this.components[i];
-
+        for (const component of this.components) {
             if (component instanceof Button && component.title === component.buttonText) {
                 const btnHeight = 36;
                 const btnWidth = contentWidth;

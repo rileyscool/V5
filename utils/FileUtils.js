@@ -28,11 +28,7 @@ function normalizeUrl(url) {
 }
 
 function resolveDestinationPath(destination) {
-    if (destination && typeof destination.getAbsolutePath === 'function') {
-        return destination.getAbsolutePath();
-    }
-
-    return String(destination);
+    return destination && typeof destination.getAbsolutePath === 'function' ? destination.getAbsolutePath() : String(destination);
 }
 
 export function ensureDirectory(dir) {
@@ -127,9 +123,7 @@ export function deleteRecursive(target) {
     if (target.isDirectory()) {
         const children = target.listFiles();
         if (children) {
-            for (let i = 0; i < children.length; i++) {
-                deleteRecursive(children[i]);
-            }
+            for (const child of children) deleteRecursive(child);
         }
     }
 

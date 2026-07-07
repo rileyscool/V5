@@ -88,7 +88,7 @@ class GlowingMushroomESP extends ModuleBase {
 const GlowingMushroomESPModule = new GlowingMushroomESP();
 
 export function getTrackedGlowingMushrooms() {
-    return Array.from(GlowingMushroomESPModule.mushrooms.values()).map((entry) => ({
+    return Array.from(GlowingMushroomESPModule.mushrooms.values(), (entry) => ({
         x: entry.x,
         y: entry.y,
         z: entry.z,

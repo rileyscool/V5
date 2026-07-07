@@ -423,8 +423,7 @@ class GlowingMushroomMacro extends ModuleBase {
         if (!fallback) return null;
 
         const point = { x: fallback[0], y: fallback[1], z: fallback[2] };
-        if (!this.isPointWithinReach(point, eye)) return null;
-        return point;
+        return this.isPointWithinReach(point, eye) ? point : null;
     }
 
     isPointWithinReach(point, eye = this.getPlayerEye()) {
@@ -442,22 +441,8 @@ class GlowingMushroomMacro extends ModuleBase {
     }
 
     isPathGoalAlreadyReached(mushroom) {
-        const player = Player.getPlayer();
-        if (!player || !mushroom) return false;
-
-        const goalX = mushroom.x;
-        const goalY = mushroom.y - 1;
-        const goalZ = mushroom.z;
-
-        const dx = Player.getX() - goalX;
-        const dy = Player.getY() - goalY;
-        const dz = Player.getZ() - goalZ;
-
-        const horizontalDistSq = dx * dx + dz * dz;
-        if (horizontalDistSq > 2.5 * 2.5) return false;
-        if (dy < -0.1 || dy > 5.5) return false;
-
-        return player.isOnGround();
+        if (!mushroom) return false;
+        return this.isGoalReached(mushroom.x, mushroom.y - 1, mushroom.z);
     }
 
     isGoalReached(goalX, goalY, goalZ) {

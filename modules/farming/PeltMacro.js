@@ -253,8 +253,7 @@ class PeltMacro extends ModuleBase {
         if (!match) return null;
         const name = match[1].trim().toLowerCase();
         const goals = this.normalizeTrevorGoals(TREVOR_TARGETS[name]);
-        if (!goals.length) return null;
-        return { name, goals };
+        return goals.length ? { name, goals } : null;
     }
 
     normalizeTrevorGoals(rawGoals) {

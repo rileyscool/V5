@@ -30,8 +30,8 @@ class TabListUtilsClass {
 
         try {
             const tabLines = this.getNames();
-            for (let i = 0; i < tabLines.length; i++) {
-                const cleanLine = this.stripFormatting(tabLines[i]).trim();
+            for (const line of tabLines) {
+                const cleanLine = this.stripFormatting(line).trim();
                 if (!cleanLine.includes('Area:')) continue;
 
                 const parts = cleanLine.split('Area:');
@@ -122,7 +122,7 @@ class TabListUtilsClass {
                 if (progressText.includes('DONE')) {
                     progress = 1;
                 } else if (progressText.includes('%')) {
-                    progress = Number.parseFloat(progressText.replace(/ /g, '').replaceAll('%', '')) / 100;
+                    progress = Number.parseFloat(progressText.replace(/[ %]/g, '')) / 100;
                 }
 
                 if (progress == null || !Number.isFinite(progress)) continue;

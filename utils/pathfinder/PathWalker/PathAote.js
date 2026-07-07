@@ -118,9 +118,7 @@ class PathAote {
         if (aotv !== -1) return aotv;
 
         const aote = Guis.findItemInHotbar('Aspect of the End');
-        if (aote !== -1) return aote;
-
-        return null;
+        return aote !== -1 ? aote : null;
     }
 
     getBlockName(block) {
@@ -391,10 +389,7 @@ class PathAote {
         if (!block || !block.type) return false;
         const name = this.getBlockName(block);
         if (!name) return false;
-        if (name.includes('mud')) return true;
-        if (this.canTeleportThrough(x, y, z)) return false;
-
-        return true;
+        return name.includes('mud') || !this.canTeleportThrough(x, y, z);
     }
 
     getSnowLayers(block) {

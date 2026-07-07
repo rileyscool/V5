@@ -10,29 +10,19 @@ class Executor {
     execute() {
         this.destroy();
 
-        this.tickRegister = register('tick', () => {
-            for (let i = 0; i < this.tickCallbacks.length; i++) {
-                const callback = this.tickCallbacks[i];
-                if (typeof callback !== 'function') continue;
-                try {
-                    callback();
-                } catch (e) {
-                    console.error('PathExecutor tick callback error:', e);
-                }
-            }
-        });
+        this.tickRegister = register('tick', () => this.runCallbacks(this.tickCallbacks, 'tick'));
+        this.stepRegister = register('step', () => this.runCallbacks(this.stepCallbacks, 'step')).setFps(120);
+    }
 
-        this.stepRegister = register('step', () => {
-            for (let i = 0; i < this.stepCallbacks.length; i++) {
-                const callback = this.stepCallbacks[i];
-                if (typeof callback !== 'function') continue;
-                try {
-                    callback();
-                } catch (e) {
-                    console.error('PathExecutor step callback error:', e);
-                }
+    runCallbacks(callbacks, name) {
+        for (const callback of callbacks) {
+            if (typeof callback !== 'function') continue;
+            try {
+                callback();
+            } catch (e) {
+                console.error(`PathExecutor ${name} callback error:`, e);
             }
-        }).setFps(120);
+        }
     }
 
     destroy() {

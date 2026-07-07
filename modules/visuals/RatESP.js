@@ -7,24 +7,18 @@ const RAT_HEIGHT = 0.975;
 const EPSILON = 0.01;
 const WORLD_TICK_MS = 50;
 
-function approxEqual(a, b, epsilon = EPSILON) {
-    return Math.abs(a - b) <= epsilon;
-}
+const approxEqual = (a, b, epsilon = EPSILON) => Math.abs(a - b) <= epsilon;
 
 export function isRatEntity(entity) {
-    if (!entity) return false;
-    if (entity.isDead()) return false;
-    return approxEqual(entity.getWidth(), RAT_WIDTH) && approxEqual(entity.getHeight(), RAT_HEIGHT);
+    return !!entity && !entity.isDead() && isRawRatEntity(entity);
 }
 
 export function isRawRatEntity(entity) {
-    if (!entity) return false;
-    return approxEqual(entity.getWidth(), RAT_WIDTH) && approxEqual(entity.getHeight(), RAT_HEIGHT);
+    return !!entity && approxEqual(entity.getWidth(), RAT_WIDTH) && approxEqual(entity.getHeight(), RAT_HEIGHT);
 }
 
 export function getRatId(entity) {
-    if (!entity) return null;
-    return entity.getUUID().toString();
+    return entity ? entity.getUUID().toString() : null;
 }
 
 export function getHubRats() {

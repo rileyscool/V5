@@ -104,7 +104,7 @@ class OverlayUtils {
     }
 
     updateRenderActive() {
-        this.renderActive = Object.values(this.animations).some((a) => a.target > 0 || a.progress > 0.01);
+        this.renderActive = Object.values(this.animations).some((animation) => animation.target > 0 || animation.progress > 0.01);
         return this.renderActive;
     }
 
@@ -223,6 +223,14 @@ class OverlayUtils {
 
     formatUptime(startTime) {
         return TimeUtils.formatUptime(startTime);
+    }
+
+    getMacroDuration(macroName) {
+        const saved = this.savedSessions && this.savedSessions[macroName];
+        if (saved && typeof saved.elapsedMs === 'number') return TimeUtils.formatDurationMs(saved.elapsedMs);
+
+        const startTime = this.startTimes && this.startTimes[macroName];
+        return startTime ? this.formatUptime(startTime) : '';
     }
 
     initTriggers() {

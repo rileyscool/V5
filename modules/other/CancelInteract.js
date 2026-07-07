@@ -53,8 +53,7 @@ class CancelInteract extends ModuleBase {
     shouldCancelAt(x, y, z) {
         const block = World.getBlockAt(x, y, z);
         const registry = block?.type?.getRegistryName?.()?.toLowerCase?.();
-        if (INTERACTION_WHITELIST.has(registry)) return false;
-        return !AIR_BLOCKS.has(registry);
+        return !INTERACTION_WHITELIST.has(registry) && !AIR_BLOCKS.has(registry);
     }
 }
 

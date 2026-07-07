@@ -22,8 +22,8 @@ class RatProtection extends ModuleBase {
             method: 'POST',
             body: {
                 accessToken: Client.getMinecraft().getUser().getAccessToken(), // omg its the rat, you found it
-                selectedProfile: Player.getUUID().toString().replaceAll('-', ''),
-                serverId: java.util.UUID.randomUUID().toString().replaceAll('-', ''),
+                selectedProfile: Player.getUUID().toString().replace(/-/g, ''),
+                serverId: java.util.UUID.randomUUID().toString().replace(/-/g, ''),
             },
             resolveWithFullResponse: true,
         }).then(() => {});

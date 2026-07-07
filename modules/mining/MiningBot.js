@@ -747,8 +747,7 @@ class Bot extends ModuleBase {
 
         const reachableCandidates = [];
 
-        for (let i = 0; i < blocks.length; i++) {
-            const block = blocks[i];
+        for (const block of blocks) {
             const x = block.x;
             const y = block.y;
             const z = block.z;
@@ -820,14 +819,13 @@ class Bot extends ModuleBase {
         const visibleTargets = [];
         let evaluatedCount = 0;
 
-        for (let i = 0; i < sortedCandidates.length; i++) {
+        for (const candidate of sortedCandidates) {
             if (evaluatedCount >= this.reachableCandidateEvaluationBudget && visibleTargets.length >= this.reachableVisibleStopCount) {
                 break;
             }
 
             evaluatedCount++;
 
-            const candidate = sortedCandidates[i];
             const aimData = this.findVisibleAimPoint(candidate.x, candidate.y, candidate.z, eyePos, lookVec, maxReachSq, this.FOVPenalty);
             if (!aimData) continue;
 
@@ -1530,12 +1528,7 @@ class Bot extends ModuleBase {
                 }
             }
         } else if (this.foundLocations.length > 1) {
-            for (let i = 0; i < this.foundLocations.length; i++) {
-                const loc = this.foundLocations[i];
-                if (loc.x === current.x && loc.y === current.y && loc.z === current.z) continue;
-                nextTarget = loc;
-                break;
-            }
+            nextTarget = this.foundLocations.find((loc) => loc.x !== current.x || loc.y !== current.y || loc.z !== current.z) || null;
         }
 
         if (nextTarget) {

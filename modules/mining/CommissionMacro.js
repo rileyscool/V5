@@ -448,9 +448,7 @@ class CommissionMacro extends ModuleBase {
         const merged = { ...tabComm, ...data };
 
         if (data.useAllMiningWaypoints) {
-            merged.waypoints = COMMISSION_DATA.filter((d) => d.type === 'MINING' && !d.useAllMiningWaypoints)
-                .map((d) => d.waypoints)
-                .reduce((acc, waypoints) => acc.concat(waypoints), []);
+            merged.waypoints = COMMISSION_DATA.filter((d) => d.type === 'MINING' && !d.useAllMiningWaypoints).reduce((acc, d) => acc.concat(d.waypoints), []);
         }
 
         return merged;
@@ -460,16 +458,14 @@ class CommissionMacro extends ModuleBase {
         if (!task) return false;
 
         if (task.type === 'MINING') {
-            if (task.name.includes('Goblin') && !this.weapon) return false;
-            return true;
+            return !task.name.includes('Goblin') || !!this.weapon;
         }
 
         if (task.type === 'SLAYER') {
-            if (task.name === 'Goblin Slayer' && !this.weapon) return false;
-            return true;
+            return task.name !== 'Goblin Slayer' || !!this.weapon;
         }
 
-        return false; // unreachable
+        return false;
     }
 
     getAvoidanceEntities() {
@@ -626,7 +622,6 @@ class CommissionMacro extends ModuleBase {
         const yDiff = closest[1] - Player.getY();
         if (yDiff > 3 && closestDist < 10) {
             if (!Pathfinder.isPathing()) {
-                // console.log('under platform');
                 this.travelPurpose = 'EMISSARY';
 
                 Pathfinder.findPath(emissaryLocations, (success) => {
@@ -706,10 +701,7 @@ class CommissionMacro extends ModuleBase {
     }
 
     getAvailableEmissaryLocations() {
-        if (!this.emissariesUnlocked) {
-            return [EMISSARY_LOCATIONS[0]];
-        }
-        return EMISSARY_LOCATIONS;
+        return this.emissariesUnlocked ? EMISSARY_LOCATIONS : [EMISSARY_LOCATIONS[0]];
     }
 
     checkEmissaryUnlocked() {
@@ -1042,9 +1034,7 @@ class CommissionMacro extends ModuleBase {
         if (!item) return null;
 
         const name = ChatLib.removeFormatting(item.getName());
-        if (name.includes('Mithril') || name.includes('Titanium') || name === '') return null;
-
-        return { slot, name };
+        return name.includes('Mithril') || name.includes('Titanium') || name === '' ? null : { slot, name };
     }
 
     getClosestMob(mobs) {
@@ -1058,16 +1048,14 @@ class CommissionMacro extends ModuleBase {
     commissionsEqual(a, b) {
         if (a === b) return true;
         if (!Array.isArray(a) || !Array.isArray(b)) return false;
-        if (a.length !== b.length) return false;
-
-        for (let i = 0; i < a.length; i++) {
-            const left = a[i];
-            const right = b[i];
-            if (!left || !right) return false;
-            if (left.name !== right.name || left.progress !== right.progress) return false;
-        }
-
-        return true;
+        return (
+            a.length === b.length &&
+            a.every((left, i) => {
+                const right = b[i];
+                if (!left || !right) return false;
+                return left.name === right.name && left.progress === right.progress;
+            })
+        );
     }
 
     updateCommissionsIfChanged(newCommissions) {

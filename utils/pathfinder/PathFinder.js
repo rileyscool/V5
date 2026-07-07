@@ -749,9 +749,7 @@ class Finder {
 
     isWalkColumnValid(x, groundY, z) {
         if (this.isBlockWalkable(x, groundY, z)) return false;
-        if (!this.isBlockWalkable(x, groundY + 1, z)) return false;
-        if (!this.isBlockWalkable(x, groundY + 2, z)) return false;
-        return true;
+        return this.isBlockWalkable(x, groundY + 1, z) && this.isBlockWalkable(x, groundY + 2, z);
     }
 
     handleStartPointWarp(result) {

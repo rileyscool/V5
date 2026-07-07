@@ -34,43 +34,31 @@ export const loadSettings = _loadSettings;
 export const getSetting = _getSetting;
 export const updateSettingMap = _updateSettingMap;
 export const applySettings = _applySettings;
-// THIS ISN'T NEEDED PROBABLY, BUT IT WORKS SO WHATEVER LMFAO
 
-export const showNotification = (title, description, type = 'SUCCESS', duration = 5000) => {
-    notify(title, description, type, duration);
-};
+export const showNotification = (title, description, type = 'SUCCESS', duration = 5000) => notify(title, description, type, duration);
 
-export const addCategoryItem = (subcategoryName, title, description, tooltip = null) => {
+export const addCategoryItem = (subcategoryName, title, description, tooltip = null) =>
     Categories.addCategoryItem(subcategoryName, title, description, tooltip);
-};
 
-export const findItem = (categoryName, itemName) => {
-    return Categories.findItem(categoryName, itemName);
-};
+export const findItem = (categoryName, itemName) => Categories.findItem(categoryName, itemName);
 
-export const addToggle = (categoryName, itemName, toggleTitle, callback = null, description = null) => {
+export const addToggle = (categoryName, itemName, toggleTitle, callback = null, description = null) =>
     Categories.addToggle(categoryName, itemName, toggleTitle, callback, description);
-};
 
-export const addSlider = (categoryName, itemName, sliderTitle, min, max, defaultValue, callback = null, description = null) => {
+export const addSlider = (categoryName, itemName, sliderTitle, min, max, defaultValue, callback = null, description = null) =>
     Categories.addSlider(categoryName, itemName, sliderTitle, min, max, defaultValue, callback, description);
-};
 
-export const addMultiToggle = (categoryName, itemName, toggleTitle, options, singleSelect = false, callback = null, description = null) => {
+export const addMultiToggle = (categoryName, itemName, toggleTitle, options, singleSelect = false, callback = null, description = null) =>
     Categories.addMultiToggle(categoryName, itemName, toggleTitle, options, singleSelect, callback, description);
-};
 
-export const addTextInput = (categoryName, itemName, title, defaultValue, callback = null, description = null) => {
+export const addTextInput = (categoryName, itemName, title, defaultValue, callback = null, description = null) =>
     Categories.addTextInput(categoryName, itemName, title, defaultValue, callback, description);
-};
 
-export const addButton = (categoryName, itemName, title, callback = null, description = null) => {
+export const addButton = (categoryName, itemName, title, callback = null, description = null) =>
     Categories.addButton(categoryName, itemName, title, callback, description);
-};
 
-export const addPopup = (categoryName, itemName, title, callback = null, description = null) => {
+export const addPopup = (categoryName, itemName, title, callback = null, description = null) =>
     Categories.addPopup(categoryName, itemName, title, callback, description);
-};
 
 export const openGui = () => {
     const { loadSettings } = require('./GuiSave');
@@ -82,6 +70,4 @@ export const openGui = () => {
     GuiState.myGui.open();
 };
 
-export const closeGui = () => {
-    Client.currentGui.close();
-};
+export const closeGui = () => Client.currentGui.close();

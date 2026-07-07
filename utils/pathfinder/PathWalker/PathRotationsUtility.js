@@ -240,8 +240,7 @@ class PathRotsUtil {
 
     getPlayerRotation() {
         const player = Player.getPlayer();
-        if (!player) return null;
-        return { yaw: MathUtils.wrapTo180(player.getYRot()), pitch: player.getXRot() };
+        return player ? { yaw: MathUtils.wrapTo180(player.getYRot()), pitch: player.getXRot() } : null;
     }
 }
 
