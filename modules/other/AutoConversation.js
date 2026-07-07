@@ -9,7 +9,6 @@ class AutoConversation extends ModuleBase {
             description: 'auto clicks on npc options in conversations',
         });
 
-        this.delay = 20;
         this.autoSelect = true;
 
         this.on('chat', (event) => {
@@ -47,13 +46,12 @@ class AutoConversation extends ModuleBase {
             if (commands.length === 0) return;
 
             if (commands.length >= 2 && this.autoSelect) {
-                ScheduleTask(this.delay, () => ChatLib.command(commands[0].replace(/^\//, '')));
+                ScheduleTask(1, () => ChatLib.command(commands[0].replace(/^\//, '')));
             } else if (commands.length === 1) {
-                ScheduleTask(this.delay, () => ChatLib.command(commands[0].replace(/^\//, '')));
+                ScheduleTask(1, () => ChatLib.command(commands[0].replace(/^\//, '')));
             }
         });
 
-        this.addSlider('Delay', 0, 100, 20, (v) => (this.delay = v), 'Delay in ticks before clicking');
         this.addToggle(
             'Select First (if multiple)',
             (v) => (this.autoSelect = v),
