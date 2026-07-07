@@ -101,6 +101,8 @@ class NukerClass extends ModuleBase {
                 this.message('- /v5 nuker remove - removes block at crosshair');
                 this.message('- /v5 nuker clear - clear all targets');
                 this.message('- /v5 nuker list - list all targets');
+                this.toggle(false);
+                return;
             }
 
             if (Client.isInGui() && !Client.isInChat()) return;
@@ -169,9 +171,8 @@ class NukerClass extends ModuleBase {
             () => this.enabled && this.autoChest && !(Client.isInGui() && !Client.isInChat()),
             'renderBlockEntity',
             (entity) => {
-                if (entity?.getBlockType()?.getID() !== 200) return;
-                const chest = entity?.getBlock()?.pos;
-                if (!chest) return;
+                if (entity?.getBlockType?.()?.getRegistryName?.() !== 'minecraft:chest') return;
+                const chest = { x: entity.getX(), y: entity.getY(), z: entity.getZ() };
                 this.chestPos = chest;
                 const posStr = `${chest.x},${chest.y},${chest.z}`;
 
