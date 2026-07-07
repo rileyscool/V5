@@ -60,8 +60,8 @@ class MinionCollector extends ModuleBase {
             if (!hasItem) continue;
 
             if (this.withinRange(playerPos, [x, y, z])) {
-                const id = entity.toMC().getEntity().getId();
-                if (!this.interactionQueue.some((e) => e.toMC().getEntity().getId() === id)) {
+                const id = entity.toMC().getId();
+                if (!this.interactionQueue.some((e) => e.toMC().getId() === id)) {
                     this.interactionQueue.push(entity);
                 }
             } else {
@@ -106,7 +106,7 @@ class MinionCollector extends ModuleBase {
     }
 
     rightClickMinion(entity) {
-        const ent = entity.toMC().getEntity();
+        const ent = entity.toMC();
         const vec = new Vec3d(0.0, 0.5, 0.0);
         const packet = new ServerboundInteractPacket(ent.getId(), MCHand.MAIN_HAND, vec, false);
         Client.sendPacket(packet);

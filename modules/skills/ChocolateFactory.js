@@ -204,7 +204,7 @@ class ChocolateFactory extends ModuleBase {
             if (!mcItem) return null;
 
             const profileComponent = mcItem.get(PROFILE_TYPE);
-            const profileString = profileComponent?.getGameProfile?.()?.toString?.() || '';
+            const profileString = profileComponent?.partialProfile?.()?.toString?.() || '';
             if (!profileString) return null;
 
             return EGG_TYPES.find((egg) => profileString.includes(egg.texture)) || null;

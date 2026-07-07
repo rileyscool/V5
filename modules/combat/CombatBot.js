@@ -314,7 +314,7 @@ class Combat extends ModuleBase {
 
             const profileType = net.minecraft.core.component.DataComponents.PROFILE;
             const profileComponent = mcItem.get(profileType);
-            const profileString = profileComponent?.getGameProfile?.()?.toString() || '';
+            const profileString = profileComponent?.partialProfile?.()?.toString() || '';
             if (!profileString) return false;
 
             for (const base64 of BLACKHOLE_TEXTURES) {
@@ -694,7 +694,7 @@ class Combat extends ModuleBase {
         try {
             if (!target) return null;
             if (target.getUUID) return target.getUUID().toString();
-            if (target.toMC && target.toMC().getUuid) return target.toMC().getUuid().toString();
+            if (target.toMC && target.toMC().getUUID) return target.toMC().getUUID().toString();
             return null;
         } catch (e) {
             console.error('V5 Caught error' + e + e.stack);

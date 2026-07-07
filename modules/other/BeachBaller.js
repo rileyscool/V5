@@ -418,7 +418,7 @@ class Beachballer extends ModuleBase {
             const profileType = net.minecraft.core.component.DataComponents.PROFILE;
 
             const profileComponent = mcItem.get(profileType);
-            const data = profileComponent.getGameProfile().toString();
+            const data = profileComponent.partialProfile().toString();
 
             return data.includes(SMALL_BEACHBALL_BASE64) || data.includes(LARGE_BEACHBALL_BASE64);
         } catch (e) {
