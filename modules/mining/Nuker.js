@@ -217,14 +217,7 @@ class NukerClass extends ModuleBase {
         const maxY = pPos.y + Math.max(this.heightLimit, scanRadius);
         const minY = pPos.y - (this.nukeBelow ? 0 : scanRadius);
 
-        const blocks = World.getBlocksInBox(
-            pPos.x - scanRadius,
-            minY,
-            pPos.z - scanRadius,
-            pPos.x + scanRadius,
-            maxY,
-            pPos.z + scanRadius
-        );
+        const blocks = World.getBlocksInBox(pPos.x - scanRadius, minY, pPos.z - scanRadius, pPos.x + scanRadius, maxY, pPos.z + scanRadius);
         for (let i = 0; i < blocks.length; i++) {
             const block = blocks[i];
             const posKey = `${block.x},${block.y},${block.z}`;
