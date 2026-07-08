@@ -70,24 +70,24 @@ const manifest = {
         'WynnProfession',
     ],
 
-    jsonFiles: {
-        'config.json': {},
-        'keybinds.json': {},
-        'OverlayPositions/music_overlay.json': {},
-        'webhook.json': {},
-        'miningstats.json': {},
-        'GemstoneRoutes/empty.json': {},
-        'RoutewalkerRoutes/empty.json': {},
-        'TunnelMinerRoutes/empty.json': {},
-        'OreRoutes/empty.json': {},
-        'EtherwarpRoutes/empty.json': {},
-        'FarmingMacro/points.json': {},
-        'developerMode.json': { enabled: false },
-        'AuthCache/do_not_share_this_file': [],
-        'responseMessages.json': responseMessages,
-        'WynnProfession/route.json': {},
-    },
+    files: [
+        ['config.json', {}],
+        ['keybinds.json', {}],
+        ['OverlayPositions/music_overlay.json', {}],
+        ['webhook.json', {}],
+        ['miningstats.json', {}],
+        ['GemstoneRoutes/empty.json', {}],
+        ['RoutewalkerRoutes/empty.json', {}],
+        ['TunnelMinerRoutes/empty.json', {}],
+        ['OreRoutes/empty.json', {}],
+        ['EtherwarpRoutes/empty.json', {}],
+        ['FarmingMacro/points.json', {}],
+        ['developerMode.json', { enabled: false }],
+        ['AuthCache/do_not_share_this_file', []],
+        ['responseMessages.json', responseMessages],
+        ['WynnProfession/route.json', {}],
+    ],
 };
 
 manifest.directories.forEach((dir) => new File(CONFIG_PATH, dir).mkdir());
-Object.entries(manifest.jsonFiles).forEach(([path, data]) => generateJson(path, data));
+manifest.files.forEach(([path, data]) => generateJson(path, data));

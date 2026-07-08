@@ -1,3 +1,5 @@
+import { finiteNumber } from './NumberUtils';
+
 let currentTick = 0;
 let queuedTasks = [];
 
@@ -28,7 +30,7 @@ register('tick', () => {
 
 export function ScheduleTask(delayOrTask, maybeTask) {
     const hasExplicitDelay = typeof delayOrTask !== 'function';
-    const delayRaw = hasExplicitDelay ? Number(delayOrTask) || 0 : 0;
+    const delayRaw = hasExplicitDelay ? finiteNumber(delayOrTask) : 0;
     const task = hasExplicitDelay ? maybeTask : delayOrTask;
 
     if (typeof task !== 'function') return;

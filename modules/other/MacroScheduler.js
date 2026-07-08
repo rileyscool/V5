@@ -83,14 +83,13 @@ class MacroScheduler extends ModuleBase {
 
     loadState() {
         const data = Utils.getConfigFile(this.configPath);
-        if (data) {
-            const validState = Object.values(STATE).includes(data.state) ? data.state : STATE.IDLE;
-            this.state = validState;
-            this.trackedMacros = Array.isArray(data.trackedMacros) ? data.trackedMacros.filter((v) => typeof v === 'string') : [];
-            this.timerEnd = Number.isFinite(data.timerEnd) ? data.timerEnd : 0;
-            this.breakDurationMs = Number.isFinite(data.breakDurationMs) ? data.breakDurationMs : 0;
-            this.returnStep = Number.isFinite(data.returnStep) ? Math.max(0, Math.min(3, data.returnStep)) : 0;
-        }
+        if (!data) return;
+
+        this.state = Object.values(STATE).includes(data.state) ? data.state : STATE.IDLE;
+        this.trackedMacros = Array.isArray(data.trackedMacros) ? data.trackedMacros.filter((v) => typeof v === 'string') : [];
+        this.timerEnd = Number.isFinite(data.timerEnd) ? data.timerEnd : 0;
+        this.breakDurationMs = Number.isFinite(data.breakDurationMs) ? data.breakDurationMs : 0;
+        this.returnStep = Number.isFinite(data.returnStep) ? Math.max(0, Math.min(3, data.returnStep)) : 0;
     }
 
     saveState() {
@@ -317,8 +316,7 @@ class MacroScheduler extends ModuleBase {
 
         this.trackedMacros.splice(index, 1);
 
-        const duration = OverlayManager.getMacroDuration(macroName);
-        Webhook.sendScreenshot(`Disabled ${macroName}`, duration);
+        Webhook.sendScreenshot(`Disabled ${macroName}`, MacroState.getModuleDuration(macroName));
 
         if (this.trackedMacros.length === 0) {
             this.state = STATE.IDLE;
@@ -357,7 +355,7 @@ class MacroScheduler extends ModuleBase {
             if (!meta || meta.context !== 'scheduler') return;
 
             const macroLines = [];
-            const runtime = OverlayManager.getMacroDuration(name);
+            const runtime = MacroState.getModuleDuration(name);
             if (runtime) macroLines.push(`Runtime: ${runtime}`);
 
             const stats = this.getMacroOverlayStats(name);

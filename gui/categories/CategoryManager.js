@@ -5,7 +5,7 @@ import { MultiToggle } from '../components/Dropdown';
 import { Popup } from '../components/Popup';
 import { TextInput } from '../components/TextInput';
 import { Separator } from '../components/Separator';
-import { getComponentLayoutHeight } from '../components/layout';
+import { getComponentLayoutHeight, layoutDirectComponents } from '../components/layout';
 import { GuiRectangles, GuiState } from '../core/GuiState';
 import { handleCategoryClick, handleCategoryScroll, updateCategoryTransitions } from './CategoryEvents';
 import { drawCategoryItems, drawDirectComponents, drawOptionsPanel, drawSubcategoryButtons, getCategoryRect, getDiscordPfpRect } from './CategoryRenderer';
@@ -280,46 +280,15 @@ export const createCategoriesManager = (deps) => {
         const directCat = Categories.categories.find((c) => c.name === categoryName);
         if (!directCat || !directCat.directComponents) return 0;
 
-        let height = PADDING;
-        let currentSection = null;
-
-        directCat.directComponents.forEach((component, index) => {
-            if (component.sectionName && component.sectionName !== currentSection) {
-                currentSection = component.sectionName;
-                if (index > 0) height += 16;
-                height += 26;
-            }
-
-            height += getComponentLayoutHeight(component);
-        });
-
-        height += PADDING;
-        return height;
+        return PADDING + layoutDirectComponents(directCat.directComponents).height + PADDING;
     };
 
     const getDirectComponentScrollY = (categoryName, component) => {
         const directCategory = Categories.categories.find((c) => c.name === categoryName);
         if (!directCategory || !directCategory.directComponents) return 0;
 
-        let currentY = PADDING;
-        let currentSection = null;
-
-        for (let i = 0; i < directCategory.directComponents.length; i++) {
-            const comp = directCategory.directComponents[i];
-            if (comp.sectionName && comp.sectionName !== currentSection) {
-                currentSection = comp.sectionName;
-                if (i > 0) currentY += 16;
-                currentY += 26;
-            }
-
-            if (comp === component) {
-                return Math.max(0, currentY - 10);
-            }
-
-            currentY += getComponentLayoutHeight(comp);
-        }
-
-        return 0;
+        const row = layoutDirectComponents(directCategory.directComponents, PADDING).rows.find((item) => item.component === component);
+        return row ? Math.max(0, row.y - 10) : 0;
     };
 
     const getModuleComponentScrollY = (item, component) => {

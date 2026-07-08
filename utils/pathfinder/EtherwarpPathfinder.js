@@ -3,6 +3,7 @@ import { MCHand, Vec3d } from '../Constants';
 import { ClientboundPingPacket, ServerboundUseItemPacket } from '../Packets';
 import { Guis } from '../player/Inventory';
 import { Keybind } from '../player/Keybinding';
+import { finiteNumber } from '../NumberUtils';
 import { RotationGCD } from '../player/RotationGCD';
 import { ServerInfo } from '../player/ServerInfo';
 import { ScheduleTask } from '../ScheduleTask';
@@ -33,9 +34,9 @@ const readPathPoints = (pathArr) => {
     const points = [];
     for (let i = 0; i + 2 < pathArr.length; i += 3) {
         points.push({
-            x: Number(pathArr[i]) || 0,
-            y: Number(pathArr[i + 1]) || 0,
-            z: Number(pathArr[i + 2]) || 0,
+            x: finiteNumber(pathArr[i]),
+            y: finiteNumber(pathArr[i + 1]),
+            z: finiteNumber(pathArr[i + 2]),
         });
     }
     return points;

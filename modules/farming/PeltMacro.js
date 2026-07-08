@@ -1,5 +1,6 @@
 import { OverlayManager } from '../../gui/OverlayUtils';
 import { MCHand, Vec3d } from '../../utils/Constants';
+import { MacroState } from '../../utils/MacroState';
 import { ModuleBase } from '../../utils/ModuleBase';
 import { ServerboundUseItemPacket } from '../../utils/Packets';
 import { ScheduleTask } from '../../utils/ScheduleTask';
@@ -314,7 +315,7 @@ class PeltMacro extends ModuleBase {
     }
 
     getActiveHours() {
-        const elapsedMs = OverlayManager.getSessionElapsedMs(this.oid);
+        const elapsedMs = MacroState.getModuleElapsedMs(this.name);
         if (elapsedMs <= 0) return 0;
         return elapsedMs / 3600000;
     }
@@ -751,7 +752,7 @@ class PeltMacro extends ModuleBase {
     }
 
     getMobDistance(entity) {
-        return Math.hypot(entity.getX() - Player.getX(), entity.getY() - Player.getY(), entity.getZ() - Player.getZ());
+        return MathUtils.fastDistance(entity.getX(), entity.getY(), entity.getZ(), Player.getX(), Player.getY(), Player.getZ());
     }
 
     getGoalKey(goal) {

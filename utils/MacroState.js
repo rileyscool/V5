@@ -1,4 +1,5 @@
 import { Chat } from './Chat';
+import { TimeUtils } from './TimeUtils';
 import { Utils } from './Utils';
 
 class MacroStateClass {
@@ -7,6 +8,8 @@ class MacroStateClass {
         this.activeMacro = null;
         this.startTime = 0;
         this.enabledMacros = new Set();
+        this.macroStartTimes = new Map();
+        this.sessionResumeWindowMs = 5 * 60 * 1000;
 
         this.modules = new Map();
         this.lastDisableMeta = new Map();
@@ -75,10 +78,20 @@ class MacroStateClass {
         if (!module || !module.isMacro) return;
 
         const wasEmpty = this.enabledMacros.size === 0;
+        const now = Date.now();
         this.enabledMacros.add(moduleName);
+        if (!this.macroStartTimes.has(moduleName)) {
+            const lastMeta = this.getLastDisableMeta(moduleName);
+            const canResume =
+                lastMeta &&
+                typeof lastMeta.timestamp === 'number' &&
+                typeof lastMeta.durationMs === 'number' &&
+                now - lastMeta.timestamp <= this.sessionResumeWindowMs;
+            this.macroStartTimes.set(moduleName, canResume ? now - lastMeta.durationMs : now);
+        }
 
         if (wasEmpty) {
-            this.startTime = Date.now();
+            this.startTime = this.getModuleStartTime(moduleName);
         }
 
         this.running = true;
@@ -92,6 +105,7 @@ class MacroStateClass {
 
         this.lastDisableMeta.set(moduleName, this.captureDisableMeta(moduleName, context));
         this.enabledMacros.delete(moduleName);
+        this.macroStartTimes.delete(moduleName);
 
         if (this.enabledMacros.size === 0) {
             this.running = false;
@@ -107,10 +121,30 @@ class MacroStateClass {
         return moduleName ? this.lastDisableMeta.get(moduleName) || null : null;
     }
 
+    getModuleStartTime(moduleName) {
+        return moduleName ? this.macroStartTimes.get(moduleName) || 0 : 0;
+    }
+
+    getModuleDuration(moduleName) {
+        const startTime = this.getModuleStartTime(moduleName);
+        if (startTime) return TimeUtils.formatUptime(startTime);
+        const durationMs = this.getLastDisableMeta(moduleName)?.durationMs || 0;
+        return durationMs > 0 ? TimeUtils.formatDurationMs(durationMs) : '';
+    }
+
+    getModuleElapsedMs(moduleName) {
+        const startTime = this.getModuleStartTime(moduleName);
+        if (startTime) return Date.now() - startTime;
+        return this.getLastDisableMeta(moduleName)?.durationMs || 0;
+    }
+
     captureDisableMeta(moduleName, context = 'user') {
+        const startTime = this.getModuleStartTime(moduleName);
+        const now = Date.now();
         return {
             context: context || 'user',
-            timestamp: Date.now(),
+            timestamp: now,
+            durationMs: startTime ? now - startTime : 0,
         };
     }
 
@@ -156,15 +190,6 @@ class MacroStateClass {
 
         macroModule.requestToggleFromUser();
         return true;
-    }
-
-    // unused, just use 'isMacro: true' in module constructor instead.
-    setMacroRunning(value, macro) {
-        if (value) {
-            this.onModuleEnabled(macro);
-        } else if (macro) {
-            this.onModuleDisabled(macro);
-        }
     }
 }
 

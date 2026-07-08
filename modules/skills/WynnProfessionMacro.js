@@ -1,4 +1,6 @@
 import { OverlayManager } from '../../gui/OverlayUtils';
+import { MacroState } from '../../utils/MacroState';
+import { MathUtils } from '../../utils/Math';
 import { ModuleBase } from '../../utils/ModuleBase';
 import Pathfinder from '../../utils/pathfinder/PathFinder';
 import { Guis } from '../../utils/player/Inventory';
@@ -441,7 +443,7 @@ class WynnProfessionMacro extends ModuleBase {
         let closestDistance = Infinity;
 
         for (const point of BLACKSMITH_LOCATIONS) {
-            const distance = Math.hypot(Player.getX() - point.x, Player.getY() - point.y, Player.getZ() - point.z);
+            const distance = MathUtils.fastDistance(Player.getX(), Player.getY(), Player.getZ(), point.x, point.y, point.z);
             if (distance < closestDistance) {
                 closest = point;
                 closestDistance = distance;
@@ -459,7 +461,7 @@ class WynnProfessionMacro extends ModuleBase {
             const point = this.route[i];
             if (!this.isValidPoint(point)) continue;
 
-            const distance = Math.hypot(Player.getX() - point.x, Player.getY() - point.y, Player.getZ() - point.z);
+            const distance = MathUtils.fastDistance(Player.getX(), Player.getY(), Player.getZ(), point.x, point.y, point.z);
             if (distance < closestDistance) {
                 closestDistance = distance;
                 closestIndex = i;
@@ -521,7 +523,7 @@ class WynnProfessionMacro extends ModuleBase {
     }
 
     getPerHour() {
-        const elapsedMs = OverlayManager.getSessionElapsedMs(this.oid);
+        const elapsedMs = MacroState.getModuleElapsedMs(this.name);
         if (elapsedMs <= 0) return '0';
 
         return this.formatNumber(this.getTotal() / (elapsedMs / 3600000));

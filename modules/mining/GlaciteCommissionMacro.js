@@ -1,7 +1,10 @@
 import { isDeveloperModeEnabled } from '../../utils/DeveloperModeState';
 import { OverlayManager } from '../../gui/OverlayUtils';
+import { MathUtils } from '../../utils/Math';
+import { MacroState } from '../../utils/MacroState';
 import { MiningUtils } from '../../utils/MiningUtils';
 import { ModuleBase } from '../../utils/ModuleBase';
+import { finiteNumber } from '../../utils/NumberUtils';
 import Pathfinder from '../../utils/pathfinder/PathFinder';
 import { Guis } from '../../utils/player/Inventory';
 import { Keybind } from '../../utils/player/Keybinding';
@@ -562,7 +565,7 @@ class GlaciteCommissionMacro extends ModuleBase {
     }
 
     getCommissionsPerHourDisplay() {
-        const elapsedMs = OverlayManager.getSessionElapsedMs(this.oid);
+        const elapsedMs = MacroState.getModuleElapsedMs(this.name);
         if (elapsedMs <= 0) return '0.00';
 
         const hours = elapsedMs / 3600000;
@@ -573,11 +576,11 @@ class GlaciteCommissionMacro extends ModuleBase {
     }
 
     getDistance(x1, y1, z1, x2, y2, z2) {
-        return Math.hypot(x1 - x2, y1 - y2, z1 - z2);
+        return MathUtils.fastDistance(x1, y1, z1, x2, y2, z2);
     }
 
     delay(ticks) {
-        this.pauseTicks = Math.max(0, Math.floor(Number(ticks) || 0));
+        this.pauseTicks = Math.max(0, Math.floor(finiteNumber(ticks)));
     }
 
     setState(newState) {

@@ -1,5 +1,4 @@
 import { ArmorStandEntity } from '../../utils/Constants';
-import { MacroState } from '../../utils/MacroState';
 import { ModuleBase } from '../../utils/ModuleBase';
 import { Guis } from '../../utils/player/Inventory';
 import { Keybind } from '../../utils/player/Keybinding';
@@ -13,6 +12,7 @@ class FishingHelper extends ModuleBase {
             tooltip: 'Auto stuff',
             autoDisableOnWorldUnload: true,
             showEnabledToggle: false,
+            isMacro: true,
         });
         this.bindToggleKey();
 
@@ -83,7 +83,6 @@ class FishingHelper extends ModuleBase {
     }
 
     onEnable() {
-        MacroState.setMacroRunning(true, 'FISHING');
         this.message('&aEnabled');
 
         this.resetSequence();
@@ -91,7 +90,6 @@ class FishingHelper extends ModuleBase {
     }
 
     onDisable() {
-        MacroState.setMacroRunning(false, 'FISHING');
         this.message('&cDisabled');
         Keybind.setKey('shift', false);
     }

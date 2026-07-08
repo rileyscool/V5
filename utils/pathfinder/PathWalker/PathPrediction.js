@@ -1,3 +1,5 @@
+import { finiteNumber } from '../../NumberUtils';
+
 export function getCurrentMotion() {
     if (!Player.getPlayer()) {
         return { x: 0, y: 0, z: 0 };
@@ -24,7 +26,7 @@ export function predictXZ(ticks = 8) {
     const verticalDrag = 0.98;
     const gravity = -0.08;
     const epsilon = 0.002;
-    const simTicks = Math.max(1, Math.floor(Number(ticks) || 0));
+    const simTicks = Math.max(1, Math.floor(finiteNumber(ticks)));
 
     for (let i = 0; i < simTicks; i++) {
         px += vx;

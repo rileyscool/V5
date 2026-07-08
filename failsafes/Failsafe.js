@@ -1,4 +1,6 @@
 import { manager } from '../utils/SkyblockEvents';
+import { MacroState } from '../utils/MacroState';
+import { finiteNumber } from '../utils/NumberUtils';
 export class Failsafe {
     registered = false;
     disabled = false;
@@ -11,6 +13,9 @@ export class Failsafe {
 
     shouldTrigger() {
         return true;
+    }
+    isActive() {
+        return MacroState.isFailsafeMacroRunning();
     }
     onTrigger() {}
     reset() {
@@ -59,8 +64,6 @@ export class Failsafe {
     }
 
     _getReactionDelay(settings) {
-        const raw = Number(settings?.FailsafeReactionTime);
-        if (!isFinite(raw)) return 600;
-        return Math.max(0, Math.floor(raw - 50));
+        return Math.max(0, Math.floor(finiteNumber(settings?.FailsafeReactionTime, 650) - 50));
     }
 }

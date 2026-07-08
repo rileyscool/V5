@@ -1,5 +1,4 @@
 import { Chat } from '../../utils/Chat';
-import { MacroState } from '../../utils/MacroState';
 import { ClientboundSetEntityMotionPacket } from '../../utils/Packets';
 import { Failsafe } from '../Failsafe';
 import FailsafeUtils from '../FailsafeUtils';
@@ -20,7 +19,7 @@ class VelocityFailsafe extends Failsafe {
 
     registerVeloListeners() {
         register('packetReceived', (packet) => {
-            if (!MacroState.isFailsafeMacroRunning() || this.disabled) return;
+            if (!this.isActive() || this.disabled) return;
             this._handleVelocityOnDamageDisabled();
             if (this.disabled) return;
             const playerMP = Player.asPlayerMP();
@@ -45,8 +44,7 @@ class VelocityFailsafe extends Failsafe {
             if (this._shouldDisableVelocity(speed, blockName)) return;
             const scheduledAt = Date.now();
             setTimeout(() => {
-                if (this.disabled || !MacroState.isFailsafeMacroRunning() || scheduledAt < this._disabledUntil || this._shouldDisableVelocity(speed, blockName))
-                    return;
+                if (this.disabled || !this.isActive() || scheduledAt < this._disabledUntil || this._shouldDisableVelocity(speed, blockName)) return;
                 this.onTrigger(speed);
             }, this._getReactionDelay(this.settings));
         }).setFilteredClass(ClientboundSetEntityMotionPacket);

@@ -1,4 +1,3 @@
-import { OverlayManager } from '../../gui/OverlayUtils';
 import { Categories } from '../../gui/categories/CategorySystem';
 import { MacroState } from '../../utils/MacroState';
 import { ModuleBase } from '../../utils/ModuleBase';
@@ -106,7 +105,7 @@ class DiscordIntegration extends ModuleBase {
 
         this.lastActiveMacro = currentMacro;
 
-        const startTime = OverlayManager.startTimes[currentMacro];
+        const startTime = MacroState.getModuleStartTime(currentMacro);
         if (!startTime) return;
 
         const now = Date.now();
@@ -116,7 +115,7 @@ class DiscordIntegration extends ModuleBase {
         const lastInterval = Math.floor(this.lastSendTime / this.FIVE_MINUTES);
 
         if (currentInterval > lastInterval && this.lastSendTime !== 0) {
-            this.sendIntervalEmbed(currentMacro, startTime);
+            this.sendIntervalEmbed(currentMacro);
         }
 
         this.lastSendTime = elapsedMs;
@@ -129,13 +128,12 @@ class DiscordIntegration extends ModuleBase {
     }
 
     sendDisableEmbed(macroName) {
-        const duration = OverlayManager.getMacroDuration(macroName);
-        Webhook.sendScreenshot(`Disabled ${macroName}`, duration);
+        Webhook.sendScreenshot(`Disabled ${macroName}`, MacroState.getModuleDuration(macroName));
     }
 
-    sendIntervalEmbed(macroName, startTime) {
-        if (!macroName || !startTime) return;
-        const duration = OverlayManager.formatUptime(startTime);
+    sendIntervalEmbed(macroName) {
+        if (!macroName) return;
+        const duration = MacroState.getModuleDuration(macroName);
         Webhook.sendScreenshot(`Update of ${macroName}`, duration ? `**Runtime:** ${duration}` : '');
     }
 

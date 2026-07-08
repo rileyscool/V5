@@ -257,7 +257,6 @@ class AutoExperiments extends ModuleBase {
 
             const lore = item.getLore();
             if (!lore) return false;
-
             const loreText = lore.join(' ');
             if (!loreText.includes('Click any to proceed!')) {
                 return false;

@@ -1,5 +1,4 @@
 import { Chat } from '../../utils/Chat';
-import { MacroState } from '../../utils/MacroState';
 import { ClientboundSetHeldSlotPacket } from '../../utils/Packets';
 import { Failsafe } from '../Failsafe';
 import FailsafeUtils from '../FailsafeUtils';
@@ -13,7 +12,7 @@ class SlotChangeFailsafe extends Failsafe {
 
     registerSlotChangeListeners() {
         register('packetReceived', (packet) => {
-            if (!MacroState.isFailsafeMacroRunning() || this.disabled) return;
+            if (!this.isActive() || this.disabled) return;
 
             this.settings = FailsafeUtils.getFailsafeSettings('Slot Change');
             if (!this.settings.isEnabled) return;
@@ -24,7 +23,7 @@ class SlotChangeFailsafe extends Failsafe {
             if (currentSlot === newSlot) return;
             const scheduledAt = Date.now();
             setTimeout(() => {
-                if (this.disabled || !MacroState.isFailsafeMacroRunning() || scheduledAt < this._disabledUntil) return;
+                if (this.disabled || !this.isActive() || scheduledAt < this._disabledUntil) return;
                 this.onTrigger(currentSlot, newSlot);
             }, this._getReactionDelay(this.settings));
         }).setFilteredClass(ClientboundSetHeldSlotPacket);

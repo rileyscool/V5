@@ -3,6 +3,7 @@ import { isDeveloperModeEnabled } from '../../utils/DeveloperModeState';
 import { OverlayManager } from '../../gui/OverlayUtils';
 import { Chat } from '../../utils/Chat';
 import { MCHand } from '../../utils/Constants';
+import { finiteNumber } from '../../utils/NumberUtils';
 import { ModuleBase } from '../../utils/ModuleBase';
 import { ServerboundUseItemPacket } from '../../utils/Packets';
 import { EtherwarpPathfinder } from '../../utils/pathfinder/EtherwarpPathfinder';
@@ -750,13 +751,13 @@ class RatMacro extends ModuleBase {
         const radius = Math.max(0, Math.floor(Number(options.radius) || 3));
         const maxDistance = Number.isFinite(options.maxDistance) ? Number(options.maxDistance) : radius;
         let sortOrigin = options.sortOrigin;
-        if (!sortOrigin || !Number.isFinite(Number(sortOrigin.x)) || !Number.isFinite(Number(sortOrigin.y)) || !Number.isFinite(Number(sortOrigin.z))) {
+        if (!sortOrigin || [sortOrigin.x, sortOrigin.y, sortOrigin.z].some((value) => !Number.isFinite(finiteNumber(value, NaN)))) {
             sortOrigin = this.getPathSortOrigin();
         } else {
             sortOrigin = {
-                x: Number(sortOrigin.x),
-                y: Number(sortOrigin.y),
-                z: Number(sortOrigin.z),
+                x: finiteNumber(sortOrigin.x),
+                y: finiteNumber(sortOrigin.y),
+                z: finiteNumber(sortOrigin.z),
             };
         }
         const filter = typeof options.filter === 'function' ? options.filter : null;

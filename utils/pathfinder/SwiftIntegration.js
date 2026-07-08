@@ -1,3 +1,5 @@
+import { finiteNumber } from '../NumberUtils';
+
 class SwiftIntegration {
     constructor() {
         this.pathManager = PathManager;
@@ -164,7 +166,7 @@ class SwiftIntegration {
         try {
             const arr = getter();
             if (!arr || typeof arr.length !== 'number') return [];
-            return Array.from(arr, (value) => Number(value) || 0);
+            return Array.from(arr, (value) => finiteNumber(value));
         } catch (e) {
             return [];
         }

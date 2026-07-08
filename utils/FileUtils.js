@@ -1,12 +1,10 @@
 import { BufferedInputStream, FileOutputStream, URL } from './Constants';
+import { finiteNumber } from './NumberUtils';
 
 const DEFAULT_DOWNLOAD_BUFFER_SIZE = 8192;
 
 function resolveBufferSize(value) {
-    const numeric = Number(value);
-    if (!isFinite(numeric)) return DEFAULT_DOWNLOAD_BUFFER_SIZE;
-
-    const normalized = Math.floor(numeric);
+    const normalized = Math.floor(finiteNumber(value, DEFAULT_DOWNLOAD_BUFFER_SIZE));
     return normalized > 0 ? normalized : DEFAULT_DOWNLOAD_BUFFER_SIZE;
 }
 

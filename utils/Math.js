@@ -3,44 +3,32 @@ import { Utils } from './Utils';
 const RAD_TO_DEG = 180 / Math.PI;
 const DEG_TO_RAD = Math.PI / 180;
 
-class Point3D {
-    constructor(x, y, z) {
-        this.x = x || 0;
-        this.y = y || 0;
-        this.z = z || 0;
-    }
-
-    dist(other) {
-        return Math.hypot(this.x - other.x, this.y - other.y, this.z - other.z);
-    }
-
-    horizontalDist(other) {
-        return Math.hypot(this.x - other.x, this.z - other.z);
-    }
-}
+const point = (x, y, z) => ({ x: x || 0, y: y || 0, z: z || 0 });
+const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+const horizontalDistance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 
 class DistanceCalculator {
     getPointFromInput(input, y, z) {
         if (typeof input === 'number') {
-            return new Point3D(input, y, z);
+            return point(input, y, z);
         }
         const vec = Utils.convertToVector(input);
-        return vec ? new Point3D(vec.x(), vec.y(), vec.z()) : null;
+        return vec ? point(vec.x(), vec.y(), vec.z()) : null;
     }
 
     getPlayerPos() {
-        return Player.getPlayer() ? new Point3D(Player.getX(), Player.getY(), Player.getZ()) : null;
+        return Player.getPlayer() ? point(Player.getX(), Player.getY(), Player.getZ()) : null;
     }
 
     getPlayerEyes() {
         const eyePos = Player.getPlayer()?.getEyePosition();
-        return eyePos ? new Point3D(eyePos.x(), eyePos.y(), eyePos.z()) : null;
+        return eyePos ? point(eyePos.x(), eyePos.y(), eyePos.z()) : null;
     }
 
     computeDistance(point1, point2) {
         return {
-            distance: point1.dist(point2),
-            distanceFlat: point1.horizontalDist(point2),
+            distance: distance(point1, point2),
+            distanceFlat: horizontalDistance(point1, point2),
             distanceY: point1.y - point2.y,
             differenceY: point1.y - point2.y,
         };
@@ -103,7 +91,7 @@ export const MathUtils = {
     distanceToPlayerPoint: function (point) {
         const eyes = distCalc.getPlayerEyes();
         const target = distCalc.getPointFromInput(point);
-        return eyes && target ? eyes.dist(target) : 0;
+        return eyes && target ? distance(eyes, target) : 0;
     },
 
     distanceToPlayer: function (point) {
@@ -122,19 +110,19 @@ export const MathUtils = {
         return distCalc.computeDistance(feet, target);
     },
 
-    distanceToPlayerCenter: function (point) {
+    distanceToPlayerCenter: function (targetPoint) {
         const eyes = distCalc.getPlayerEyes();
         if (!eyes) return 0;
-        const target = distCalc.getPointFromInput(point);
+        const target = distCalc.getPointFromInput(targetPoint);
         if (!target) return 0;
         const centerY = Player.getY() + Player.asPlayerMP().getHeight() / 2;
-        return distCalc.computeDistance(new Point3D(eyes.x, centerY, eyes.z), target);
+        return distCalc.computeDistance(point(eyes.x, centerY, eyes.z), target);
     },
 
     distanceToPlayerCT: function (entity) {
         const eyes = distCalc.getPlayerEyes();
         if (!eyes || !entity) return 0;
-        return distCalc.computeDistance(eyes, new Point3D(entity.getX(), entity.getY(), entity.getZ()));
+        return distCalc.computeDistance(eyes, point(entity.getX(), entity.getY(), entity.getZ()));
     },
 
     distanceToPlayerMC: function (entity) {
@@ -146,8 +134,8 @@ export const MathUtils = {
         const p2 = distCalc.getPointFromInput(pos2);
         if (!p1 || !p2) return { distance: 0, distanceFlat: 0, distanceY: 0 };
         return {
-            distance: p1.dist(p2),
-            distanceFlat: p1.horizontalDist(p2),
+            distance: distance(p1, p2),
+            distanceFlat: horizontalDistance(p1, p2),
             distanceY: p1.y - p2.y,
         };
     },
@@ -185,6 +173,25 @@ export const MathUtils = {
         const dx = x1 - x2;
         const dy = y1 - y2;
         const dz = z1 - z2;
+        return Math.hypot(dx, dy, dz);
+    },
+
+    blockCenter: function (x, y, z) {
+        return point(x + 0.5, y + 0.5, z + 0.5);
+    },
+
+    distanceToBlockCenter: function (x, y, z) {
+        return MathUtils.distanceToPlayerFeet(MathUtils.blockCenter(x, y, z));
+    },
+
+    distanceToBox: function (pos, min, max) {
+        const p = distCalc.getPointFromInput(pos);
+        const lo = distCalc.getPointFromInput(min);
+        const hi = distCalc.getPointFromInput(max);
+        if (!p || !lo || !hi) return 0;
+        const dx = Math.max(lo.x - p.x, 0, p.x - hi.x);
+        const dy = Math.max(lo.y - p.y, 0, p.y - hi.y);
+        const dz = Math.max(lo.z - p.z, 0, p.z - hi.z);
         return Math.hypot(dx, dy, dz);
     },
 

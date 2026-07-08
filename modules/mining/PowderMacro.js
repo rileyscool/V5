@@ -26,12 +26,12 @@ const SEARCH_OFFSETS = (() => {
     return offsets.sort((a, b) => a[3] - b[3]).map(([dx, dy, dz]) => [dx, dy, dz]);
 })();
 
-const State = Object.freeze({
+const State = {
     IDLE: 'idle',
     MINING: 'mining',
     CHEST: 'chest',
     RETURNING: 'returning',
-});
+};
 
 class PowderMacro extends ModuleBase {
     constructor() {

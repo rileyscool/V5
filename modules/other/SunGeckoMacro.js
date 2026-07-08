@@ -1,5 +1,7 @@
 import { OverlayManager } from '../../gui/OverlayUtils';
 import { CombatBot } from '../combat/CombatBot';
+import { MacroState } from '../../utils/MacroState';
+import { MathUtils } from '../../utils/Math';
 import { ModuleBase } from '../../utils/ModuleBase';
 import Pathfinder from '../../utils/pathfinder/PathFinder';
 import { Guis } from '../../utils/player/Inventory';
@@ -240,7 +242,7 @@ class SunGecko extends ModuleBase {
         for (const entity of World.getAllEntities()) {
             if (ChatLib.removeFormatting(String(entity.getName?.() || '')).trim() !== name) continue;
 
-            const distance = Math.hypot(entity.getX() - x, entity.getY() - y, entity.getZ() - z);
+            const distance = MathUtils.fastDistance(entity.getX(), entity.getY(), entity.getZ(), x, y, z);
             if (distance >= closestDistance) continue;
 
             closestDistance = distance;
@@ -277,7 +279,7 @@ class SunGecko extends ModuleBase {
         let closestDistance = Infinity;
 
         for (const point of Points) {
-            const distance = Math.hypot(Player.getX() - point.x, Player.getY() - point.y, Player.getZ() - point.z);
+            const distance = MathUtils.fastDistance(Player.getX(), Player.getY(), Player.getZ(), point.x, point.y, point.z);
 
             if (distance < closestDistance) {
                 closestDistance = distance;
@@ -332,7 +334,7 @@ class SunGecko extends ModuleBase {
         if (Pathfinder.isPathing()) Pathfinder.resetPath();
         this.pathRequestActive = false;
 
-        const distanceToLadder = Math.hypot(Player.getX() - RIFT_SPAWN_LADDER_WAYPOINT.x, Player.getZ() - RIFT_SPAWN_LADDER_WAYPOINT.z);
+        const distanceToLadder = MathUtils.fastDistance(Player.getX(), 0, Player.getZ(), RIFT_SPAWN_LADDER_WAYPOINT.x, 0, RIFT_SPAWN_LADDER_WAYPOINT.z);
 
         if (distanceToLadder > 0.25) {
             Keybind.setKey('shift', true);
@@ -424,7 +426,7 @@ class SunGecko extends ModuleBase {
     }
 
     getActiveHours() {
-        const elapsedMs = OverlayManager.getSessionElapsedMs(this.oid);
+        const elapsedMs = MacroState.getModuleElapsedMs(this.name);
         if (elapsedMs <= 0) return 0;
         return elapsedMs / 3600000;
     }

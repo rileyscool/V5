@@ -7,7 +7,7 @@ import './mining/Nuker';
 import './mining/OreMacro';
 import './mining/PinglessMining';
 //import './mining/PowderMacro';
-//import './Mining/ScathaMacro';
+//import './mining/ScathaMacro';
 import './mining/TunnelsMiner';
 //import './mining/VeinDetectorTest';
 

@@ -1,5 +1,6 @@
 import { ModuleBase } from '../../utils/ModuleBase';
 import { MacroState } from '../../utils/MacroState';
+import { MathUtils } from '../../utils/Math';
 import { Guis } from '../../utils/player/Inventory';
 import { Keybind } from '../../utils/player/Keybinding';
 import Pathfinder from '../../utils/pathfinder/PathFinder';
@@ -206,7 +207,7 @@ class ExcavatorMacro extends ModuleBase {
 
         this.warpCooldownTicks = 0;
 
-        const distance = Math.hypot(Player.getX() - 19, Player.getY() - 120, Player.getZ() - 227);
+        const distance = MathUtils.fastDistance(Player.getX(), Player.getY(), Player.getZ(), 19, 120, 227);
 
         if (distance > 3) {
             if (Player.getContainer()) Guis.closeInv();
@@ -256,29 +257,6 @@ class ExcavatorMacro extends ModuleBase {
         this.inExcavator = false;
         this.noScrapMisses = 0;
         this.state = this.STATES.OPENING;
-    }
-
-    clickItem(name, shift = false, button = 'LEFT', displayName = true, startSlot = 0) {
-        const container = Player.getContainer();
-        if (!container) return false;
-
-        const items = container.getItems();
-        if (!items) return false;
-
-        const targetName = name.toLowerCase();
-        for (let i = startSlot; i < items.length; i++) {
-            const item = items[i];
-            if (!item) continue;
-
-            const itemName = displayName !== false ? ChatLib.removeFormatting(String(item.getName?.() || '')) : String(item.type?.getRegistryName?.() || '');
-            if (!itemName) continue;
-
-            if (itemName.toLowerCase().includes(targetName)) {
-                return Guis.clickSlot(i, shift, button);
-            }
-        }
-
-        return false;
     }
 
     updateBlacklistedSlots() {

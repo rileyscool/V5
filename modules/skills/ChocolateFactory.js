@@ -1,4 +1,5 @@
 import { ArmorStandEntity, Vec3d } from '../../utils/Constants';
+import { MathUtils } from '../../utils/Math';
 import { ModuleBase } from '../../utils/ModuleBase';
 import { Guis } from '../../utils/player/Inventory';
 
@@ -254,7 +255,7 @@ class ChocolateFactory extends ModuleBase {
             if (!egg || egg.isFound || !egg.entity) return;
             if (`${egg.eggType}`.toLowerCase() !== targetType) return;
 
-            const distance = Math.hypot(player.getX() - egg.entity.getX(), player.getY() - egg.entity.getY(), player.getZ() - egg.entity.getZ());
+            const distance = MathUtils.fastDistance(player.getX(), player.getY(), player.getZ(), egg.entity.getX(), egg.entity.getY(), egg.entity.getZ());
             if (distance < closestDistance) {
                 closest = egg;
                 closestDistance = distance;
@@ -265,7 +266,7 @@ class ChocolateFactory extends ModuleBase {
             this.detectedEggs.forEach((egg) => {
                 if (!egg || egg.isFound || !egg.entity) return;
 
-                const distance = Math.hypot(player.getX() - egg.entity.getX(), player.getY() - egg.entity.getY(), player.getZ() - egg.entity.getZ());
+                const distance = MathUtils.fastDistance(player.getX(), player.getY(), player.getZ(), egg.entity.getX(), egg.entity.getY(), egg.entity.getZ());
                 if (distance < closestDistance) {
                     closest = egg;
                     closestDistance = distance;

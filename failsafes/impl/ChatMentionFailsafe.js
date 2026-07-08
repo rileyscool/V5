@@ -1,5 +1,4 @@
 import { Chat } from '../../utils/Chat';
-import { MacroState } from '../../utils/MacroState';
 import { Failsafe } from '../Failsafe';
 import FailsafeUtils from '../FailsafeUtils';
 import { ClientboundSystemChatPacket } from '../../utils/Packets';
@@ -17,7 +16,7 @@ class ChatMentionFailsafe extends Failsafe {
 
     registerChatListeners() {
         register('packetReceived', (packet, event) => {
-            if (!MacroState.isFailsafeMacroRunning() || this.disabled) return;
+            if (!this.isActive() || this.disabled) return;
             if (packet.overlay()) return; // action bar
 
             this.settings = FailsafeUtils.getFailsafeSettings('Chat Mention');

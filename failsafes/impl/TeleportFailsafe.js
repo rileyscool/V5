@@ -1,5 +1,4 @@
 import { Chat } from '../../utils/Chat';
-import { MacroState } from '../../utils/MacroState';
 import { ServerboundUseItemPacket, ClientboundPlayerPositionPacket, ServerboundChatCommandPacket } from '../../utils/Packets';
 import PathConfig from '../../utils/pathfinder/PathConfig';
 import { Failsafe } from '../Failsafe';
@@ -30,12 +29,12 @@ class TeleportFailsafe extends Failsafe {
 
     registerRightClickListener() {
         register('packetSent', () => {
-            if (!MacroState.isFailsafeMacroRunning()) return;
+            if (!this.isActive()) return;
             lastRightClickTime = Date.now();
         }).setFilteredClass(ServerboundUseItemPacket);
 
         register('packetSent', (packet) => {
-            if (!MacroState.isFailsafeMacroRunning()) return;
+            if (!this.isActive()) return;
             const command = packet.command().toLowerCase();
             if (command.includes('warp')) {
                 lastCommandTime = Date.now();
@@ -123,7 +122,7 @@ class TeleportFailsafe extends Failsafe {
 
     registerTPListeners() {
         register('packetReceived', (packet) => {
-            if (!MacroState.isFailsafeMacroRunning() || this.disabled) return;
+            if (!this.isActive() || this.disabled) return;
 
             this.settings = FailsafeUtils.getFailsafeSettings('TP');
             if (!this.settings.isEnabled) return;
@@ -177,7 +176,7 @@ class TeleportFailsafe extends Failsafe {
 
             const scheduledAt = Date.now();
             setTimeout(() => {
-                if (this.disabled || !MacroState.isFailsafeMacroRunning() || scheduledAt < this._disabledUntil || this._shouldDisableTeleport(data)) return;
+                if (this.disabled || !this.isActive() || scheduledAt < this._disabledUntil || this._shouldDisableTeleport(data)) return;
                 this.onTrigger(fromX, fromY, fromZ, newX, newY, newZ, distance);
             }, this._getReactionDelay(this.settings));
         }).setFilteredClass(ClientboundPlayerPositionPacket);

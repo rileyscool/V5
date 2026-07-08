@@ -1,5 +1,5 @@
 import { Popup } from '../components/Popup';
-import { getComponentLayoutHeight } from '../components/layout';
+import { getComponentHitRect, getComponentLayoutHeight, layoutDirectComponents } from '../components/layout';
 import { GuiRectangles } from '../core/GuiState';
 import { OverlayManager } from '../OverlayUtils';
 import { easeInOutQuad, FontSizes, getTextWidth, isInside, PADDING, playClickSound, SUBCATEGORY_BUTTON_HEIGHT, SUBCATEGORY_BUTTON_SPACING } from '../Utils';
@@ -48,36 +48,16 @@ export const handleDirectComponentsClick = (mouseX, mouseY, panel, scrollY, cate
     const directCat = Categories.categories.find((c) => c.name === categoryName);
     if (!directCat || !directCat.directComponents) return false;
 
-    const components = directCat.directComponents;
-    const panelX = panel.x;
-    const panelWidth = panel.width;
-
-    let currentY = panel.y + PADDING - scrollY;
-    let currentSection = null;
-
-    for (let i = 0; i < components.length; i++) {
-        const component = components[i];
-
-        if (component.sectionName && component.sectionName !== currentSection) {
-            currentSection = component.sectionName;
-            if (i > 0) currentY += 16;
-            currentY += 26;
-        }
+    for (const row of layoutDirectComponents(directCat.directComponents, panel.y + PADDING - scrollY).rows) {
+        const component = row.component;
 
         if (component instanceof Popup && typeof component.handleButtonClick === 'function') {
-            const componentHeight = getComponentLayoutHeight(component);
-
-            const clickableArea = {
-                x: panelX + PADDING,
-                y: currentY,
-                width: panelWidth - 2 * PADDING,
-                height: componentHeight,
-            };
+            const clickableArea = getComponentHitRect(panel, row.y, row.height, PADDING);
 
             if (isInside(mouseX, mouseY, clickableArea)) {
-                component.x = panelX + PADDING + 10;
-                component.y = currentY;
-                component.optionPanelWidth = panelWidth;
+                component.x = panel.x + PADDING + 10;
+                component.y = row.y;
+                component.optionPanelWidth = panel.width;
                 component.optionPanelHeight = panel.height;
 
                 if (component.handleButtonClick(mouseX, mouseY)) {
@@ -85,36 +65,25 @@ export const handleDirectComponentsClick = (mouseX, mouseY, panel, scrollY, cate
                 }
             }
 
-            currentY += componentHeight;
             continue;
         }
 
         if (typeof component.handleClick !== 'function') {
-            currentY += getComponentLayoutHeight(component);
             continue;
         }
 
-        const componentHeight = getComponentLayoutHeight(component);
-
-        const clickableArea = {
-            x: panelX + PADDING,
-            y: currentY,
-            width: panelWidth - 2 * PADDING,
-            height: componentHeight,
-        };
+        const clickableArea = getComponentHitRect(panel, row.y, row.height, PADDING);
 
         if (isInside(mouseX, mouseY, clickableArea)) {
-            component.x = panelX + PADDING + 10;
-            component.y = currentY;
-            component.optionPanelWidth = panelWidth;
+            component.x = panel.x + PADDING + 10;
+            component.y = row.y;
+            component.optionPanelWidth = panel.width;
             component.optionPanelHeight = panel.height;
 
             if (component.handleClick(mouseX, mouseY)) {
                 return true;
             }
         }
-
-        currentY += componentHeight;
     }
 
     return false;

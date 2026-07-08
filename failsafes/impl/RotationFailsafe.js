@@ -1,6 +1,5 @@
 import { Chat } from '../../utils/Chat';
 import { MathUtils } from '../../utils/Math';
-import { MacroState } from '../../utils/MacroState';
 import { ClientboundPlayerPositionPacket } from '../../utils/Packets';
 import { Failsafe } from '../Failsafe';
 import FailsafeUtils from '../FailsafeUtils';
@@ -14,7 +13,7 @@ class RotationFailsafe extends Failsafe {
 
     registerRotationListeners() {
         register('packetReceived', (packet) => {
-            if (!MacroState.isFailsafeMacroRunning() || this.disabled) return;
+            if (!this.isActive() || this.disabled) return;
             this.settings = FailsafeUtils.getFailsafeSettings('Rotation');
             if (!this.settings.isEnabled) return;
 
@@ -51,7 +50,7 @@ class RotationFailsafe extends Failsafe {
 
             const scheduledAt = Date.now();
             setTimeout(() => {
-                if (this.disabled || !MacroState.isFailsafeMacroRunning() || scheduledAt < this._disabledUntil) return;
+                if (this.disabled || !this.isActive() || scheduledAt < this._disabledUntil) return;
                 this.onTrigger(currYaw, currPitch, newYaw, newPitch, yawDiff, pitchDiff);
             }, this._getReactionDelay(this.settings));
         }).setFilteredClass(ClientboundPlayerPositionPacket);

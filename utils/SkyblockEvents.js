@@ -23,7 +23,13 @@ const INCLUDE_CHECKS = {
 };
 
 const triggerName = (name) => `v5skyblock${name.toLowerCase()}`;
-const events = [...new Set([...Object.values(STARTSWITH_CHECKS), ...Object.values(INCLUDE_CHECKS)])];
+const events = [
+    ...new Set(
+        Object.keys(STARTSWITH_CHECKS)
+            .map((key) => STARTSWITH_CHECKS[key])
+            .concat(Object.keys(INCLUDE_CHECKS).map((key) => INCLUDE_CHECKS[key]))
+    ),
+];
 const triggers = {};
 for (const name of events) {
     triggers[name] = createCustomTrigger(triggerName(name));

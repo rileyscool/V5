@@ -1,4 +1,5 @@
 import { V5ConfigFile } from '../utils/Constants';
+import { finiteNumber } from '../utils/NumberUtils';
 
 const DEFAULT_FAILSAFE_SETTINGS = {
     isEnabled: true,
@@ -100,7 +101,7 @@ class FailsafeUtils {
             const max = Math.max(low, high);
             reactionTime = Math.floor(Math.random() * (max - min + 1) + min);
         } else {
-            reactionTime = Number.isFinite(reactionInput) ? reactionInput : reactionTime;
+            reactionTime = finiteNumber(reactionInput, reactionTime);
         }
 
         const hasEnabledList = Array.isArray(normalized.rawEnabledList);

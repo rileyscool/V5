@@ -1,3 +1,4 @@
+import { finiteNumber } from '../../NumberUtils';
 import { Keybind } from '../../player/Keybinding';
 import { PathExecutor } from '../PathExecutor';
 
@@ -49,7 +50,7 @@ class PathMovement {
     }
 
     forceJump(ticks = 4) {
-        this.forceJumpTicks = Math.max(0, Math.floor(Number(ticks) || 0));
+        this.forceJumpTicks = Math.max(0, Math.floor(finiteNumber(ticks)));
     }
 
     backup(ticks, onComplete) {

@@ -1,5 +1,6 @@
 import { OverlayManager } from '../../gui/OverlayUtils';
 import { ArmorStandEntity } from '../../utils/Constants';
+import { MacroState } from '../../utils/MacroState';
 import { MathUtils } from '../../utils/Math';
 import { ModuleBase } from '../../utils/ModuleBase';
 import { Guis } from '../../utils/player/Inventory';
@@ -7,7 +8,7 @@ import { Keybind } from '../../utils/player/Keybinding';
 import { Rotations } from '../../utils/player/Rotations';
 import { Mouse } from '../../utils/Ungrab';
 
-const STEPS = Object.freeze({
+const STEPS = {
     WAITING_FOR_BITE: 0,
     EQUIP_FLAY: 2,
     START_KILL_COMBO: 4,
@@ -25,7 +26,7 @@ const STEPS = Object.freeze({
     SNAP_TO_STRIDER: 100,
     RESTORE_ROTATION: 101,
     RESUME_LOOP: 102,
-});
+};
 
 class StridersurferMacro extends ModuleBase {
     constructor() {
@@ -434,7 +435,7 @@ class StridersurferMacro extends ModuleBase {
     }
 
     getActiveHours() {
-        const elapsedMs = OverlayManager.getSessionElapsedMs(this.oid);
+        const elapsedMs = MacroState.getModuleElapsedMs(this.name);
         if (elapsedMs <= 0) return 0;
         return elapsedMs / 3600000;
     }

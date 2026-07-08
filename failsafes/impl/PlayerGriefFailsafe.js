@@ -1,5 +1,4 @@
 import { Chat } from '../../utils/Chat';
-import { MacroState } from '../../utils/MacroState';
 import { Failsafe } from '../Failsafe';
 import FailsafeUtils from '../FailsafeUtils';
 
@@ -20,7 +19,7 @@ class PlayerGriefFailsafe extends Failsafe {
 
     registerGriefListeners() {
         register('step', () => {
-            if (!MacroState.isFailsafeMacroRunning() || !World.isLoaded() || !Player.asPlayerMP()) return;
+            if (!this.isActive() || !World.isLoaded() || !Player.asPlayerMP()) return;
 
             this.settings = FailsafeUtils.getFailsafeSettings('Player Grief');
             if (!this.settings.isEnabled) return;
