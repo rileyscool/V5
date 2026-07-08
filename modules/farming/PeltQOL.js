@@ -163,7 +163,7 @@ class PeltQOL extends ModuleBase {
                     this.abiphoneState = ABIPHONE.RIGHT_CLICK;
                     return;
                 }
-                ChatLib.chat('Abiphone not found in hotbar!');
+                this.message('Abiphone not found in hotbar!');
                 this.abiphoneState = ABIPHONE.IDLE;
                 break;
             }
@@ -230,7 +230,6 @@ class PeltQOL extends ModuleBase {
         const cooldown = lower.match(/\[npc\] trevor: try coming back in.*?(\d+)\s*s\b/);
         if (cooldown) {
             const delay = Math.max(+cooldown[1] * 20 - 80, 0);
-            ChatLib.chat(delay);
             if (this.callMode === '/call') this.run('call trevor', this.rezarAbicaseAccessory ? delay - 40 : delay);
             else if (this.callMode === 'Abiphone')
                 ScheduleTask(delay - 20, () => {
