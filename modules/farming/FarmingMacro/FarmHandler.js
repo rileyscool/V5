@@ -244,8 +244,8 @@ export default class FarmHandler {
             const CTBlock = World.getBlockAt(targetX, targetY, targetZ);
 
             if (checkForAge) {
-                const ageProp = block.getStateManager().getProperty('age');
-                return { age: ageProp ? state.get(ageProp) : -1 };
+                const ageProp = block.getStateDefinition().getProperty('age');
+                return { age: ageProp ? state.getValue(ageProp) : -1 };
             }
 
             const blockName = CTBlock?.type?.getRegistryName() || '';

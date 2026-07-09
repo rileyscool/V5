@@ -163,7 +163,7 @@ export default class CocoaBean extends FarmHandler {
     isMatureCocoa(block) {
         if (!block || !block.type.getRegistryName().includes('cocoa')) return false;
         try {
-            return block.getState().get(net.minecraft.world.level.block.state.properties.BlockStateProperties.AGE_2) === 2;
+            return block.getState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.AGE_2) === 2;
         } catch (e) {
             return false;
         }

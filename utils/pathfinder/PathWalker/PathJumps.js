@@ -131,7 +131,7 @@ class PathJumps {
     getSnowLayers(block) {
         if (this.getBlockName(block) !== 'minecraft:snow') return 0;
         try {
-            return block.getState().get(SnowBlock.LAYERS);
+            return block.getState().getValue(SnowBlock.LAYERS);
         } catch (e) {
             return 0;
         }
