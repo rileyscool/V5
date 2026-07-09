@@ -105,7 +105,7 @@ class VisibilityChecker {
             let pz = point[2] - eyePos.z;
             let distance = Math.hypot(px, py, pz);
 
-            let result = player.raycast(distance + 0.1, 0, false);
+            let result = player.pick(distance + 0.1, 0, false);
             if (!result) return false;
 
             let hitPos = result.getBlockPos();
@@ -277,7 +277,7 @@ class BlockScanner {
             let player = Player.getPlayer();
             if (!player) return null;
 
-            let result = player.raycast(maxDistance, 0, false);
+            let result = player.pick(maxDistance, 0, false);
             if (!result) return null;
 
             let blockPos = result.getBlockPos();
