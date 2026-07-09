@@ -136,6 +136,28 @@ class TabListUtilsClass {
         }
     }
 
+    readVisitors() {
+        try {
+            const tabNames = this.getNames();
+            const startIdx = tabNames.findIndex((line) => this.stripFormatting(line?.getName?.() ?? line).includes('Visitors:'));
+            if (startIdx === -1) return [];
+
+            const visitors = [];
+            for (let i = startIdx + 1; i < tabNames.length && visitors.length < 5; i++) {
+                const text = this.stripFormatting(tabNames[i]?.getName?.() ?? tabNames[i]).trim();
+                if (!text || text.includes('Next Visitor')) break;
+
+                const name = text.replace(/\s*NEW!$/i, '').trim();
+                if (name) visitors.push(name);
+            }
+
+            return visitors.reverse();
+        } catch (e) {
+            console.error('V5 Caught error' + e + e.stack);
+            return [];
+        }
+    }
+
     findIndex(items, target, start = 0) {
         for (let i = start; i < items.length; i++) {
             const cleaned = this.stripFormatting(items[i]).trim();
