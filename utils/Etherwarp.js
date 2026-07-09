@@ -18,6 +18,10 @@ const ETHERWARP_PLAYER_EYE_HEIGHT = 1.62;
 const ETHERWARP_LEGACY_SNEAK_OFFSET = 0.08;
 const ETHERWARP_MODERN_SNEAK_OFFSET = 0.35;
 
+export const EtherwarpPathState = {
+    handler: null,
+};
+
 export const isModernEtherwarpArea = (area = Utils.area()) => MODERN_ETHERWARP_AREAS.has(area || '');
 
 export const getEtherwarpSneakOffset = (area = Utils.area()) => (isModernEtherwarpArea(area) ? ETHERWARP_MODERN_SNEAK_OFFSET : ETHERWARP_LEGACY_SNEAK_OFFSET);

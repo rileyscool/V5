@@ -4,7 +4,7 @@ import { Utils } from '../Utils';
 import { v5Command } from '../V5Commands';
 import { Rotations as PathRotations } from '../pathfinder/PathWalker/PathRotations';
 import { FlyRotations } from '../pathfinder/PathFlyer/PathRotations';
-import { EtherwarpPathfinder } from '../pathfinder/EtherwarpPathfinder';
+import { EtherwarpPathState } from '../Etherwarp';
 
 class RotationConfig extends ModuleBase {
     constructor() {
@@ -144,7 +144,7 @@ class RotationController {
         if (!this.request) return;
         if (!this.refreshTarget()) return;
 
-        if (PathRotations.rotationActive || FlyRotations.rotationActive || EtherwarpPathfinder.isPathing()) return;
+        if (PathRotations.rotationActive || FlyRotations.rotationActive || EtherwarpPathState.handler?.isPathing?.()) return;
 
         const player = Player.getPlayer();
         if (!player || !this.targetAngles) {

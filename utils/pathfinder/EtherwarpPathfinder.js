@@ -8,6 +8,7 @@ import { RotationGCD } from '../player/RotationGCD';
 import { ServerInfo } from '../player/ServerInfo';
 import { ScheduleTask } from '../ScheduleTask';
 import { v5Command } from '../V5Commands';
+import { EtherwarpPathState } from '../Etherwarp';
 
 const SEARCH_OPTIONS = {
     maxIterations: 100000,
@@ -58,6 +59,7 @@ const readAngles = (angleArr) => {
 class EtherwarpPathHandler {
     constructor() {
         this.resetState();
+        EtherwarpPathState.handler = this;
 
         v5Command('etherwarp', (x, y, z) => this.test(x, y, z), ['greedyString']);
 
