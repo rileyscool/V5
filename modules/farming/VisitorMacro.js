@@ -61,6 +61,25 @@ class VisitorMacro extends ModuleBase {
         this.purchaseIndex = 0;
         this.requiredItems = [];
         this.firstSeek = true;
+        this.purchaseFailureAction = 'Decline';
+        this.declineCurrentVisitor = false;
+        this.maxPrice = 500_000;
+        this.addSlider(
+            'Max Price',
+            0,
+            5_000_000,
+            this.maxPrice,
+            (value) => (this.maxPrice = Number(value)),
+            'Cancels a Bazaar purchase when its total price is above this amount.'
+        );
+        this.addMultiToggle(
+            'Purchase Failure',
+            ['Decline', 'Skip'],
+            true,
+            (options) => (this.purchaseFailureAction = options.find((option) => option.enabled)?.name || 'Decline'),
+            'What to do with a visitor when a Bazaar purchase fails.',
+            this.purchaseFailureAction
+        );
 
         this.on('tick', () => this.tick());
     }
@@ -72,6 +91,7 @@ class VisitorMacro extends ModuleBase {
         this.nextActionAt = 0;
         this.pathRequestActive = false;
         this.firstSeek = true;
+        this.declineCurrentVisitor = false;
         this.message(this.visitors.length ? `&aFound ${this.visitors.length} visitors.` : '&eNo visitors found.');
     }
 
@@ -108,6 +128,7 @@ class VisitorMacro extends ModuleBase {
                 Guis.closeInv();
                 this.visitorIndex++;
                 this.firstSeek = true;
+                this.declineCurrentVisitor = false;
                 this.state = this.visitorIndex < this.visitors.length ? STATES.SEEKING : STATES.DONE;
                 if (this.state === STATES.DONE) {
                     this.message('&aAll stored visitors completed.');
@@ -183,7 +204,14 @@ class VisitorMacro extends ModuleBase {
     checkOffer() {
         if (!Client.isInGui()) return this.retrySeeking();
 
-        const offer = this.getOffer();
+        if (this.declineCurrentVisitor) {
+            const refusal = this.getOffer('Refuse Offer');
+            if (!refusal) return this.retrySeeking();
+            Guis.clickSlot(refusal.slot, false, 'LEFT');
+            return this.advanceVisitor();
+        }
+
+        const offer = this.getOffer('Accept Offer');
         if (!offer) return;
         if (offer.lore.some((line) => ChatLib.removeFormatting(String(line)).includes('Click to give!'))) {
             Guis.clickSlot(offer.slot, false, 'LEFT');
@@ -198,13 +226,13 @@ class VisitorMacro extends ModuleBase {
         this.buyNextItem();
     }
 
-    getOffer() {
+    getOffer(name) {
         const container = Player.getContainer();
         if (!container) return null;
 
         for (let slot = 0; slot < container.getSize(); slot++) {
             const item = container.getStackInSlot(slot);
-            if (!item || !ChatLib.removeFormatting(String(item.getName())).includes('Accept Offer')) continue;
+            if (!item || !ChatLib.removeFormatting(String(item.getName())).includes(name)) continue;
             return { slot, lore: item.getLore() || [] };
         }
 
@@ -220,12 +248,23 @@ class VisitorMacro extends ModuleBase {
         }
 
         this.state = STATES.BUYING;
-        bazaarUtil.buy(item.name, item.count, (success) => {
+        bazaarUtil.buy(item.name, item.count, this.maxPrice, (success) => {
             if (!this.enabled) return;
-            if (!success) return this.retrySeeking();
+            if (!success) return this.handlePurchaseFailure();
             this.purchaseIndex++;
             this.buyNextItem();
         });
+    }
+
+    handlePurchaseFailure() {
+        if (this.purchaseFailureAction === 'Skip') return this.advanceVisitor();
+        this.declineCurrentVisitor = true;
+        this.retrySeeking();
+    }
+
+    advanceVisitor() {
+        this.state = STATES.ADVANCING;
+        this.nextActionAt = Date.now() + 750;
     }
 
     retrySeeking() {

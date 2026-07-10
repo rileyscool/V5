@@ -25,6 +25,7 @@ import './utils/pathfinder/PathFinder';
 import './utils/pathfinder/EtherwarpPathfinder';
 //import './utils/Clipping';
 import './utils/Misc';
+import './utils/SkyblockItemUtil';
 import './failsafes/FailsafeManager';
 import './utils/SkyblockEvents';
 
