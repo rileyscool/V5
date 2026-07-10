@@ -4,6 +4,7 @@ import Pathfinder from '../../utils/pathfinder/PathFinder';
 import { Guis } from '../../utils/player/Inventory';
 import { Keybind } from '../../utils/player/Keybinding';
 import { Rotations } from '../../utils/player/Rotations';
+import { ScheduleTask } from '../../utils/ScheduleTask';
 import { TabListUtils } from '../../utils/TabListUtils';
 
 const STATES = {
@@ -34,7 +35,7 @@ export function parseRequiredItems(lore) {
         if (text === 'Rewards:') break;
 
         const match = text.match(/^(.*?)\s+x([\d,]+)$/);
-        if (match) items.push({ name: match[1].trim(), count: Number(match[2].replace(/,/g, '')) });
+        items.push({ name: match ? match[1].trim() : text, count: match ? Number(match[2].replace(/,/g, '')) : 1 });
     }
 
     return items.filter((item) => item.name && Number.isFinite(item.count) && item.count > 0);
@@ -59,6 +60,7 @@ class VisitorMacro extends ModuleBase {
         this.pathRequestActive = false;
         this.purchaseIndex = 0;
         this.requiredItems = [];
+        this.firstSeek = true;
 
         this.on('tick', () => this.tick());
     }
@@ -69,6 +71,7 @@ class VisitorMacro extends ModuleBase {
         this.state = this.visitors.length ? STATES.SEEKING : STATES.DONE;
         this.nextActionAt = 0;
         this.pathRequestActive = false;
+        this.firstSeek = true;
         this.message(this.visitors.length ? `&aFound ${this.visitors.length} visitors.` : '&eNo visitors found.');
     }
 
@@ -104,6 +107,7 @@ class VisitorMacro extends ModuleBase {
             case STATES.ADVANCING:
                 Guis.closeInv();
                 this.visitorIndex++;
+                this.firstSeek = true;
                 this.state = this.visitorIndex < this.visitors.length ? STATES.SEEKING : STATES.DONE;
                 if (this.state === STATES.DONE) {
                     this.message('&aAll stored visitors completed.');
@@ -138,6 +142,11 @@ class VisitorMacro extends ModuleBase {
         Rotations.onComplete(() => {
             if (!this.enabled || this.state !== STATES.OPENING) return;
             Keybind.leftClick();
+            if (!this.firstSeek) return;
+            this.firstSeek = false;
+            ScheduleTask(5, () => {
+                if (this.enabled) Keybind.leftClick();
+            });
         });
     }
 
