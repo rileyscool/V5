@@ -128,7 +128,10 @@ class VisitorMacro extends ModuleBase {
         }
 
         const entity = this.findVisitor(target);
-        if (!entity) return this.retrySeeking();
+        if (!entity || this.distanceTo(entity) > 15) {
+            ChatLib.command('tptoplot barn');
+            return this.retrySeeking();
+        }
 
         if (this.distanceTo(entity) > INTERACT_DISTANCE) return this.pathTo(entity);
         if (Rotations.active) return;
