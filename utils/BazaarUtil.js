@@ -24,7 +24,7 @@ class BazaarUtil {
         register('tick', () => this.tick());
     }
 
-    buy(itemName, count, callback) {
+    buy(itemName, count, maxPrice, callback) {
         const name = this.clean(itemName);
         const amount = String(count ?? '').trim();
         if (this.state !== 'idle' || !name || !amount) {
@@ -34,6 +34,7 @@ class BazaarUtil {
 
         this.itemName = name;
         this.amount = amount;
+        this.maxPrice = Number(maxPrice);
         this.callback = callback;
         ChatLib.command(`bz ${itemName}`);
         this.setState('bazaar');
@@ -67,6 +68,7 @@ class BazaarUtil {
             case 'confirm amount': {
                 const slot = this.findSlot('Custom Amount');
                 if (slot === -1) return;
+                if (this.getSlotPrice(slot) > this.maxPrice) return this.finish(false);
                 this.confirmSlot = slot;
                 if (!Guis.clickSlot(slot)) return this.finish(false);
                 this.setState('warning', 500);
@@ -107,6 +109,12 @@ class BazaarUtil {
 
     isSlotNamed(slot, name) {
         return slot >= 0 && this.clean(Player.getContainer()?.getStackInSlot(slot)?.getName?.()) === this.clean(name);
+    }
+
+    getSlotPrice(slot) {
+        const lore = Player.getContainer()?.getStackInSlot(slot)?.getLore?.() || [];
+        const line = lore.find((value) => /^Price: [\d,]+ coins$/.test(ChatLib.removeFormatting(String(value)).trim()));
+        return Number(line?.match(/[\d,]+/)?.[0]?.replace(/,/g, ''));
     }
 
     isSignOpen() {
