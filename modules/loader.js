@@ -24,6 +24,7 @@ import './farming/GlowingMushroomMacro';
 import './farming/PestESP';
 import './farming/PeltMacro';
 import './farming/PeltQOL';
+import './farming/VisitorMacro';
 
 /* VISUALS */
 import './visuals/BlockVisual';
