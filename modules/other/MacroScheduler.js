@@ -425,9 +425,9 @@ class MacroScheduler extends ModuleBase {
     disconnect(reason) {
         try {
             const mc = Client.getMinecraft();
-            if (mc.getNetworkHandler()) {
+            if (mc.getConnection()) {
                 const text = net.minecraft.network.chat.Component.literal(String(reason ?? ''));
-                mc.getNetworkHandler().getConnection().disconnect(text);
+                mc.getConnection().getConnection().disconnect(text);
             }
         } catch (e) {
             console.error('Scheduler disconnect error:', e);
