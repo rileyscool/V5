@@ -18,8 +18,7 @@ const STATES = {
 };
 
 const INTERACT_DISTANCE = 3;
-const RETRY_DELAY_MS = 500;
-const OPEN_TIMEOUT_MS = 3000;
+const OPEN_TIMEOUT_MS = 1000;
 
 export function parseRequiredItems(lore) {
     const items = [];
@@ -243,7 +242,7 @@ class VisitorMacro extends ModuleBase {
         const item = this.requiredItems[this.purchaseIndex];
         if (!item) {
             this.state = STATES.SEEKING;
-            this.nextActionAt = Date.now() + RETRY_DELAY_MS;
+            this.nextActionAt = Date.now();
             return;
         }
 
@@ -264,12 +263,12 @@ class VisitorMacro extends ModuleBase {
 
     advanceVisitor() {
         this.state = STATES.ADVANCING;
-        this.nextActionAt = Date.now() + 750;
+        this.nextActionAt = Date.now() + 250;
     }
 
     retrySeeking() {
         this.state = STATES.SEEKING;
-        this.nextActionAt = Date.now() + RETRY_DELAY_MS;
+        this.nextActionAt = Date.now();
     }
 }
 
