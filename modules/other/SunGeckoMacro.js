@@ -172,15 +172,9 @@ class SunGecko extends ModuleBase {
         const baseZ = Math.floor(player.getZ());
         const radius = 5;
 
-        return World.getBlocksInBox(
-            baseX - radius,
-            baseY - radius,
-            baseZ - radius,
-            baseX + radius,
-            baseY + radius,
-            baseZ + radius,
-            new BlockType('minecraft:red_terracotta')
-        ).length;
+        return World.getBlocksInBox(baseX - radius, baseY - radius, baseZ - radius, baseX + radius, baseY + radius, baseZ + radius, [
+            new BlockType('minecraft:red_terracotta'),
+        ]).length;
     }
 
     scheduleState(nextState, delay = 1) {
