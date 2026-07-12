@@ -180,7 +180,19 @@ function loadComponentValue(component, savedValue) {
     if (component instanceof ToggleButton) {
         component.enabled = savedValue;
     } else if (component instanceof Slider) {
-        component.value = savedValue;
+        if (component.isRange) {
+            const low = Number.parseFloat(savedValue?.low);
+            const high = Number.parseFloat(savedValue?.high);
+            if (!Number.isFinite(low) || !Number.isFinite(high)) return;
+
+            component.value = {
+                low: Math.max(component.min, Math.min(component.max, Math.min(low, high))),
+                high: Math.max(component.min, Math.min(component.max, Math.max(low, high))),
+            };
+        } else {
+            const value = Number.parseFloat(savedValue);
+            if (Number.isFinite(value)) component.value = Math.max(component.min, Math.min(component.max, value));
+        }
     } else if (component instanceof MultiToggle) {
         if (Array.isArray(savedValue)) {
             component.options.forEach((option) => {

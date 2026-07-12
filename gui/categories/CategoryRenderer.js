@@ -25,7 +25,7 @@ import {
 } from '../Utils';
 import { Popup } from '../components/Popup';
 import { Separator } from '../components/Separator';
-import { getComponentLayoutHeight, getComponentXOffset } from '../components/layout';
+import { getComponentLayoutHeight, getComponentXOffset, isComponentVisible } from '../components/layout';
 import { GuiRectangles } from '../core/GuiState';
 import { setTooltip } from '../core/GuiTooltip';
 import { SearchBar } from './CategorySearchBar';
@@ -193,7 +193,7 @@ export const drawDirectComponents = (panel, panelX, yOffset, mouseX, mouseY, scr
         }
     }
 
-    components.forEach((component, index) => {
+    components.filter(isComponentVisible).forEach((component, index) => {
         if (component.sectionName && component.sectionName !== currentSection) {
             currentSection = component.sectionName;
 
@@ -269,6 +269,7 @@ export const drawOptionsPanel = (panel, mouseX, mouseY, macroToggleButton = null
 
     let drawnCompY = optionY + 78 - scrollY;
     selectedItem.components.forEach((component) => {
+        if (!isComponentVisible(component)) return;
         const isPopup = component instanceof Popup;
         if (!isPopup && typeof component.draw !== 'function') return;
 

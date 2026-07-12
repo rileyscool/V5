@@ -7,6 +7,8 @@ export const SEPARATOR_HEIGHT = 26;
 export const COMPONENT_HEIGHT = 54;
 export const BUTTON_ONLY_HEIGHT = 46;
 
+export const isComponentVisible = (component) => component.visible !== false;
+
 export const getComponentExpansionHeight = (component, useExpandedHeightWhenStatic = false) => {
     if (!(component instanceof MultiToggle || component instanceof ColorPicker) || typeof component.getExpandedHeight !== 'function') {
         return 0;
@@ -18,6 +20,7 @@ export const getComponentExpansionHeight = (component, useExpandedHeightWhenStat
 };
 
 export const getComponentLayoutHeight = (component, useExpandedHeightWhenStatic = false) => {
+    if (!isComponentVisible(component)) return 0;
     if (component instanceof Separator) return SEPARATOR_HEIGHT;
     const baseHeight = component instanceof Button && component.title === component.buttonText ? BUTTON_ONLY_HEIGHT : COMPONENT_HEIGHT;
     return baseHeight + getComponentExpansionHeight(component, useExpandedHeightWhenStatic);
@@ -37,7 +40,7 @@ export const layoutDirectComponents = (components, startY = 0, useExpandedHeight
     let y = startY;
     let currentSection = null;
 
-    components.forEach((component, index) => {
+    components.filter(isComponentVisible).forEach((component, index) => {
         if (component.sectionName && component.sectionName !== currentSection) {
             currentSection = component.sectionName;
             if (index > 0) y += 16;

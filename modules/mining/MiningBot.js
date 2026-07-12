@@ -297,15 +297,17 @@ class Bot extends ModuleBase {
             'Moves around vein while mining.',
             true
         );
+        let additionalLagCompensation;
         this.addToggle(
             'Tick Gliding',
             (value) => {
                 this.TICKGLIDE = value;
+                additionalLagCompensation.visible = value;
             },
             'Predicts when blocks are broken to begin mining the next block early.',
             true
         );
-        this.addSlider(
+        additionalLagCompensation = this.addSlider(
             'Additional lag compensation',
             0,
             5,
@@ -315,6 +317,7 @@ class Bot extends ModuleBase {
             },
             'Adds extra ticks to glide delay on top of TPS compensation. (Tick Gliding)'
         );
+        additionalLagCompensation.visible = this.TICKGLIDE;
         this.addToggle(
             'Jasper Drill Exploit',
             (value) => {

@@ -1,5 +1,5 @@
 import { Popup } from '../components/Popup';
-import { getComponentHitRect, getComponentLayoutHeight, layoutDirectComponents } from '../components/layout';
+import { getComponentHitRect, getComponentLayoutHeight, isComponentVisible, layoutDirectComponents } from '../components/layout';
 import { GuiRectangles } from '../core/GuiState';
 import { OverlayManager } from '../OverlayUtils';
 import { easeInOutQuad, FontSizes, getTextWidth, isInside, PADDING, playClickSound, SUBCATEGORY_BUTTON_HEIGHT, SUBCATEGORY_BUTTON_SPACING } from '../Utils';
@@ -165,6 +165,7 @@ export const handleCategoryClick = (
         let currentDrawnCompY = optionY + 78 - sY;
 
         for (const component of components) {
+            if (!isComponentVisible(component)) continue;
             if (component instanceof Popup && typeof component.handleButtonClick === 'function') {
                 const drawnCompY = currentDrawnCompY;
                 let handled = false;
@@ -400,7 +401,7 @@ export const handleCategoryScroll = (
     if (Categories.currentPage === 'categories') {
         const directCat = Categories.categories.find((c) => c.name === Categories.selected);
         if (directCat?.directComponents && isInside(mouseX, mouseY, panel)) {
-            const openPopup = directCat.directComponents.find((component) => component instanceof Popup && component.isOpen);
+            const openPopup = directCat.directComponents.find((component) => isComponentVisible(component) && component instanceof Popup && component.isOpen);
             if (openPopup && typeof openPopup.handleScroll === 'function') {
                 openPopup.optionPanelWidth = panel.width;
                 openPopup.handleScroll(mouseX, mouseY, dir);
@@ -412,7 +413,7 @@ export const handleCategoryScroll = (
             let componentY = panel.y + PADDING;
             let currentSection = null;
 
-            components.forEach((component, index) => {
+            components.filter(isComponentVisible).forEach((component, index) => {
                 if (component.sectionName && component.sectionName !== currentSection) {
                     currentSection = component.sectionName;
                     if (index > 0) componentY += 16;
@@ -446,7 +447,7 @@ export const handleCategoryScroll = (
         const optionX = panel.x + PADDING;
         const optionY = panel.y + PADDING;
         const components = Categories.selectedItem.components;
-        const openPopup = components?.find((component) => component instanceof Popup && component.isOpen);
+        const openPopup = components?.find((component) => isComponentVisible(component) && component instanceof Popup && component.isOpen);
         if (openPopup && typeof openPopup.handleScroll === 'function') {
             openPopup.optionPanelWidth = panel.width;
             openPopup.handleScroll(mouseX, mouseY, dir);
@@ -457,6 +458,7 @@ export const handleCategoryScroll = (
         let componentY = optionY + 78;
         if (components) {
             components.forEach((component) => {
+                if (!isComponentVisible(component)) return;
                 const compHeight = getComponentLayoutHeight(component, true);
                 const compRect = {
                     x: optionX + 10,

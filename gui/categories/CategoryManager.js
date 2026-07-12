@@ -5,7 +5,7 @@ import { MultiToggle } from '../components/Dropdown';
 import { Popup } from '../components/Popup';
 import { TextInput } from '../components/TextInput';
 import { Separator } from '../components/Separator';
-import { getComponentLayoutHeight, layoutDirectComponents } from '../components/layout';
+import { getComponentLayoutHeight, isComponentVisible, layoutDirectComponents } from '../components/layout';
 import { GuiRectangles, GuiState } from '../core/GuiState';
 import { handleCategoryClick, handleCategoryScroll, updateCategoryTransitions } from './CategoryEvents';
 import { drawCategoryItems, drawDirectComponents, drawOptionsPanel, drawSubcategoryButtons, getCategoryRect, getDiscordPfpRect } from './CategoryRenderer';
@@ -182,7 +182,8 @@ export const createCategoriesManager = (deps) => {
                     const titleMatch = matchesSearch(item.title, searchRegexes);
                     const descMatch = matchesSearch(item.description, searchRegexes);
 
-                    const componentMatch = item.components && item.components.some((comp) => matchesSearch(comp.title, searchRegexes));
+                    const componentMatch =
+                        item.components && item.components.some((comp) => isComponentVisible(comp) && matchesSearch(comp.title, searchRegexes));
                     return categoryMatches || subcategoryMatches || titleMatch || descMatch || (allowComponentMatch && componentMatch);
                 });
 
@@ -193,7 +194,8 @@ export const createCategoriesManager = (deps) => {
                 }
             } else {
                 const titleMatch = matchesSearch(group.title, searchRegexes);
-                const componentMatch = group.components && group.components.some((comp) => matchesSearch(comp.title, searchRegexes));
+                const componentMatch =
+                    group.components && group.components.some((comp) => isComponentVisible(comp) && matchesSearch(comp.title, searchRegexes));
 
                 if (categoryMatches || titleMatch || (allowComponentMatch && componentMatch)) {
                     acc.push(group);
@@ -211,6 +213,7 @@ export const createCategoriesManager = (deps) => {
         if (!directCategory || !directCategory.directComponents) return [];
 
         const matches = directCategory.directComponents.filter((component) => {
+            if (!isComponentVisible(component)) return false;
             const titleMatch = matchesSearch(component.title, searchRegexes);
             const descMatch = matchesSearch(component.description, searchRegexes);
             const sectionMatch = matchesSearch(component.sectionName, searchRegexes);
@@ -253,7 +256,7 @@ export const createCategoriesManager = (deps) => {
         };
 
         const checkComponent = (item, component) => {
-            if (!component || component instanceof Separator) return;
+            if (!component || !isComponentVisible(component) || component instanceof Separator) return;
             const titleMatch = matchesSearch(component.title, searchRegexes);
             const descMatch = matchesSearch(component.description, searchRegexes);
             if (titleMatch || descMatch) pushMatch(item, component);
@@ -297,6 +300,7 @@ export const createCategoriesManager = (deps) => {
         let currentY = 78;
         for (let i = 0; i < item.components.length; i++) {
             const comp = item.components[i];
+            if (!isComponentVisible(comp)) continue;
             if (comp === component) {
                 return Math.max(0, currentY - 10);
             }
@@ -419,7 +423,7 @@ export const createCategoriesManager = (deps) => {
         if (!components) return;
 
         components.forEach((component) => {
-            if (component instanceof Popup && typeof component.drawOverlay === 'function') {
+            if (isComponentVisible(component) && component instanceof Popup && typeof component.drawOverlay === 'function') {
                 component.drawOverlay(mouseX, mouseY);
             }
         });
