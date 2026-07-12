@@ -163,6 +163,7 @@ export class ModuleBase {
                 console.error(`Error in ${this.name}.onEnable():`);
                 console.error('V5 Caught error' + e + e.stack);
             }
+            if (!this.enabled) return;
             this._registers.forEach((h) => h.register());
         } else {
             if (this.isMacro) {
