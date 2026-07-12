@@ -41,6 +41,10 @@ class BazaarUtil {
         return true;
     }
 
+    cancel() {
+        if (this.state !== 'idle') this.finish(false);
+    }
+
     tick() {
         if (this.state === 'idle' || Date.now() < this.waitUntil) return;
         if (Date.now() >= this.deadline) return this.finish(false);
