@@ -192,4 +192,5 @@ export const Keybind = {
     setKeysForStraightLineCoords: (x, y, z, j, ignoreBottomSlab) => controls.setMovementToCoords(x, y, z, j, ignoreBottomSlab),
     stopMovement: () => controls.haltMovement(),
     unpressKeys: () => controls.fullRelease(),
+    isGuiOpen: () => controls.isGuiOpen(),
 };

@@ -1,21 +1,42 @@
-// idk if ready for release up to zurviq
 import { isDeveloperModeEnabled } from '../../utils/DeveloperModeState';
 import { Vec3d } from '../../utils/Constants';
 import { ModuleBase } from '../../utils/ModuleBase';
 import { Utils } from '../../utils/Utils';
 
+const PEST_NAMES = ['Silverfish', 'Bat'];
+const PEST_KILL_RADIUS_SQ = 8 ** 2;
+
+export function getNearbyPest() {
+    const eyes = Player.getPlayer()?.getEyePosition();
+    if (!eyes) return null;
+
+    let closest = null;
+    let closestDistanceSq = PEST_KILL_RADIUS_SQ;
+    World.getAllEntities().forEach((entity) => {
+        if (entity.isDead() || !PEST_NAMES.some((name) => entity.getName()?.includes(name))) return;
+
+        const dx = entity.getX() - eyes.x();
+        const dy = entity.getY() - eyes.y();
+        const dz = entity.getZ() - eyes.z();
+        const distanceSq = dx * dx + dy * dy + dz * dz;
+        if (distanceSq <= closestDistanceSq) {
+            closest = entity;
+            closestDistanceSq = distanceSq;
+        }
+    });
+    return closest;
+}
+
 class PestESP extends ModuleBase {
     constructor() {
         super({
             name: 'Pest ESP',
-            subcategory: 'Farming',
+            subcategory: 'Visuals',
             description: 'Scans and remembers pest locations even in distant chunks.',
             showEnabledToggle: true,
         });
 
         this.persistentPests = new Map();
-        this.targetNames = ['Silverfish', 'Bat'];
-
         this.on('tick', () => {
             if (Utils.area() !== 'Garden') return;
 
@@ -23,9 +44,8 @@ class PestESP extends ModuleBase {
 
             World.getAllEntities().forEach((entity) => {
                 const name = entity.getName();
-                if (name && this.targetNames.some((target) => name.includes(target))) {
+                if (name && PEST_NAMES.some((target) => name.includes(target))) {
                     this.persistentPests.set(entity.getUUID().toString(), {
-                        name: name,
                         x: entity.getX(),
                         y: entity.getY(),
                         z: entity.getZ(),
@@ -36,11 +56,7 @@ class PestESP extends ModuleBase {
             });
 
             this.persistentPests.forEach((data, uuid) => {
-                const isDead = data.entity.isDead();
-                if (isDead) this.persistentPests.delete(uuid);
-
-                const timeSinceSeen = now - data.lastSeen;
-                if (timeSinceSeen > 15000) this.persistentPests.delete(uuid);
+                if (data.entity.isDead() || now - data.lastSeen > 15_000) this.persistentPests.delete(uuid);
             });
         });
 

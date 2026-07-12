@@ -19,6 +19,9 @@ const STATES = {
 
 const INTERACT_DISTANCE = 3;
 const OPEN_TIMEOUT_MS = 1000;
+const VISITOR_TIMEOUT_MS = 15_000;
+const TELEPORT_RETRY_MS = 1000;
+const MISSING_VISITOR_TIMEOUT_MS = 5000;
 
 export function parseRequiredItems(lore) {
     const items = [];
@@ -45,10 +48,11 @@ class VisitorMacro extends ModuleBase {
         super({
             name: 'Visitor Macro',
             subcategory: 'Farming',
-            description: 'Visits garden visitors and buys their requested Bazaar items.',
-            tooltip: 'Reads the current visitor list when enabled.',
+            description: 'Buys requested Bazaar items and accepts garden visitors.',
+            tooltip: 'Automatically used in farming macro by rewarp.',
             isMacro: true,
             autoDisableOnWorldUnload: true,
+            showEnabledToggle: false,
         });
 
         this.bindToggleKey();
@@ -63,6 +67,8 @@ class VisitorMacro extends ModuleBase {
         this.purchaseFailureAction = 'Decline';
         this.declineCurrentVisitor = false;
         this.maxPrice = 500_000;
+        this.visitorStartedAt = 0;
+        this.visitorMissingSince = 0;
         this.addSlider(
             'Max Price',
             0,
@@ -91,10 +97,13 @@ class VisitorMacro extends ModuleBase {
         this.pathRequestActive = false;
         this.firstSeek = true;
         this.declineCurrentVisitor = false;
+        this.visitorStartedAt = Date.now();
+        this.visitorMissingSince = 0;
         this.message(this.visitors.length ? `&aFound ${this.visitors.length} visitors.` : '&eNo visitors found.');
     }
 
     onDisable() {
+        bazaarUtil.cancel();
         if (Pathfinder.isPathing()) Pathfinder.resetPath();
         Rotations.stop();
         Keybind.stopMovement();
@@ -103,6 +112,8 @@ class VisitorMacro extends ModuleBase {
 
     tick() {
         if (!this.enabled) return;
+        if (this.state !== STATES.ADVANCING && this.state !== STATES.DONE && Date.now() - this.visitorStartedAt >= VISITOR_TIMEOUT_MS)
+            return this.skipVisitor();
 
         if (this.state === STATES.OPENING) {
             if (Client.isInGui()) {
@@ -126,9 +137,12 @@ class VisitorMacro extends ModuleBase {
             case STATES.ADVANCING:
                 Guis.closeInv();
                 this.visitorIndex++;
+                this.visitors.push(...TabListUtils.readVisitors().filter((visitor) => !this.visitors.includes(visitor)));
                 this.firstSeek = true;
                 this.declineCurrentVisitor = false;
                 this.state = this.visitorIndex < this.visitors.length ? STATES.SEEKING : STATES.DONE;
+                this.visitorStartedAt = Date.now();
+                this.visitorMissingSince = 0;
                 if (this.state === STATES.DONE) {
                     this.message('&aAll stored visitors completed.');
                     this.toggle(false);
@@ -148,9 +162,23 @@ class VisitorMacro extends ModuleBase {
         }
 
         const entity = this.findVisitor(target);
-        if (!entity || this.distanceTo(entity) > 15) {
+        if (!entity) {
+            const now = Date.now();
+            if (!this.visitorMissingSince) this.visitorMissingSince = now;
+            if (now - this.visitorMissingSince >= MISSING_VISITOR_TIMEOUT_MS) {
+                this.message('&eVisitor not found after teleporting, stopping.');
+                return this.toggle(false);
+            }
             ChatLib.command('tptoplot barn');
-            return this.retrySeeking();
+            this.nextActionAt = now + TELEPORT_RETRY_MS;
+            return;
+        }
+        this.visitorMissingSince = 0;
+
+        if (this.distanceTo(entity) > 15) {
+            ChatLib.command('tptoplot barn');
+            this.nextActionAt = Date.now() + TELEPORT_RETRY_MS;
+            return;
         }
 
         if (this.distanceTo(entity) > INTERACT_DISTANCE) return this.pathTo(entity);
@@ -190,12 +218,13 @@ class VisitorMacro extends ModuleBase {
     pathTo(entity) {
         if (this.pathRequestActive || Pathfinder.isPathing()) return;
 
+        const visitorIndex = this.visitorIndex;
         this.pathRequestActive = true;
         this.state = STATES.PATHING;
         Pathfinder.resetPath();
         Pathfinder.findPath([[Math.floor(entity.getX()), Math.floor(entity.getY()) - 1, Math.floor(entity.getZ())]], () => {
             this.pathRequestActive = false;
-            if (!this.enabled) return;
+            if (!this.enabled || this.state !== STATES.PATHING || this.visitorIndex !== visitorIndex) return;
             this.retrySeeking();
         });
     }
@@ -221,6 +250,7 @@ class VisitorMacro extends ModuleBase {
 
         this.requiredItems = parseRequiredItems(offer.lore);
         if (!this.requiredItems.length) return this.retrySeeking();
+        if (!this.hasInventorySpace()) return this.handlePurchaseFailure();
         this.purchaseIndex = 0;
         this.buyNextItem();
     }
@@ -238,6 +268,15 @@ class VisitorMacro extends ModuleBase {
         return null;
     }
 
+    hasInventorySpace() {
+        const inventory = Player.getInventory();
+        if (!inventory) return false;
+
+        const emptySlots = inventory.getItems().filter((item) => item === null).length;
+        const requiredSlots = this.requiredItems.reduce((slots, item) => slots + Math.ceil(item.count / 64), 0);
+        return emptySlots >= requiredSlots;
+    }
+
     buyNextItem() {
         const item = this.requiredItems[this.purchaseIndex];
         if (!item) {
@@ -247,8 +286,9 @@ class VisitorMacro extends ModuleBase {
         }
 
         this.state = STATES.BUYING;
+        const visitorIndex = this.visitorIndex;
         bazaarUtil.buy(item.name, item.count, this.maxPrice, (success) => {
-            if (!this.enabled) return;
+            if (!this.enabled || this.state !== STATES.BUYING || this.visitorIndex !== visitorIndex) return;
             if (!success) return this.handlePurchaseFailure();
             this.purchaseIndex++;
             this.buyNextItem();
@@ -266,9 +306,20 @@ class VisitorMacro extends ModuleBase {
         this.nextActionAt = Date.now() + 250;
     }
 
+    skipVisitor() {
+        if (Pathfinder.isPathing()) Pathfinder.resetPath();
+        Rotations.stop();
+        Keybind.stopMovement();
+        Guis.closeInv();
+        this.pathRequestActive = false;
+        this.message('&eVisitor timed out, skipping.');
+        bazaarUtil.cancel();
+        this.advanceVisitor();
+    }
+
     retrySeeking() {
         this.state = STATES.SEEKING;
-        this.nextActionAt = Date.now();
+        this.nextActionAt = Date.now() + 250;
     }
 }
 

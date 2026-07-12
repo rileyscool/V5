@@ -19,7 +19,13 @@ import './foraging/HuntingHelpers';
 //import './foraging/SeaLumieMacro';
 
 /* FARMING */
-import './farming/PestESP';
+import './farming/VisitorMacro';
+import './farming/ADRotatingMelonMacro';
+import './farming/CocoaBeansMacro';
+import './farming/SDSMushroomMacro';
+import './farming/SShapeCropMacro';
+import './farming/SShapeSugarCaneMacro';
+import './farming/WSRowMacros';
 
 /* VISUALS */
 import './visuals/BlockVisual';
@@ -28,6 +34,7 @@ import './visuals/GIF';
 import './visuals/HUD';
 import './visuals/MobHider';
 import './visuals/MusicOverlay';
+import './visuals/PestESP';
 import './visuals/ProfileHider';
 import './visuals/RatESP';
 import './visuals/StructureESP';
