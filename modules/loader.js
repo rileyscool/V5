@@ -6,6 +6,7 @@ import './mining/LobbyHopper';
 import './mining/Nuker';
 import './mining/OreMacro';
 import './mining/PinglessMining';
+import './mining/GlowingMushroomMacro';
 //import './mining/PowderMacro';
 //import './mining/ScathaMacro';
 import './mining/TunnelsMiner';
@@ -18,13 +19,15 @@ import './foraging/HuntingHelpers';
 //import './foraging/SeaLumieMacro';
 
 /* FARMING */
-import './farming/FarmingMacro/FarmingMacro';
-import './farming/GlowingMushroomESP';
-import './farming/GlowingMushroomMacro';
 import './farming/PestESP';
-import './farming/PeltMacro';
-import './farming/PeltQOL';
+import './farming/ADRotatingMelonMacro';
+import './farming/CocoaBeansMacro';
+import './farming/SDSMushroomMacro';
+import './farming/SShapeCropMacro';
+import './farming/SShapeSugarCaneMacro';
 import './farming/VisitorMacro';
+import './farming/WSCropMacro';
+import './farming/WSFlowerMacro';
 
 /* VISUALS */
 import './visuals/BlockVisual';
@@ -36,6 +39,7 @@ import './visuals/MusicOverlay';
 import './visuals/ProfileHider';
 import './visuals/RatESP';
 import './visuals/StructureESP';
+import './visuals/GlowingMushroomESP';
 
 /* SKILLS */
 import './skills/AutoExperiments';
@@ -63,3 +67,5 @@ import './other/VoidgloomHelper';
 import './other/AutoCombine';
 import './other/SunGeckoMacro';
 import './other/RatMacro';
+import './other/PeltMacro';
+import './other/PeltQOL';

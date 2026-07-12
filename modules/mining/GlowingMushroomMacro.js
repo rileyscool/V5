@@ -11,7 +11,7 @@ import { Keybind } from '../../utils/player/Keybinding';
 import { Rotations } from '../../utils/player/Rotations';
 import { Raytrace } from '../../utils/Raytrace';
 import { NukerUtils } from '../../utils/NukerUtils';
-import { getTrackedGlowingMushrooms, isGlowingMushroomBlock } from './GlowingMushroomESP';
+import { getTrackedGlowingMushrooms, isGlowingMushroomBlock } from '../visuals/GlowingMushroomESP';
 import { ScheduleTask } from '../../utils/ScheduleTask';
 
 const MAX_REACH = 4.5;
