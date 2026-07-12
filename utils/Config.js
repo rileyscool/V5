@@ -81,7 +81,6 @@ const manifest = {
         ['TunnelMinerRoutes/empty.json', {}],
         ['OreRoutes/empty.json', {}],
         ['EtherwarpRoutes/empty.json', {}],
-        ['FarmingMacro/points.json', {}],
         ['developerMode.json', { enabled: false }],
         ['AuthCache/do_not_share_this_file', []],
         ['responseMessages.json', responseMessages],
