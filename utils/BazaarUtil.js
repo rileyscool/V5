@@ -138,7 +138,7 @@ class BazaarUtil {
         this.state = 'idle';
         this.callback = null;
         this.confirmSlot = -1;
-        if (!success && Client.isInGui()) Guis.closeInv();
+        if (Client.isInGui()) Guis.closeInv();
         if (typeof callback === 'function') callback(success);
     }
 }
