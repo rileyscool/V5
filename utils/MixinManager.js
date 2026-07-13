@@ -119,7 +119,7 @@ class MixinEngine {
 
     // Intercepts and changes the value a method is about to return
     modifyReturnValue(config) {
-        this.lastInjection = this.lastInjection = this.realMixin.modifyReturnValue(this._processConfig(config));
+        this.lastInjection = this.realMixin.modifyReturnValue(this._processConfig(config));
         return this;
     }
 
