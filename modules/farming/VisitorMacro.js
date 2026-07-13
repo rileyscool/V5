@@ -22,6 +22,7 @@ const OPEN_TIMEOUT_MS = 1000;
 const VISITOR_TIMEOUT_MS = 15_000;
 const TELEPORT_RETRY_MS = 1000;
 const MISSING_VISITOR_TIMEOUT_MS = 5000;
+const VISITOR_BLACKLIST = ['Vinyl Collector', 'Gold Forger'];
 
 export function parseRequiredItems(lore) {
     const items = [];
@@ -232,6 +233,7 @@ class VisitorMacro extends ModuleBase {
     checkOffer() {
         if (!Client.isInGui()) return this.retrySeeking();
 
+        if (VISITOR_BLACKLIST.includes(this.visitors[this.visitorIndex])) this.declineCurrentVisitor = true;
         if (this.declineCurrentVisitor) {
             const refusal = this.getOffer('Refuse Offer');
             if (!refusal) return this.retrySeeking();

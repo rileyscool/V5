@@ -1,3 +1,2 @@
 - Subcategory keybinds
-- Blacklist visitors failure (Vinyl Collector, Gold Forger)
 - Mousemat stuff
