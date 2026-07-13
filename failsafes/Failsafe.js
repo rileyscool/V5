@@ -52,15 +52,7 @@ export class Failsafe {
         register('worldLoad', () => {
             this._setDisabled(1000);
         });
-        manager.subscribe('serverchange', () => {
-            this._setDisabled(1000);
-        });
-        manager.subscribe('death', () => {
-            this._setDisabled(1000);
-        });
-        manager.subscribe('warp', () => {
-            this._setDisabled(1000);
-        });
+        ['serverchange', 'death', 'warp'].forEach((event) => manager.subscribe(event, () => this._setDisabled(1000)));
     }
 
     _getReactionDelay(settings) {
