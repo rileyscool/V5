@@ -39,7 +39,7 @@ class StructureESP extends ModuleBase {
         });
 
         register('gameUnload', () => {
-            StructureFinder.shutdown();
+            StructureFinder.clear();
         });
     }
 

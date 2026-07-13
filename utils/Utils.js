@@ -91,7 +91,7 @@ class LocationDetector {
             for (const line of scoreLines) {
                 let lineStr = String(line);
 
-                if (lineStr.indexOf('⏣') !== -1) {
+                if (lineStr.includes('⏣')) {
                     let cleaned = this.stripFormatting(lineStr);
                     let segments = cleaned.split('⏣');
 
@@ -220,23 +220,19 @@ class VectorConverter {
     convert(input) {
         if (!input) return null;
 
+        let coordinates;
         if (this.hasXYZ(input)) {
-            return new Vec3d(input.x, input.y, input.z);
+            coordinates = [input.x, input.y, input.z];
+        } else if (this.hasXYZMethods(input)) {
+            coordinates = [input.x(), input.y(), input.z()];
+        } else if (Array.isArray(input) && input.length >= 3) {
+            coordinates = input;
+        } else if (this.hasPositionMethods(input)) {
+            coordinates = [input.getX(), input.getY(), input.getZ()];
         }
 
-        if (this.hasXYZMethods(input)) {
-            return new Vec3d(input.x(), input.y(), input.z());
-        }
-
-        if (Array.isArray(input) && input.length >= 3) {
-            return new Vec3d(input[0], input[1], input[2]);
-        }
-
-        if (this.hasPositionMethods(input)) {
-            return new Vec3d(input.getX(), input.getY(), input.getZ());
-        }
-
-        return null;
+        const vector = coordinates?.slice(0, 3);
+        return vector?.every(Number.isFinite) ? new Vec3d(...vector) : null;
     }
 
     hasXYZ(obj) {

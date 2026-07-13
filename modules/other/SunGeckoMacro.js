@@ -3,6 +3,7 @@ import { CombatBot } from '../combat/CombatBot';
 import { MacroState } from '../../utils/MacroState';
 import { MathUtils } from '../../utils/Math';
 import { ModuleBase } from '../../utils/ModuleBase';
+import { formatRoundedNumber } from '../../utils/NumberUtils';
 import Pathfinder from '../../utils/pathfinder/PathFinder';
 import { Guis } from '../../utils/player/Inventory';
 import { Keybind } from '../../utils/player/Keybinding';
@@ -114,9 +115,9 @@ class SunGecko extends ModuleBase {
                     title: 'Status',
                     data: {
                         State: () => this.getStateName(),
-                        Kills: () => this.formatNumber(OverlayManager.getTrackedValue(this.oid, 'kills', 0)),
+                        Kills: () => formatRoundedNumber(OverlayManager.getTrackedValue(this.oid, 'kills', 0)),
                         'Kills/hr': () => this.formatHourlyRate(OverlayManager.getTrackedValue(this.oid, 'kills', 0)),
-                        Essence: () => this.formatNumber(OverlayManager.getTrackedValue(this.oid, 'essence', 0)),
+                        Essence: () => formatRoundedNumber(OverlayManager.getTrackedValue(this.oid, 'essence', 0)),
                         'Essence/hr': () => this.formatHourlyRate(OverlayManager.getTrackedValue(this.oid, 'essence', 0)),
                     },
                 },
@@ -416,19 +417,13 @@ class SunGecko extends ModuleBase {
     formatHourlyRate(total) {
         const hours = this.getActiveHours();
         if (hours <= 0) return '0';
-        return this.formatNumber(total / hours);
+        return formatRoundedNumber(total / hours);
     }
 
     getActiveHours() {
         const elapsedMs = MacroState.getModuleElapsedMs(this.name);
         if (elapsedMs <= 0) return 0;
         return elapsedMs / 3600000;
-    }
-
-    formatNumber(value) {
-        if (!Number.isFinite(value)) return '0';
-        const rounded = Math.round(value);
-        return String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
 
     setState(newState) {

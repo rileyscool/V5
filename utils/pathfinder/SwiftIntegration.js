@@ -1,5 +1,13 @@
 import { finiteNumber } from '../NumberUtils';
 
+const readPointArray = (values) => {
+    const points = [];
+    for (let i = 0; i + 2 < values.length; i += 3) {
+        points.push({ x: values[i], y: values[i + 1], z: values[i + 2] });
+    }
+    return points;
+};
+
 class SwiftIntegration {
     constructor() {
         this.pathManager = PathManager;
@@ -89,15 +97,8 @@ class SwiftIntegration {
         const keyArr = PathManager.getKeyNodesArray();
         if (!pathArr || !keyArr) return null;
 
-        const path = [];
-        for (let i = 0; i + 2 < pathArr.length; i += 3) {
-            path.push({ x: pathArr[i], y: pathArr[i + 1], z: pathArr[i + 2] });
-        }
-
-        const keynodes = [];
-        for (let i = 0; i + 2 < keyArr.length; i += 3) {
-            keynodes.push({ x: keyArr[i], y: keyArr[i + 1], z: keyArr[i + 2] });
-        }
+        const path = readPointArray(pathArr);
+        const keynodes = readPointArray(keyArr);
 
         const pathFlags = this.readIntArraySafely(() => PathManager.getPathFlagsArray());
         const keyNodeFlags = this.readIntArraySafely(() => PathManager.getKeyNodeFlagsArray());
@@ -106,8 +107,8 @@ class SwiftIntegration {
         const pathSignature = this.readStringSafely(() => PathManager.getPathSignature());
 
         const result = {
-            path: path,
-            keynodes: keynodes,
+            path,
+            keynodes,
             path_between_key_nodes: path,
             time_ms: PathManager.getLastTimeMs(),
             nodes_explored: PathManager.getNodesExplored(),

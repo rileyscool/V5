@@ -2,6 +2,7 @@ import { OverlayManager } from '../../gui/OverlayUtils';
 import { MacroState } from '../../utils/MacroState';
 import { MathUtils } from '../../utils/Math';
 import { ModuleBase } from '../../utils/ModuleBase';
+import { formatRoundedNumber } from '../../utils/NumberUtils';
 import Pathfinder from '../../utils/pathfinder/PathFinder';
 import { Guis } from '../../utils/player/Inventory';
 import { Keybind } from '../../utils/player/Keybinding';
@@ -121,7 +122,7 @@ class WynnProfessionMacro extends ModuleBase {
                 {
                     title: 'Performance',
                     data: {
-                        Total: () => this.formatNumber(this.getTotal()),
+                        Total: () => formatRoundedNumber(this.getTotal()),
                         '/hr': () => this.getPerHour(),
                     },
                 },
@@ -526,14 +527,7 @@ class WynnProfessionMacro extends ModuleBase {
         const elapsedMs = MacroState.getModuleElapsedMs(this.name);
         if (elapsedMs <= 0) return '0';
 
-        return this.formatNumber(this.getTotal() / (elapsedMs / 3600000));
-    }
-
-    formatNumber(value) {
-        if (!Number.isFinite(value)) return '0';
-
-        const rounded = Math.round(value);
-        return String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return formatRoundedNumber(this.getTotal() / (elapsedMs / 3600000));
     }
 
     loadRoute() {

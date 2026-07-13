@@ -256,7 +256,7 @@ class MiningStatsCollector {
                 let match = cleanLine.match(pattern);
                 if (match) {
                     let value = match[1].replace(/,/g, '');
-                    return value.indexOf('.') !== -1 ? Number.parseFloat(value) : Number.parseInt(value);
+                    return value.includes('.') ? Number.parseFloat(value) : Number.parseInt(value);
                 }
             }
         } catch (e) {
@@ -325,7 +325,7 @@ class ToolFinder {
     }
 
     static matchTool(name) {
-        return TOOL_PRIORITY_LIST.find((tool) => name.indexOf(tool.match) !== -1) || null;
+        return TOOL_PRIORITY_LIST.find((tool) => name.includes(tool.match)) || null;
     }
 
     static checkBlueCheese(item) {
@@ -333,7 +333,7 @@ class ToolFinder {
             let lore = item.getLore();
             for (const line of lore) {
                 let clean = ChatLib.removeFormatting(String(line));
-                if (clean.indexOf('Blue Cheese') !== -1) {
+                if (clean.includes('Blue Cheese')) {
                     return true;
                 }
             }
@@ -629,7 +629,7 @@ class RefuelService {
                 break;
 
             case this.STATES.SELECT_CONTACT:
-                if (Guis.guiName()?.indexOf('Abiphone') !== -1) {
+                if (Guis.guiName()?.includes('Abiphone')) {
                     this.contactSlot = Guis.findFirst(Player.getContainer(), 'Jotraeline Greatforge');
                     if (!Player.getContainer()?.getStackInSlot(this.contactSlot)) {
                         if (this.handleTimeout('No jotraeline contact detected!')) return;
@@ -818,7 +818,7 @@ class ExplorerUpgrade {
             let chatWatcher = register('chat', function (event) {
                 let msg = event.message.getString();
 
-                if (msg.indexOf('You must first unlock') !== -1) {
+                if (msg.includes('You must first unlock')) {
                     Thread.sleep(300);
                     Chat.message("great explorer can't be unlocked!");
                     Guis.closeInv();
@@ -826,7 +826,7 @@ class ExplorerUpgrade {
                     return callback(false);
                 }
 
-                if (msg.indexOf("You don't have enough Gemstone Powder!") !== -1) {
+                if (msg.includes("You don't have enough Gemstone Powder!")) {
                     Thread.sleep(300);
                     Chat.message('insufficient powder!');
                     Guis.closeInv();
@@ -855,9 +855,9 @@ class ExplorerUpgrade {
 
                 let nbtString = slot.getNBT().toString();
 
-                if (nbtString.indexOf('item.minecraft.coal') !== -1) {
+                if (nbtString.includes('item.minecraft.coal')) {
                     Guis.clickSlot(42, false);
-                } else if (nbtString.indexOf('item.minecraft.emerald') !== -1) {
+                } else if (nbtString.includes('item.minecraft.emerald')) {
                     Guis.clickSlot(42, true);
                 } else {
                     break;
@@ -886,7 +886,7 @@ class ScoreboardDebuffReader {
 
         for (const line of lines) {
             let lineText = String(line);
-            if (lineText.indexOf(symbol) !== -1) {
+            if (lineText.includes(symbol)) {
                 let clean = ChatLib.removeFormatting(lineText);
                 let pattern = new RegExp('(\\d+(?:\\.\\d+)?)\\s*' + symbol);
                 let match = clean.match(pattern);
@@ -955,7 +955,7 @@ class CommissionParser {
 
         let progress = 0;
 
-        if (lore.some((line) => String(line).indexOf('COMPLETED') !== -1)) {
+        if (lore.some((line) => String(line).includes('COMPLETED'))) {
             progress = 1;
         } else {
             for (const line of lore) {

@@ -4,14 +4,14 @@ import { isGuiClickSoundEnabled, setGuiClickSoundEnabled } from './Utils';
 const initProfileSettings = () => {
     let discordCat = Categories.categories.find((category) => category.name === 'Discord');
     if (!discordCat) {
-        Categories.categories.push({
+        discordCat = {
             name: 'Discord',
             items: [],
             subcategories: [],
             directComponents: [],
             hiddenInSidebar: true,
-        });
-        discordCat = Categories.categories.find((category) => category.name === 'Discord');
+        };
+        Categories.categories.push(discordCat);
     } else if (!discordCat.directComponents) {
         discordCat.directComponents = [];
     }

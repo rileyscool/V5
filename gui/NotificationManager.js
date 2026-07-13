@@ -14,20 +14,27 @@ const TEXT_LINE_HEIGHT = 15;
 const DESC_SCALE = 0.8;
 const DESC_LINE_SPACING = 7;
 
+const drawCheckIcon = (centerX, centerY, alpha) => {
+    const color = (alpha << 24) | THEME.NOTIF_ICON;
+    NVG.save();
+    NVG.translate(centerX - 2, centerY + 4);
+    NVG.rotate(-45);
+    NVG.drawRect(-1.5, -7, 3, 8.5, color);
+    NVG.drawRect(-1.5, -1.5, 14, 3, color);
+    NVG.restore();
+};
+const drawAlertIcon = (centerX, centerY, alpha) => {
+    const color = (alpha << 24) | THEME.NOTIF_ICON;
+    NVG.drawRect(centerX - 1.5, centerY - 8, 3, 10, color);
+    NVG.drawRect(centerX - 1.5, centerY + 4, 3, 3, color);
+};
+
 const NOTIFICATION_TYPES = {
     SUCCESS: {
         get outlineColor() {
             return THEME.NOTIF_SUCCESS;
         },
-        iconDrawer: (centerX, centerY, alpha) => {
-            const color = (alpha << 24) | THEME.NOTIF_ICON;
-            NVG.save();
-            NVG.translate(centerX - 2, centerY + 4);
-            NVG.rotate(-45);
-            NVG.drawRect(-1.5, -7, 3, 8.5, color);
-            NVG.drawRect(-1.5, -1.5, 14, 3, color);
-            NVG.restore();
-        },
+        iconDrawer: drawCheckIcon,
     },
     ERROR: {
         get outlineColor() {
@@ -47,35 +54,19 @@ const NOTIFICATION_TYPES = {
         get outlineColor() {
             return THEME.NOTIF_DANGER;
         },
-        iconDrawer: (centerX, centerY, alpha) => {
-            const color = (alpha << 24) | THEME.NOTIF_ICON;
-            NVG.drawRect(centerX - 1.5, centerY - 8, 3, 10, color);
-            NVG.drawRect(centerX - 1.5, centerY + 4, 3, 3, color);
-        },
+        iconDrawer: drawAlertIcon,
     },
     'CHECK-IN': {
         get outlineColor() {
             return THEME.NOTIF_CHECK_IN;
         },
-        iconDrawer: (centerX, centerY, alpha) => {
-            const color = (alpha << 24) | THEME.NOTIF_ICON;
-            NVG.save();
-            NVG.translate(centerX - 2, centerY + 4);
-            NVG.rotate(-45);
-            NVG.drawRect(-1.5, -7, 3, 8.5, color);
-            NVG.drawRect(-1.5, -1.5, 14, 3, color);
-            NVG.restore();
-        },
+        iconDrawer: drawCheckIcon,
     },
     WARNING: {
         get outlineColor() {
             return THEME.NOTIF_WARNING;
         },
-        iconDrawer: (centerX, centerY, alpha) => {
-            const color = (alpha << 24) | THEME.NOTIF_ICON;
-            NVG.drawRect(centerX - 1.5, centerY - 8, 3, 10, color);
-            NVG.drawRect(centerX - 1.5, centerY + 4, 3, 3, color);
-        },
+        iconDrawer: drawAlertIcon,
     },
     INFO: {
         get outlineColor() {

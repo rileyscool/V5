@@ -144,8 +144,7 @@ class HUD extends ModuleBase {
         lines.forEach((l, index) => {
             const labelW = getTextWidth(`${l.label}:`, fontSize);
             const valueW = getTextWidth(String(l.value), fontSize);
-            l._width = labelW + gap + valueW;
-            totalWidth += l._width;
+            totalWidth += labelW + gap + valueW;
 
             if (index < lines.length - 1) {
                 totalWidth += separatorWidth;

@@ -51,6 +51,7 @@ class MixinStorage {
 
     clear() {
         this._storage.clear();
+        V5MixinStorage.clear();
     }
 }
 

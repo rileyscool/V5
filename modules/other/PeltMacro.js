@@ -2,6 +2,7 @@ import { OverlayManager } from '../../gui/OverlayUtils';
 import { MCHand, Vec3d } from '../../utils/Constants';
 import { MacroState } from '../../utils/MacroState';
 import { ModuleBase } from '../../utils/ModuleBase';
+import { formatRoundedNumber } from '../../utils/NumberUtils';
 import { ServerboundUseItemPacket } from '../../utils/Packets';
 import { ScheduleTask } from '../../utils/ScheduleTask';
 import Pathfinder from '../../utils/pathfinder/PathFinder';
@@ -305,25 +306,19 @@ class PeltMacro extends ModuleBase {
     }
 
     getPeltsDisplay() {
-        return this.formatCount(OverlayManager.getTrackedValue(this.oid, 'pelts', 0));
+        return formatRoundedNumber(OverlayManager.getTrackedValue(this.oid, 'pelts', 0));
     }
 
     getPeltsPerHourDisplay() {
         const hours = this.getActiveHours();
         if (hours <= 0) return '0';
-        return this.formatCount(OverlayManager.getTrackedValue(this.oid, 'pelts', 0) / hours);
+        return formatRoundedNumber(OverlayManager.getTrackedValue(this.oid, 'pelts', 0) / hours);
     }
 
     getActiveHours() {
         const elapsedMs = MacroState.getModuleElapsedMs(this.name);
         if (elapsedMs <= 0) return 0;
         return elapsedMs / 3600000;
-    }
-
-    formatCount(value) {
-        if (!Number.isFinite(value)) return '0';
-        const rounded = Math.round(value);
-        return String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
 
     findPeltMob() {

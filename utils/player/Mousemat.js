@@ -76,12 +76,14 @@ class MousematController {
     snap(rotation) {
         if (this.rotation !== rotation) return;
 
-        Keybind.leftClick();
-        Guis.setItemSlot(rotation.originalSlot);
-        this.rotation = null;
         const callbacks = this.callbacks;
+        this.rotation = null;
         this.callbacks = [];
-        callbacks.forEach((callback) => ScheduleTask(callback));
+        Keybind.leftClick();
+        ScheduleTask(1, () => {
+            Guis.setItemSlot(rotation.originalSlot);
+            callbacks.forEach((callback) => ScheduleTask(callback));
+        });
     }
 }
 

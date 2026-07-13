@@ -12,15 +12,7 @@ class AutoHarp extends ModuleBase {
 
         this.DELAY = 3;
 
-        class Note {
-            constructor(slot) {
-                this.slot = slot;
-                this.clicked = false;
-                this.DELAY = 0;
-            }
-        }
-
-        this.notes = [37, 38, 39, 40, 41, 42, 43].map((slot) => new Note(slot));
+        this.notes = [37, 38, 39, 40, 41, 42, 43].map((slot) => ({ slot, clicked: false, DELAY: 0 }));
 
         this.on('tick', () => {
             const invName = Guis.guiName();

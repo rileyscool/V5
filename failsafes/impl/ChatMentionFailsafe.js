@@ -43,7 +43,7 @@ class ChatMentionFailsafe extends Failsafe {
         const isHigh = !!highMatch;
         const blockedWord = highMatch || mediumMatch;
 
-        return { isBlocked: isBlocked, blockedWord: blockedWord, isHigh: isHigh, fullMessage: fullMessage };
+        return { isBlocked, blockedWord, isHigh, fullMessage };
     }
 
     onTrigger(result) {

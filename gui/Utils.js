@@ -178,10 +178,7 @@ export const drawImage = (path, x, y, width, height, radius = 0, alpha = 1) => {
     NVG.drawImage(path, x, y, width, height, radius, alpha);
 };
 
-export const drawImageFromURL = (url, x, y, width, height, radius = 0, alpha = 1) => {
-    if (!url) return;
-    NVG.drawImage(url, x, y, width, height, radius, alpha);
-};
+export const drawImageFromURL = drawImage;
 
 export const drawCircularImage = (path, x, y, size, alpha = 1) => {
     if (!path) return;
@@ -240,6 +237,8 @@ export const isInside = (mouseX, mouseY, rect) => mouseX >= rect.x && mouseX <= 
 export const fetchURL = (url, headers = {}) => {
     try {
         let conn = new java.net.URL(url).openConnection();
+        conn.setConnectTimeout(5000);
+        conn.setReadTimeout(5000);
         Object.keys(headers).forEach((key) => {
             const value = headers[key];
             if (value !== undefined && value !== null) {

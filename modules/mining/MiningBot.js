@@ -1272,7 +1272,7 @@ class Bot extends ModuleBase {
         const requiresLargeMove = values.distanceFlat > cfg.unsneakLargeMoveThreshold;
         const justOutOfReach = true; //values.distance > this.mineReach && values.distance <= this.mineReach + cfg.jumpReachPadding;
         const blockedForward = moveForward && this.hasForwardObstacle();
-        const shouldJump = Player.getPlayer()?.isOnGround() && justOutOfReach && blockedForward;
+        const shouldJump = Player.getPlayer()?.onGround() && justOutOfReach && blockedForward;
         const shouldUnsneak = isMoving && (requiresDropToMove || requiresLargeMove);
         this.setSneak(!shouldUnsneak);
         Keybind.setKey('space', shouldJump);

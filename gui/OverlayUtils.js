@@ -221,16 +221,12 @@ class OverlayUtils {
         }
     }
 
-    formatUptime(startTime) {
-        return TimeUtils.formatUptime(startTime);
-    }
-
     getMacroDuration(macroName) {
         const saved = this.savedSessions && this.savedSessions[macroName];
         if (saved && typeof saved.elapsedMs === 'number') return TimeUtils.formatDurationMs(saved.elapsedMs);
 
         const startTime = this.startTimes && this.startTimes[macroName];
-        return startTime ? this.formatUptime(startTime) : '';
+        return startTime ? TimeUtils.formatUptime(startTime) : '';
     }
 
     initTriggers() {
@@ -559,7 +555,7 @@ class OverlayUtils {
         const basePadding = boxPadding;
 
         const sections = this.ensureArray(id.sections);
-        const uptimeVal = forceGUI ? '0.00s' : this.formatUptime(this.startTimes[id.name]);
+        const uptimeVal = forceGUI ? '0.00s' : TimeUtils.formatUptime(this.startTimes[id.name]);
 
         let contentMaxWidth = getTextWidth(id.name, fontSize);
         let calculatedHeight = 30 * scale;

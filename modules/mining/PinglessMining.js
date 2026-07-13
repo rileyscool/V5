@@ -15,20 +15,16 @@ class Pingless extends ModuleBase {
         });
 
         this.mining = false;
-        let x;
-        let y;
-        let z;
 
         this.on('packetSent', (packet) => {
             if (Utils.area() !== 'Crystal Hollows') return;
 
             let action = packet?.getAction()?.toString();
             if (action === 'START_DESTROY_BLOCK') {
-                this.pos = packet?.getPos();
-
-                x = this.pos.x;
-                y = this.pos.y;
-                z = this.pos.z;
+                const pos = packet?.getPos();
+                if (!pos) return;
+                this.pos = pos;
+                const { x, y, z } = pos;
 
                 const player = Player.getPlayer();
                 if (!player || !player.onGround()) return;

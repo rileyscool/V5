@@ -44,13 +44,13 @@ const setPickerColor = (picker, value) => {
 const initThemeSettings = () => {
     let themeCat = Categories.categories.find((c) => c.name === 'Theme');
     if (!themeCat) {
-        Categories.categories.push({
+        themeCat = {
             name: 'Theme',
             items: [],
             subcategories: [],
             directComponents: [],
-        });
-        themeCat = Categories.categories.find((c) => c.name === 'Theme');
+        };
+        Categories.categories.push(themeCat);
     } else if (!themeCat.directComponents) {
         themeCat.directComponents = [];
     }

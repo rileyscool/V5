@@ -192,7 +192,7 @@ class CommissionMacro extends ModuleBase {
         if (name.length > maxLen) {
             name = name.substring(0, maxLen - 2) + '..';
         }
-        return `${name}`;
+        return name;
     }
 
     getToolDisplay() {
@@ -303,9 +303,7 @@ class CommissionMacro extends ModuleBase {
     }
 
     setState(newState) {
-        if (this.currentState !== newState) {
-            this.currentState = newState;
-        }
+        this.currentState = newState;
     }
 
     runLogic() {
@@ -609,7 +607,7 @@ class CommissionMacro extends ModuleBase {
 
         const pigeonSlot = Guis.findItemInHotbar('Royal Pigeon');
         if (pigeonSlot !== -1) {
-            if (Player.getHeldItemIndex() != pigeonSlot) {
+            if (Player.getHeldItemIndex() !== pigeonSlot) {
                 Guis.setItemSlot(pigeonSlot);
                 this.delay(3);
             } else {

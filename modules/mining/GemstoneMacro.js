@@ -438,18 +438,7 @@ class GemstoneMacro extends ModuleBase {
         Mouse.ungrab();
 
         this.state = this.STATES.DECIDING;
-        this.scanned = false;
-        this.miningBotEnabled = false;
-
-        this.closestPoint = null;
-        this.rawPoint = null;
-        this.closestPointIndex = null;
-        this.rotatedToPoint = false;
-        this.attemptedEtherwarp = false;
-
-        this.etherwarpAttempts = 0;
-        this.etherwarpTicks = 0;
-        this.scanTickTimeout = 0;
+        this.resetRuntimeState();
 
         this.message('&aEnabled');
     }
@@ -463,6 +452,12 @@ class GemstoneMacro extends ModuleBase {
         Mouse.regrab();
 
         this.state = this.STATES.WAITING;
+        this.resetRuntimeState();
+
+        this.message('&cDisabled');
+    }
+
+    resetRuntimeState() {
         this.scanned = false;
         this.miningBotEnabled = false;
 
@@ -475,8 +470,6 @@ class GemstoneMacro extends ModuleBase {
         this.etherwarpAttempts = 0;
         this.etherwarpTicks = 0;
         this.scanTickTimeout = 0;
-
-        this.message('&cDisabled');
     }
 }
 

@@ -266,7 +266,7 @@ class Finder {
                     this.recalculate('nonchange_progress');
                     return;
                 }
-            } else if (this.isFly) {
+            } else {
                 if (!this.flyStarted) {
                     const flyNodes = result.path?.length
                         ? result.path
@@ -391,26 +391,7 @@ class Finder {
             Chat.messagePathfinder(`§eRecalculating (${this.recalculateAttempts}/${this.MAX_RECALCULATE_ATTEMPTS})`);
         }
 
-        const end = this.currentEnd;
-        const starts = this.currentStarts;
-        const callback = this.currentCallback;
-        const wasFromFile = this.calledFromFile;
-        const attempts = this.recalculateAttempts;
-        const scheduleId = ++this.recalculateScheduleId;
-
-        this.resetPath(false);
-
-        this.saidInfo = false;
-
-        ScheduleTask(3, () => {
-            if (scheduleId !== this.recalculateScheduleId) return;
-            this.currentEnd = end;
-            this.currentStarts = starts;
-            this.currentCallback = callback;
-            this.calledFromFile = wasFromFile;
-            this.recalculateAttempts = attempts;
-            this.findPath(end, callback, this.isFly, starts, true);
-        });
+        this.schedulePathRetry(3);
     }
 
     updatePathSignatureState(result) {
@@ -488,6 +469,10 @@ class Finder {
 
     retryRecalculate() {
         this.pathVariantSeed = Math.max(this.pathVariantSeed, this.recalculateAttempts);
+        this.schedulePathRetry(5);
+    }
+
+    schedulePathRetry(delay) {
         const end = this.currentEnd;
         const starts = this.currentStarts;
         const callback = this.currentCallback;
@@ -499,7 +484,7 @@ class Finder {
 
         this.saidInfo = false;
 
-        ScheduleTask(5, () => {
+        ScheduleTask(delay, () => {
             if (scheduleId !== this.recalculateScheduleId) return;
 
             this.currentEnd = end;

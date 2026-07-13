@@ -17,7 +17,7 @@ class Routes {
 
         const normalized = [];
         for (const point of routeArray) {
-            if (!point || typeof point.x !== 'number' || typeof point.y !== 'number' || typeof point.z !== 'number') continue;
+            if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y) || !Number.isFinite(point.z)) continue;
 
             const normalizedPoint = {
                 x: Math.floor(point.x),
@@ -79,7 +79,7 @@ class Routes {
      */
     getFilefromCallback(callback) {
         if (!Array.isArray(callback)) return null;
-        const routeName = callback.find((item) => item.enabled === true)?.name;
+        const routeName = callback.find((item) => item?.enabled === true)?.name;
         return routeName ? `${routeName}.json` : null;
     }
 

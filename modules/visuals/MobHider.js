@@ -49,18 +49,11 @@ class MobHider extends ModuleBase {
 
         const cleanName = ChatLib.removeFormatting(entityName);
 
-        const mobChecks = {
-            Kalhuikis: () => cleanName.includes('Kalhuiki'),
-            'Sven Pups': () => cleanName.includes('Sven Pup'),
-            Thysts: () => cleanName.includes('Thyst') || cleanName.includes('Endermite'),
-            Jerries: () => this.jerryRegex.test(cleanName),
-        };
-
         for (const option of enabled) {
-            const check = mobChecks[option];
-            if (check && check()) {
-                return true;
-            }
+            if (option === 'Kalhuikis' && cleanName.includes('Kalhuiki')) return true;
+            if (option === 'Sven Pups' && cleanName.includes('Sven Pup')) return true;
+            if (option === 'Thysts' && (cleanName.includes('Thyst') || cleanName.includes('Endermite'))) return true;
+            if (option === 'Jerries' && this.jerryRegex.test(cleanName)) return true;
         }
 
         return false;

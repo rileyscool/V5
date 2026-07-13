@@ -18,7 +18,7 @@ class ItemSearcher {
         const lowerName = cleanName.toLowerCase();
         const lowerTarget = targetName.toLowerCase();
 
-        return exact ? lowerName === lowerTarget : lowerName.indexOf(lowerTarget) !== -1;
+        return exact ? lowerName === lowerTarget : lowerName.includes(lowerTarget);
     }
 
     findInList(inventory, targetName, exact = false) {
@@ -141,7 +141,7 @@ export const Guis = {
             const itemName = displayName !== false ? ChatLib.removeFormatting(String(item.getName())) : String(item.type?.getRegistryName?.() || '');
             if (!itemName) continue;
 
-            const match = exact ? itemName.toLowerCase() === name.toLowerCase() : itemName.toLowerCase().indexOf(name.toLowerCase()) !== -1;
+            const match = exact ? itemName.toLowerCase() === name.toLowerCase() : itemName.toLowerCase().includes(name.toLowerCase());
 
             if (match) {
                 return this.clickSlot(i, shift, button);

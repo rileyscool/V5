@@ -423,9 +423,7 @@ class ClippingManager extends ModuleBase {
         });
     }
 
-    startRecording(silent) {
-        if (silent === undefined) silent = false;
-
+    startRecording(silent = false) {
         if (!ffmpegFile.exists()) {
             Chat.messageClip('FFmpeg not found. Downloading...');
             this.downloadFFmpeg();
@@ -524,10 +522,7 @@ class ClippingManager extends ModuleBase {
         });
     }
 
-    stopRecording(clear, silent, waitForExit) {
-        if (clear === undefined) clear = true;
-        if (silent === undefined) silent = false;
-        if (waitForExit === undefined) waitForExit = true;
+    stopRecording(clear = true, silent = false, waitForExit = true) {
         if (this.isStoppingProcess) return;
 
         const process = this.process;

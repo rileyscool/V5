@@ -3,6 +3,7 @@ import { ArmorStandEntity } from '../../utils/Constants';
 import { MacroState } from '../../utils/MacroState';
 import { MathUtils } from '../../utils/Math';
 import { ModuleBase } from '../../utils/ModuleBase';
+import { formatRoundedNumber } from '../../utils/NumberUtils';
 import { Guis } from '../../utils/player/Inventory';
 import { Keybind } from '../../utils/player/Keybinding';
 import { Rotations } from '../../utils/player/Rotations';
@@ -425,13 +426,7 @@ class StridersurferMacro extends ModuleBase {
     getKillsPerHour() {
         const hours = this.getActiveHours();
         if (hours <= 0) return '0';
-        return this.formatNumber(this.getKills() / hours);
-    }
-
-    formatNumber(value) {
-        if (!Number.isFinite(value)) return '0';
-        const rounded = Math.round(value);
-        return String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return formatRoundedNumber(this.getKills() / hours);
     }
 
     getActiveHours() {

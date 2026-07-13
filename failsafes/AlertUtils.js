@@ -50,7 +50,7 @@ class AlertUtilsClass {
         this._grabWindowOnFailsafe();
 
         const line1 = 'V5 BELIEVES YOU HAVE BEEN MACRO CHECKED!';
-        const key = `${this.cancelKey}`;
+        const key = this.cancelKey;
         const line2Start = 'PRESS ';
         const line2End = ' TO DISABLE THE REACTION';
 

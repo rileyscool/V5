@@ -3,7 +3,7 @@ import { isDeveloperModeEnabled } from '../../utils/DeveloperModeState';
 import { OverlayManager } from '../../gui/OverlayUtils';
 import { Chat } from '../../utils/Chat';
 import { MCHand } from '../../utils/Constants';
-import { finiteNumber } from '../../utils/NumberUtils';
+import { finiteNumber, formatRoundedNumber } from '../../utils/NumberUtils';
 import { ModuleBase } from '../../utils/ModuleBase';
 import { ServerboundUseItemPacket } from '../../utils/Packets';
 import { EtherwarpPathfinder } from '../../utils/pathfinder/EtherwarpPathfinder';
@@ -110,7 +110,7 @@ class RatMacro extends ModuleBase {
                         Target: () => this.getTargetDisplayName(),
                         Rats: () => this.getLiveRats().length,
                         Blacklisted: () => this.blacklistedRatIds.size,
-                        Cleared: () => this.formatNumber(OverlayManager.getTrackedValue(this.oid, 'cleared', 0)),
+                        Cleared: () => formatRoundedNumber(OverlayManager.getTrackedValue(this.oid, 'cleared', 0)),
                     },
                 },
             ],
@@ -1117,11 +1117,6 @@ class RatMacro extends ModuleBase {
 
     isEtherwarpPathfinderDebugEnabled() {
         return PathConfig.PATHFINDING_DEBUG;
-    }
-
-    formatNumber(value) {
-        if (!Number.isFinite(value)) return '0';
-        return String(Math.round(value)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
 
     onWorldUnload() {
