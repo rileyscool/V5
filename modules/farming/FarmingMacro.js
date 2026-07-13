@@ -16,6 +16,7 @@ import { rewarpSettings } from './RewarpSettings';
 const REWARP_RETRY_MS = 10_000;
 const MAX_REWARP_ATTEMPTS = 3;
 const MAX_PEST_TRACK_DISTANCE_SQ = 12 ** 2;
+const PEST_STALL_GRACE_TICKS = 20;
 const FARMING = 'Farming';
 const PEST = 'Pest';
 const RESTORING_PEST = 'Restoring Pest';
@@ -38,6 +39,7 @@ export class FarmingMacro extends ModuleBase {
         this.pestTarget = null;
         this.pestRotation = null;
         this.pestFarmState = null;
+        this.pestStallGraceTicks = 0;
 
         this.bindToggleKey();
         this.addButton('Set Rewarp Start', () => this.saveRewarpPoint('start'), 'Stand at the position reached by the rewarp command.');
@@ -83,6 +85,7 @@ export class FarmingMacro extends ModuleBase {
         this.pestTarget = null;
         this.pestRotation = null;
         this.pestFarmState = null;
+        this.pestStallGraceTicks = 0;
         pestSettings.restoreSlot();
     }
 
@@ -128,7 +131,12 @@ export class FarmingMacro extends ModuleBase {
         // Shift if flying.
         if (player.getAbilities().flying) return this.hold(false, false, true);
 
-        this.updateFarmState(player);
+        if (this.pestStallGraceTicks > 0) {
+            this.pestStallGraceTicks--;
+            this.updatePosition(player);
+        } else {
+            this.updateFarmState(player);
+        }
         this.invokeFarmState();
     }
 
@@ -251,6 +259,7 @@ export class FarmingMacro extends ModuleBase {
         this.pestTarget = null;
         this.pestRotation = null;
         this.pestFarmState = null;
+        this.pestStallGraceTicks = PEST_STALL_GRACE_TICKS;
         this.mode = FARMING;
     }
 
