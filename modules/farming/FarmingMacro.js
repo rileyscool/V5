@@ -3,6 +3,7 @@ import { Keybind } from '../../utils/player/Keybinding';
 import { Mousemat } from '../../utils/player/Mousemat';
 import { Rotations } from '../../utils/player/Rotations';
 import { MacroState } from '../../utils/MacroState';
+import { ScheduleTask } from '../../utils/ScheduleTask';
 import { TabListUtils } from '../../utils/TabListUtils';
 import { Mouse } from '../../utils/Ungrab';
 import { Utils } from '../../utils/Utils';
@@ -227,7 +228,9 @@ export class FarmingMacro extends ModuleBase {
             const player = Player.getPlayer();
             if (this.enabled && player) this.resumeFarming(player, farmState, rotation);
         };
-        if (!this.rotateTo(rotation.yaw, rotation.pitch, resume)) resume();
+        ScheduleTask(() => {
+            if (this.enabled && !this.rotateTo(rotation.yaw, rotation.pitch, resume)) resume();
+        });
     }
 
     resumeFarming(player, farmState, rotation) {

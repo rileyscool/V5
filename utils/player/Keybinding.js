@@ -3,11 +3,6 @@ import { ServerboundUseItemOnPacket } from '../Packets';
 import { ScheduleTask } from '../ScheduleTask';
 import { Utils, mc } from '../Utils';
 
-const LEFT_CLICK_METHOD = mc.getClass().getDeclaredMethod('startAttack'); // mojmap: startAttack
-const RIGHT_CLICK_METHOD = mc.getClass().getDeclaredMethod('startUseItem'); // mojmap: startUseItem
-LEFT_CLICK_METHOD.setAccessible(true);
-RIGHT_CLICK_METHOD.setAccessible(true);
-
 class ControlSystem {
     constructor() {
         this.lastActionTime = Date.now();
@@ -20,14 +15,14 @@ class ControlSystem {
     triggerLeftClick() {
         if (this.isGuiOpen()) return;
         ScheduleTask(() => {
-            LEFT_CLICK_METHOD.invoke(mc);
+            Client.leftClick();
         });
     }
 
     triggerRightClick() {
         if (this.isGuiOpen()) return;
         ScheduleTask(() => {
-            RIGHT_CLICK_METHOD.invoke(mc);
+            Client.rightClick();
         });
     }
 
@@ -52,11 +47,7 @@ class ControlSystem {
 
             if (isPressed && guiOpen) return false;
 
-            if (isPressed) {
-                const mouseGrabbed = net.minecraft.client.MouseHandler.class.getDeclaredField('mouseGrabbed'); // mojmap: mouseGrabbed
-                mouseGrabbed.setAccessible(true);
-                mouseGrabbed.setBoolean(Client.getMinecraft().mouseHandler, true);
-            }
+            if (isPressed) Client.getMinecraft().mouseHandler.grabMouse();
 
             ScheduleTask(() => {
                 attackKey.setDown(!!isPressed);
