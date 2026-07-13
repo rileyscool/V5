@@ -139,7 +139,7 @@ class GlowingMushroomMacro extends ModuleBase {
             this.reachableCount = nearbyNukerTargets.length;
             if (nearbyNukerTargets.length) {
                 this.nukeMushroomBatch(nearbyNukerTargets, token, (clicks) => {
-                    this.lastClickCount = clicks;
+                    this.lastClickCount += clicks;
                 });
             }
         }
@@ -173,7 +173,7 @@ class GlowingMushroomMacro extends ModuleBase {
             this.harvestRequestActive = true;
             this.harvestMushrooms(nearby, token, (clicks) => {
                 this.harvestRequestActive = false;
-                this.lastClickCount = clicks;
+                this.lastClickCount += clicks;
             });
             return;
         }
@@ -219,6 +219,7 @@ class GlowingMushroomMacro extends ModuleBase {
         this.waitingPathActive = waitingPath;
         this.status = waitingPath ? 'Waiting for Mushrooms' : 'Pathing';
 
+        Rotations.stop();
         Pathfinder.resetPath();
         Pathfinder.findPath(goals, (success) => {
             if (!this.enabled || token !== this.loopToken) return;
@@ -245,7 +246,7 @@ class GlowingMushroomMacro extends ModuleBase {
             this.harvestRequestActive = true;
             this.harvestMushrooms(postPath, token, (clicks) => {
                 this.harvestRequestActive = false;
-                this.lastClickCount = clicks;
+                this.lastClickCount += clicks;
             });
         });
     }
