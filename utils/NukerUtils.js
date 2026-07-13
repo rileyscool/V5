@@ -145,38 +145,11 @@ class NukerUtilsClass {
     }
 
     getFaceCenterPosition(blockPos, face) {
-        const offset = this.getFaceOffset(face);
-
-        return new Vec3d(blockPos.getX() + 0.5 + offset.x * 0.5, blockPos.getY() + 0.5 + offset.y * 0.5, blockPos.getZ() + 0.5 + offset.z * 0.5);
-    }
-
-    getFaceOffset(face) {
-        let offsetX = 0;
-        let offsetY = 0;
-        let offsetZ = 0;
-
-        switch (face) {
-            case Direction.DOWN:
-                offsetY = -1;
-                break;
-            case Direction.UP:
-                offsetY = 1;
-                break;
-            case Direction.NORTH:
-                offsetZ = -1;
-                break;
-            case Direction.SOUTH:
-                offsetZ = 1;
-                break;
-            case Direction.WEST:
-                offsetX = -1;
-                break;
-            case Direction.EAST:
-                offsetX = 1;
-                break;
-        }
-
-        return { x: offsetX, y: offsetY, z: offsetZ };
+        return new Vec3d(
+            blockPos.getX() + 0.5 + face.getStepX() * 0.5,
+            blockPos.getY() + 0.5 + face.getStepY() * 0.5,
+            blockPos.getZ() + 0.5 + face.getStepZ() * 0.5
+        );
     }
 }
 
