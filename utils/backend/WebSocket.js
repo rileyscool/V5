@@ -1,7 +1,7 @@
 import WebSocket from 'WebSocket';
-import { returnDiscord } from '../../gui/Utils';
 import { Chat } from '../Chat';
 import { Links } from '../Constants';
+import { returnDiscord } from '../NetworkUtils';
 import { ServerboundChatPacket } from '../Packets';
 import { ScheduleTask } from '../ScheduleTask';
 import { v5Command } from '../V5Commands';

@@ -1,4 +1,4 @@
-import { fetchURL } from '../gui/Utils';
+import { fetchURL } from './NetworkUtils';
 
 const ITEMS_URL = 'https://api.hypixel.net/v2/resources/skyblock/items';
 const PRICE_URL = 'https://sky.coflnet.com/api/item/price/';

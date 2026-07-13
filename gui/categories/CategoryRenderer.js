@@ -17,7 +17,6 @@ import {
     drawText,
     easeInOutQuad,
     easeOutCubic,
-    getDiscordPfpPath,
     getTextWidth,
     isInside,
     resetScissor,
@@ -31,6 +30,7 @@ import { setTooltip } from '../core/GuiTooltip';
 import { SearchBar } from './CategorySearchBar';
 import { Categories } from './CategorySystem';
 import { globalAssetsDir } from '../../utils/Constants';
+import { getDiscordPfpPath } from '../../utils/NetworkUtils';
 
 const ASSETS_PATHS = [globalAssetsDir.getPath() + '/'];
 
