@@ -27,18 +27,22 @@ class MousematController {
             waitingForClose: false,
         });
 
-        Guis.setItemSlot(slot);
         ScheduleTask(2, () => {
             if (this.rotation !== rotation) return;
 
-            const lore = ChatLib.removeFormatting(Player.getHeldItem()?.getLore?.().join('\n') || '');
-            const selectedYaw = lore.match(/Selected Yaw: (-?[\d.]+)/);
-            const selectedPitch = lore.match(/Selected Pitch: (-?[\d.]+)/);
-            if (selectedYaw && selectedPitch && Number(selectedYaw[1]) === Number(rotation.yaw) && Number(selectedPitch[1]) === Number(rotation.pitch))
-                return this.snap(rotation);
+            Guis.setItemSlot(slot);
+            ScheduleTask(2, () => {
+                if (this.rotation !== rotation) return;
 
-            rotation.waitingForSign = true;
-            Keybind.rightClick();
+                const lore = ChatLib.removeFormatting(Player.getHeldItem()?.getLore?.().join('\n') || '');
+                const selectedYaw = lore.match(/Selected Yaw: (-?[\d.]+)/);
+                const selectedPitch = lore.match(/Selected Pitch: (-?[\d.]+)/);
+                if (selectedYaw && selectedPitch && Number(selectedYaw[1]) === Number(rotation.yaw) && Number(selectedPitch[1]) === Number(rotation.pitch))
+                    return this.snap(rotation);
+
+                rotation.waitingForSign = true;
+                Keybind.rightClick();
+            });
         });
         return true;
     }
@@ -49,8 +53,12 @@ class MousematController {
 
         this.stop();
         const rotation = (this.rotation = { originalSlot: Player.getHeldItemIndex() });
-        Guis.setItemSlot(slot);
-        ScheduleTask(2, () => this.snap(rotation));
+        ScheduleTask(2, () => {
+            if (this.rotation !== rotation) return;
+
+            Guis.setItemSlot(slot);
+            ScheduleTask(2, () => this.snap(rotation));
+        });
         return true;
     }
 
