@@ -457,7 +457,7 @@ class GlowingMushroomMacro extends ModuleBase {
         if (horizontalDistSq > 2.5 * 2.5) return false;
         if (dy < -0.1 || dy > 5.5) return false;
 
-        return player.isOnGround();
+        return player.onGround();
     }
 
     getMushroomKey(x, y, z) {
