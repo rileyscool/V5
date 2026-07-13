@@ -21,6 +21,9 @@ class FishingHelper extends ModuleBase {
 
         this.petSwapRecast = false;
         this.petSlotRecast = 10;
+        this.slugfishMode = false;
+        this.slugfishWaitTime = 0;
+        this.bobberActiveAt = 0;
 
         this.pendingPetSlot = null;
 
@@ -30,6 +33,13 @@ class FishingHelper extends ModuleBase {
 
         this.addToggle('Pet swap after recast', (v) => (this.petSwapRecast = v));
         this.addSlider('Pet slot (recast)', 10, 43, 10, (v) => (this.petSlotRecast = v));
+        let slugfishWaitTime;
+        this.addToggle('Slugfish Mode', (v) => {
+            this.slugfishMode = v;
+            slugfishWaitTime.visible = v;
+        });
+        slugfishWaitTime = this.addSlider('Slugfish wait time', 0, 30, 0, (v) => (this.slugfishWaitTime = v));
+        slugfishWaitTime.visible = false;
     }
     tick() {
         if (this.tickDelay > 0) {
@@ -39,6 +49,8 @@ class FishingHelper extends ModuleBase {
 
         switch (this.step) {
             case 0: {
+                if (this.slugfishMode && Date.now() - this.bobberActiveAt < this.slugfishWaitTime * 1000) return;
+
                 const armorStands = World.getAllEntitiesOfType(ArmorStandEntity);
                 const target = armorStands.find((element) => element.getName() === '!!!');
                 if (!target) return;
@@ -51,6 +63,7 @@ class FishingHelper extends ModuleBase {
             }
             case 20:
                 Keybind.rightClick();
+                this.bobberActiveAt = Date.now();
                 if (this.petSwapRecast) {
                     this.pendingPetSlot = this.petSlotRecast;
                     this.step = 30;
