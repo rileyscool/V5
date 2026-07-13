@@ -1,5 +1,4 @@
 import { FarmingMacro } from './FarmingMacro';
-import { Rotations } from '../../utils/player/Rotations';
 
 const STATES = {
     LEFT: 'Left',
@@ -26,7 +25,7 @@ class SDSMushroomMacro extends FarmingMacro {
         this.ignoreTicks = 20;
         this.stationaryTicks = 0;
         this.updatePosition(player);
-        Rotations.lookAtAngles(this.snapYaw(player.getYRot(), -16), 6.7);
+        this.rotateTo(this.snapYaw(player.getYRot(), -16), 6.7);
     }
 
     updateFarmState(player) {

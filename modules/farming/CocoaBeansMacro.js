@@ -1,5 +1,4 @@
 import { FarmingMacro } from './FarmingMacro';
-import { Rotations } from '../../utils/player/Rotations';
 
 const STATES = {
     FORWARD: 'Forward',
@@ -28,7 +27,7 @@ class CocoaBeansMacro extends FarmingMacro {
         this.lastDirection = STATES.FORWARD;
         this.stationaryTicks = 0;
         this.updatePosition(player);
-        Rotations.lookAtAngles(0, -45);
+        this.rotateTo(0, -45);
     }
 
     updateFarmState(player) {

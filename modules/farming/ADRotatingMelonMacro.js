@@ -1,5 +1,4 @@
 import { FarmingMacro } from './FarmingMacro';
-import { Rotations } from '../../utils/player/Rotations';
 
 const STATES = {
     LEFT: 'Left',
@@ -39,7 +38,7 @@ class ADRotatingMelonMacro extends FarmingMacro {
         this.stationaryTicks = 0;
         this.ignoreTicks = 5;
         this.leftYaw = this.snapYaw(player.getYRot(), 45) - (this.state === STATES.RIGHT ? 90 : 0);
-        Rotations.lookAtAngles(this.state === STATES.LEFT ? this.leftYaw : this.leftYaw + 90, 42);
+        this.rotateTo(this.state === STATES.LEFT ? this.leftYaw : this.leftYaw + 90, 42);
     }
 
     updateFarmState(player) {
@@ -55,8 +54,7 @@ class ADRotatingMelonMacro extends FarmingMacro {
         this.stationaryTicks = 0;
         this.nextState = this.state === STATES.LEFT ? STATES.RIGHT : STATES.LEFT;
         this.state = STATES.ROTATING;
-        Rotations.lookAtAngles(this.nextState === STATES.LEFT ? this.leftYaw : this.leftYaw + 90, 42);
-        Rotations.onComplete(() => {
+        this.rotateTo(this.nextState === STATES.LEFT ? this.leftYaw : this.leftYaw + 90, 42, () => {
             if (!this.enabled) return;
             this.state = this.nextState;
             this.ignoreTicks = Math.round(this.getLaneSwitchDelay() / 50);

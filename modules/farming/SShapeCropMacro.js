@@ -1,5 +1,4 @@
 import { FarmingMacro } from './FarmingMacro';
-import { Rotations } from '../../utils/player/Rotations';
 
 const STATES = {
     LEFT: 'Left',
@@ -28,7 +27,7 @@ class SShapeCropMacro extends FarmingMacro {
         this.stationaryTicks = 0;
         this.yaw = this.snapYaw(player.getYRot(), 0);
         this.updatePosition(player);
-        Rotations.lookAtAngles(this.yaw, this.pitch);
+        this.rotateTo(this.yaw, this.pitch);
     }
 
     updateFarmState(player) {

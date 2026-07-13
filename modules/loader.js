@@ -19,6 +19,7 @@ import './foraging/HuntingHelpers';
 //import './foraging/SeaLumieMacro';
 
 /* FARMING */
+import './farming/FarmingSettings';
 import './farming/VisitorMacro';
 import './farming/ADRotatingMelonMacro';
 import './farming/CocoaBeansMacro';

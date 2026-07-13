@@ -1,11 +1,13 @@
 import { ModuleBase } from '../../utils/ModuleBase';
 import { Keybind } from '../../utils/player/Keybinding';
+import { Mousemat } from '../../utils/player/Mousemat';
 import { Rotations } from '../../utils/player/Rotations';
 import { MacroState } from '../../utils/MacroState';
 import { TabListUtils } from '../../utils/TabListUtils';
 import { Mouse } from '../../utils/Ungrab';
 import { Utils } from '../../utils/Utils';
 import { v5Command } from '../../utils/V5Commands';
+import { farmingSettings, MOUSEMAT, MOUSEMAT_NAME } from './FarmingSettings';
 import { getNearbyPest } from '../visuals/PestESP';
 import { pestSettings } from './PestKiller';
 import { rewarpSettings } from './RewarpSettings';
@@ -68,6 +70,7 @@ export class FarmingMacro extends ModuleBase {
 
     onDisable() {
         if (this.rewarpActionStarted) MacroState.getModule('Visitor Macro')?.toggle(false);
+        Mousemat.stop();
         Rotations.stop();
         Keybind.unpressKeys();
         Mouse.regrab();
@@ -91,6 +94,7 @@ export class FarmingMacro extends ModuleBase {
         const player = Player.getPlayer();
         if (!player) return;
 
+        if (Mousemat.active) return;
         if (Keybind.isGuiOpen()) return Keybind.unpressKeys();
 
         switch (this.mode) {
@@ -230,11 +234,29 @@ export class FarmingMacro extends ModuleBase {
     resumeFarming(player, farmState, rotation) {
         this.onFarmStart(player);
         Object.assign(this, farmState);
-        Rotations.lookAtAngles(rotation.yaw, rotation.pitch);
+        if (farmingSettings.rotationMethod !== MOUSEMAT) Rotations.lookAtAngles(rotation.yaw, rotation.pitch);
         this.pestTarget = null;
         this.pestRotation = null;
         this.pestFarmState = null;
         this.mode = FARMING;
+    }
+
+    rotateTo(yaw, pitch, callback = null) {
+        if (farmingSettings.rotationMethod !== MOUSEMAT) {
+            const started = Rotations.lookAtAngles(yaw, pitch);
+            if (started && callback) Rotations.onComplete(callback);
+            return started;
+        }
+
+        Keybind.unpressKeys();
+        Rotations.stop();
+        if (!Mousemat.rotateTo(yaw, pitch)) {
+            this.message(`&cNo ${MOUSEMAT_NAME} found in hotbar.`);
+            this.toggle(false);
+            return false;
+        }
+        if (callback) Mousemat.onComplete(callback);
+        return true;
     }
 
     hold(left, backward, sneak = false, right = false, forward = false) {

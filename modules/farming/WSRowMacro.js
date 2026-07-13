@@ -1,5 +1,4 @@
 import { FarmingMacro } from './FarmingMacro';
-import { Rotations } from '../../utils/player/Rotations';
 import { Utils } from '../../utils/Utils';
 
 const STATES = {
@@ -34,7 +33,7 @@ export class WSRowMacro extends FarmingMacro {
         this.ignoreTicks = 20;
         this.stationaryTicks = 0;
         this.updatePosition(player);
-        Rotations.lookAtAngles(this.snapYaw(player.getYRot(), this.yaw), Utils.randomFloat(this.pitchMin, this.pitchMax));
+        this.rotateTo(this.snapYaw(player.getYRot(), this.yaw), Utils.randomFloat(this.pitchMin, this.pitchMax));
     }
 
     updateFarmState(player) {
