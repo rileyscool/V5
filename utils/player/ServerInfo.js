@@ -136,10 +136,5 @@ export const ServerInfo = {
         if (ping < 249) return 0xffaa00;
         return 0xff5555;
     },
-    getServerInfo: function () {
-        return {
-            ping: this.getPing(),
-            tps: this.getTPS(),
-        };
-    },
+    getServerInfo: () => ({ ping: ServerInfo.getPing(), tps: ServerInfo.getTPS() }),
 };

@@ -1,7 +1,6 @@
-import { ArmorStandEntity } from '../../utils/Constants';
+import { ArmorStandEntity, MCHand, Vec3d } from '../../utils/Constants';
 import { ModuleBase } from '../../utils/ModuleBase';
 import { Utils } from '../../utils/Utils';
-import { MCHand, Vec3d } from '../../utils/Constants';
 import { ServerboundInteractPacket } from '../../utils/Packets';
 import { Guis } from '../../utils/player/Inventory';
 

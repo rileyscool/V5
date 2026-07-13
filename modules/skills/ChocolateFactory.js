@@ -249,30 +249,20 @@ class ChocolateFactory extends ModuleBase {
 
         const targetType = `${eggTypeName}`.toLowerCase();
         let closest = null;
+        let closestPriority = Infinity;
         let closestDistance = Infinity;
 
         this.detectedEggs.forEach((egg) => {
             if (!egg || egg.isFound || !egg.entity) return;
-            if (`${egg.eggType}`.toLowerCase() !== targetType) return;
 
             const distance = MathUtils.fastDistance(player.getX(), player.getY(), player.getZ(), egg.entity.getX(), egg.entity.getY(), egg.entity.getZ());
-            if (distance < closestDistance) {
+            const priority = `${egg.eggType}`.toLowerCase() === targetType ? 0 : 1;
+            if (priority < closestPriority || (priority === closestPriority && distance < closestDistance)) {
                 closest = egg;
+                closestPriority = priority;
                 closestDistance = distance;
             }
         });
-
-        if (!closest) {
-            this.detectedEggs.forEach((egg) => {
-                if (!egg || egg.isFound || !egg.entity) return;
-
-                const distance = MathUtils.fastDistance(player.getX(), player.getY(), player.getZ(), egg.entity.getX(), egg.entity.getY(), egg.entity.getZ());
-                if (distance < closestDistance) {
-                    closest = egg;
-                    closestDistance = distance;
-                }
-            });
-        }
 
         if (closest) {
             closest.isFound = true;

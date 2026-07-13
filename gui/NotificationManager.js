@@ -1,4 +1,4 @@
-import { colorWithAlpha, drawRoundedRectangle, drawText, FontSizes, THEME } from './Utils';
+import { colorWithAlpha, drawRoundedRectangle, drawText, easeOutCubic, FontSizes, THEME } from './Utils';
 
 // Configuration
 const NOTIFICATION_WIDTH = 250;
@@ -162,7 +162,7 @@ class Notification {
         const lifetime = now - this.createdAt;
         if (this.state === 'entering') {
             const progress = Math.min(1, (now - this.animationStart) / ANIMATION_DURATION);
-            const eased = this.easeOutCubic(progress);
+            const eased = easeOutCubic(progress);
             this.x = Renderer.screen.getWidth() + (this.targetX - Renderer.screen.getWidth()) * eased;
             this.opacity = eased;
             const yDiff = this.targetY - this.y;
@@ -195,10 +195,6 @@ class Notification {
             this.exitX = this.x;
             this.exitY = this.y;
         }
-    }
-
-    easeOutCubic(t) {
-        return 1 - Math.pow(1 - t, 3);
     }
 
     draw(mouseX, mouseY) {

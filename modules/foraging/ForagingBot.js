@@ -70,7 +70,7 @@ class ForagingBot extends ModuleBase {
         this.state = this.STATES.WAITING;
 
         this.bindToggleKey();
-        this.addToggle('Debug', this.setDebug.bind(this), 'Render stuff');
+        this.addToggle('Debug', (value) => (this.debug = !!value), 'Render stuff');
 
         this.on('tick', this.tick.bind(this));
         this.on('postRenderWorld', this.renderConnectedBlocks.bind(this));
@@ -85,10 +85,6 @@ class ForagingBot extends ModuleBase {
                 },
             },
         ]);
-    }
-
-    setDebug(value) {
-        this.debug = value;
     }
 
     registerWaypointCommand() {

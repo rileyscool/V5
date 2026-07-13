@@ -65,14 +65,14 @@ function handleIncomingMessage(raw) {
             }
             handleRemoteMessage(data);
             return;
-        } else {
-            handleIRCMessage(data);
-            if (isIrcEnabled() && isAutoMeowEnabled() && data.type === 'message' && `${data.msg ?? ''}`.trim().toLowerCase() === 'meow') {
-                const meows = isRandomChoiceMeowEnabled()
-                    ? ['meow!', 'mrrp!', 'mreow!', 'mroew!', 'mew!', 'mrow!', 'nya!', 'prrrt!', 'mraow!', 'mrrow!']
-                    : ['meow!'];
-                sendChatMessage(meows[Math.floor(Math.random() * meows.length)]);
-            }
+        }
+
+        handleIRCMessage(data);
+        if (isIrcEnabled() && isAutoMeowEnabled() && data.type === 'message' && `${data.msg ?? ''}`.trim().toLowerCase() === 'meow') {
+            const meows = isRandomChoiceMeowEnabled()
+                ? ['meow!', 'mrrp!', 'mreow!', 'mroew!', 'mew!', 'mrow!', 'nya!', 'prrrt!', 'mraow!', 'mrrow!']
+                : ['meow!'];
+            sendChatMessage(meows[Math.floor(Math.random() * meows.length)]);
         }
     } catch (e) {
         Chat.messageIrc('An error occurred parsing message:');

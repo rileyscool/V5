@@ -53,7 +53,6 @@ class SwiftIntegration {
         const endsValid = Array.isArray(endPoints) && endPoints.length > 0 && Array.isArray(endPoints[0]);
 
         if (!startsValid || !endsValid) return false;
-        if (!startPoints.length || !endPoints.length) return false;
 
         try {
             const startArray = this.toJavaPointArray(startPoints, fly);

@@ -79,14 +79,8 @@ class Routes {
      */
     getFilefromCallback(callback) {
         if (!Array.isArray(callback)) return null;
-
-        let enabledObjects = callback.filter((item) => item.enabled === true);
-        let enabledRouteNames = enabledObjects.map((item) => item.name);
-
-        if (enabledRouteNames.length === 0) return null;
-
-        let fileName = enabledRouteNames[0] + '.json';
-        return fileName;
+        const routeName = callback.find((item) => item.enabled === true)?.name;
+        return routeName ? `${routeName}.json` : null;
     }
 
     /**

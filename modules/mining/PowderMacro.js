@@ -39,7 +39,7 @@ class PowderMacro extends ModuleBase {
             name: 'Powder Macro',
             description: 'Powder Macro',
             subcategory: 'Mining',
-            hideEnabledButton: true, // what the fuck is this, this isnt a thing???
+            showEnabledToggle: false,
             isMacro: true,
         });
 

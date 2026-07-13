@@ -119,11 +119,7 @@ class ChatQOL extends ModuleBase {
     }
 
     bypassChat(message) {
-        let bypassedMessage = '';
-        for (let char of message) {
-            bypassedMessage += this.bypassDict[char] || char;
-        }
-        return bypassedMessage;
+        return Array.from(message, (char) => this.bypassDict[char] || char).join('');
     }
 }
 

@@ -129,9 +129,12 @@ class PeltQOL extends ModuleBase {
         }
     }
 
-    callTrevor() {
-        if (this.callMode === '/call') this.run('call trevor');
-        else if (this.callMode === 'Abiphone') this.startAbiphoneCall();
+    callTrevor(delay = 0, scheduleAbiphone = false) {
+        if (this.callMode === '/call') return this.run('call trevor', delay);
+        if (this.callMode === 'Abiphone') {
+            if (scheduleAbiphone) return ScheduleTask(delay - 20, () => this.startAbiphoneCall());
+            this.startAbiphoneCall();
+        }
     }
 
     startAbiphoneCall() {
@@ -215,26 +218,20 @@ class PeltQOL extends ModuleBase {
         if (FINISH.some((hint) => lower.includes(hint))) {
             this.huntCompleted = true;
             this.animals = [];
-            if (this.callMode === '/call') this.run('call trevor');
-            else if (this.callMode === 'Abiphone') this.startAbiphoneCall();
+            this.callTrevor();
             return;
         }
 
         if (this.callMode === 'Disabled') return;
         if (RETRY.some((hint) => lower.includes(hint))) {
-            if (this.callMode === '/call') this.run('call trevor');
-            else if (this.callMode === 'Abiphone') this.startAbiphoneCall();
+            this.callTrevor();
             return;
         }
 
         const cooldown = lower.match(/\[npc\] trevor: try coming back in.*?(\d+)\s*s\b/);
         if (cooldown) {
             const delay = Math.max(+cooldown[1] * 20 - 80, 0);
-            if (this.callMode === '/call') this.run('call trevor', this.rezarAbicaseAccessory ? delay - 40 : delay);
-            else if (this.callMode === 'Abiphone')
-                ScheduleTask(delay - 20, () => {
-                    this.startAbiphoneCall();
-                });
+            this.callTrevor(this.callMode === '/call' && this.rezarAbicaseAccessory ? delay - 40 : delay, true);
         }
     }
 

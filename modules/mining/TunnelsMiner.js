@@ -71,7 +71,7 @@ class TunnelsMiner extends ModuleBase {
     }
 
     setSelectedOres(value) {
-        this.selectedOres = [...new Set(value.filter((entry) => entry.enabled).map((entry) => entry.name))];
+        return this.setSelectedOreNames(value.filter((entry) => entry.enabled).map((entry) => entry.name));
     }
 
     setSelectedOreNames(ores) {

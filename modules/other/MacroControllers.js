@@ -15,41 +15,24 @@ class Controller extends ModuleBase {
 
         this.addDirectToggle(
             'Auto-Perspective',
-            (v) => this.handlePerspective(v),
+            (value) => Mixin.set('forcePerspective', value),
             'Automatically switches to third person while macro is running.',
             false,
             sectionName
         );
 
-        this.addDirectToggle('Limit FPS', (v) => this.handleFPS(v), 'Limits FPS while macro is running.', false, sectionName);
-        this.addDirectToggle('Mute Game', (v) => this.handleMute(v), 'Mutes game audio while macro is running.', false, sectionName);
+        this.addDirectToggle('Limit FPS', (value) => Mixin.set('limitFps', value), 'Limits FPS while macro is running.', false, sectionName);
+        this.addDirectToggle('Mute Game', (value) => Mixin.set('muteGame', value), 'Mutes game audio while macro is running.', false, sectionName);
 
         this.addDirectMultiToggle(
             'Render Limiters',
             ['Off', 'Limit Chunks', 'No Render'],
             true,
-            (v) => this.handleRenderingLimiter(v),
+            (value) => Mixin.set('renderLimiter', value?.find?.((option) => option.enabled)?.name || 'Off'),
             'Limits render distance or cancels rendering while macro is running.',
             'Off',
             sectionName
         );
-    }
-
-    handleRenderingLimiter(value) {
-        const v = value?.find?.((option) => option.enabled);
-        Mixin.set('renderLimiter', v?.name || 'Off');
-    }
-
-    handlePerspective(value) {
-        Mixin.set('forcePerspective', value);
-    }
-
-    handleFPS(value) {
-        Mixin.set('limitFps', value);
-    }
-
-    handleMute(value) {
-        Mixin.set('muteGame', value);
     }
 }
 
