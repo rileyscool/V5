@@ -227,8 +227,7 @@ export class FarmingMacro extends ModuleBase {
             const player = Player.getPlayer();
             if (this.enabled && player) this.resumeFarming(player, farmState, rotation);
         };
-        if (!Rotations.lookAtAngles(rotation.yaw, rotation.pitch)) return resume();
-        Rotations.onComplete(resume);
+        if (!this.rotateTo(rotation.yaw, rotation.pitch, resume)) resume();
     }
 
     resumeFarming(player, farmState, rotation) {
