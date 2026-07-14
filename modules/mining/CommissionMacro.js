@@ -636,7 +636,7 @@ class CommissionMacro extends ModuleBase {
             return;
         }
 
-        if (closestDist < 4 && !Pathfinder.isPathing()) {
+        if (MathUtils.distanceToPlayerPoint(adjustedTarget) <= 3 && !Pathfinder.isPathing()) { // entity interaction range = 3
             if (!this.ensureDrillEquippedForEmissaryClaim()) return;
             if (Math.abs(Player.getMotionX()) + Math.abs(Player.getMotionZ()) >= 0.04) return;
 
