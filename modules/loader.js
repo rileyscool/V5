@@ -19,13 +19,8 @@ import './foraging/HuntingHelpers';
 //import './foraging/SeaLumieMacro';
 
 /* FARMING */
-import './farming/FarmingSettings';
-import './farming/VisitorMacro';
-import './farming/ADRotatingMelonMacro';
 import './farming/CocoaBeansMacro';
-import './farming/SDSMushroomMacro';
 import './farming/SShapeCropMacro';
-import './farming/SShapeSugarCaneMacro';
 import './farming/WSRowMacros';
 
 /* VISUALS */

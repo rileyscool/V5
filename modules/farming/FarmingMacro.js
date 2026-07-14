@@ -2,25 +2,21 @@ import { ModuleBase } from '../../utils/ModuleBase';
 import { Keybind } from '../../utils/player/Keybinding';
 import { Mousemat } from '../../utils/player/Mousemat';
 import { Rotations } from '../../utils/player/Rotations';
-import { MacroState } from '../../utils/MacroState';
 import { ScheduleTask } from '../../utils/ScheduleTask';
 import { TabListUtils } from '../../utils/TabListUtils';
 import { Mouse } from '../../utils/Ungrab';
 import { Utils } from '../../utils/Utils';
-import { v5Command } from '../../utils/V5Commands';
 import { farmingSettings } from './FarmingSettings';
+import { visitorMacro } from './VisitorMacro';
 import { getNearbyPest } from '../visuals/PestESP';
-import { pestSettings } from './PestKiller';
-import { rewarpSettings } from './RewarpSettings';
 
 const REWARP_RETRY_MS = 10_000;
 const MAX_REWARP_ATTEMPTS = 3;
-const MAX_PEST_TRACK_DISTANCE_SQ = 12 ** 2;
+const MAX_PEST_TRACK_DISTANCE = 12;
 const PEST_STALL_GRACE_TICKS = 20;
 const FARMING = 'Farming';
 const PEST = 'Pest';
 const RESTORING_PEST = 'Restoring Pest';
-const VISITING = 'Visiting';
 const REWARPING = 'Rewarping';
 
 export class FarmingMacro extends ModuleBase {
@@ -29,21 +25,11 @@ export class FarmingMacro extends ModuleBase {
 
         this.pointsPath = `FarmingMacro/${commandPrefix.replaceAll(' ', '_')}_points.json`;
         this.points = Utils.getConfigFile(this.pointsPath) || {};
-        this.mode = FARMING;
-        this.startDelayTicks = 0;
-        this.rewarpAttempts = 0;
-        this.nextRewarpAt = 0;
-        this.pauseForRotations = true;
-        this.rewarpActionStarted = false;
-        this.rewarpStartPoint = null;
-        this.pestTarget = null;
-        this.pestRotation = null;
-        this.pestFarmState = null;
-        this.pestStallGraceTicks = 0;
 
         this.bindToggleKey();
-        this.addButton('Set Rewarp Start', () => this.saveRewarpPoint('start'), 'Stand at the position reached by the rewarp command.');
-        this.addButton('Set Rewarp End', () => this.saveRewarpPoint('end'), 'Stand at the farm endpoint that should trigger a rewarp.');
+        const rewarpStart = this.addButton('Set Rewarp Start', () => this.saveRewarpPoint('start'), 'Stand at the position reached by the rewarp command.');
+        const rewarpEnd = this.addButton('Set Rewarp End', () => this.saveRewarpPoint('end'), 'Stand at the farm endpoint that should trigger a rewarp.');
+        farmingSettings.addRewarpButtons(rewarpStart, rewarpEnd);
         this.createOverlay([
             {
                 title: 'Status',
@@ -51,42 +37,38 @@ export class FarmingMacro extends ModuleBase {
             },
         ]);
 
-        v5Command(`${commandPrefix} set start`, () => this.saveRewarpPoint('start'));
-        v5Command(`${commandPrefix} set end`, () => this.saveRewarpPoint('end'));
         this.on('tick', () => this.handleTick());
     }
 
     onEnable() {
-        if (rewarpSettings.mode === 'Rewarp' && !this.hasRewarpPoints()) {
+        if (!farmingSettings.looping && (!this.isPoint(this.points.start) || !this.isPoint(this.points.end))) {
             this.message('&cSet both Rewarp points before enabling Rewarp mode.');
             this.toggle(false);
             return;
         }
+        this.farmingRotation = null;
+        this.mode = FARMING;
         Mouse.ungrab();
         this.startDelayTicks = 1;
         const player = Player.getPlayer();
         if (!player) return;
 
-        this.mode = FARMING;
-        this.onFarmStart(player);
+        this.startFarming(player);
     }
 
     onDisable() {
-        if (this.rewarpActionStarted) MacroState.getModule('Visitor Macro')?.toggle(false);
+        if (this.rewarpActionStarted) visitorMacro.toggle(false);
         Mousemat.stop();
         Rotations.stop();
         Keybind.unpressKeys();
         Mouse.regrab();
         this.mode = FARMING;
         this.rewarpActionStarted = false;
-        this.rewarpStartPoint = null;
-        this.rewarpAttempts = 0;
-        this.nextRewarpAt = 0;
         this.pestTarget = null;
         this.pestRotation = null;
         this.pestFarmState = null;
         this.pestStallGraceTicks = 0;
-        pestSettings.restoreSlot();
+        farmingSettings.restoreSlot();
     }
 
     handleTick() {
@@ -108,28 +90,23 @@ export class FarmingMacro extends ModuleBase {
                 return this.handlePest(player);
             case RESTORING_PEST:
                 return Keybind.unpressKeys();
-            case VISITING:
-                return this.handleVisitor(player);
             case REWARPING:
                 return this.handleRewarp(player);
         }
     }
 
     handleFarming(player) {
-        // Nearby pest killer
-        if (pestSettings.killNearbyPests && this.handlePest(player)) return;
+        if (farmingSettings.killNearbyPests && this.handlePest(player)) return;
 
-        // Handle both rewarp modes
-        if (rewarpSettings.mode === 'Rewarp' && this.isAtPoint(player, this.points.end)) return this.beginRewarp();
-        if (rewarpSettings.mode === 'Looping' && rewarpSettings.runVisitorMacro && TabListUtils.readVisitors().length >= rewarpSettings.minimumVisitors) {
+        if (!farmingSettings.looping && this.isAtPoint(player, this.points.end)) return this.beginRewarp();
+        if (farmingSettings.looping && farmingSettings.runVisitorMacro && TabListUtils.readVisitors().length >= farmingSettings.minimumVisitors) {
             ChatLib.command('sethome');
             return this.beginRewarp({ x: player.getX(), y: player.getY(), z: player.getZ() });
         }
 
-        if (Rotations.active && this.pauseForRotations) return this.hold(false, false);
+        if (Rotations.active) return this.hold();
 
-        // Shift if flying.
-        if (player.getAbilities().flying) return this.hold(false, false, true);
+        if (player.getAbilities().flying) return this.hold('shift');
 
         if (this.pestStallGraceTicks > 0) {
             this.pestStallGraceTicks--;
@@ -143,47 +120,37 @@ export class FarmingMacro extends ModuleBase {
     beginRewarp(rewarpStartPoint = this.points.start) {
         this.rewarpStartPoint = rewarpStartPoint;
         this.rewarpAttempts = 0;
-        this.nextRewarpAt = Date.now() + Utils.randomInt(rewarpSettings.delayMin, rewarpSettings.delayMax);
+        this.nextRewarpAt = Date.now() + Utils.randomInt(farmingSettings.delayMin, farmingSettings.delayMax);
         Keybind.unpressKeys();
+        this.mode = REWARPING;
 
-        if (!rewarpSettings.runVisitorMacro || TabListUtils.readVisitors().length < rewarpSettings.minimumVisitors) {
-            this.mode = REWARPING;
-            return;
-        }
+        if (!farmingSettings.runVisitorMacro || TabListUtils.readVisitors().length < farmingSettings.minimumVisitors) return;
 
-        this.mode = VISITING;
-        const visitorMacro = MacroState.getModule('Visitor Macro');
+        this.nextRewarpAt = 0;
         if (visitorMacro.enabled) return;
         this.rewarpActionStarted = true;
         visitorMacro.toggle(true, true);
     }
 
-    handleVisitor(player) {
-        if (MacroState.getModule('Visitor Macro').enabled) return;
-        this.rewarpActionStarted = false;
-        this.mode = REWARPING;
-        this.nextRewarpAt = Date.now();
-        return this.handleRewarp(player);
-    }
-
     handleRewarp(player) {
+        if (this.nextRewarpAt === 0) {
+            if (visitorMacro.enabled) return;
+            this.rewarpActionStarted = false;
+        }
         Keybind.unpressKeys();
         if (this.isAtPoint(player, this.rewarpStartPoint)) {
             this.mode = FARMING;
-            this.rewarpStartPoint = null;
-            this.rewarpAttempts = 0;
-            this.nextRewarpAt = 0;
-            this.onFarmStart(player);
+            this.startFarming(player);
             return;
         }
         if (Date.now() < this.nextRewarpAt) return;
-        if (this.rewarpAttempts >= MAX_REWARP_ATTEMPTS || !rewarpSettings.command) {
+        if (this.rewarpAttempts >= MAX_REWARP_ATTEMPTS || !farmingSettings.command) {
             this.message('&cRewarp failed.');
             this.toggle(false);
             return;
         }
 
-        ChatLib.command(rewarpSettings.command);
+        ChatLib.command(farmingSettings.command);
         this.rewarpAttempts++;
         this.nextRewarpAt = Date.now() + REWARP_RETRY_MS;
     }
@@ -201,11 +168,11 @@ export class FarmingMacro extends ModuleBase {
         Keybind.unpressKeys();
         if (this.mode === FARMING) {
             this.pestRotation = { yaw: player.getYRot(), pitch: player.getXRot() };
-            this.pestFarmState = { state: this.state, lastDirection: this.lastDirection, yaw: this.yaw, leftYaw: this.leftYaw };
+            this.pestFarmState = { state: this.state, lastDirection: this.lastDirection, yaw: this.yaw };
             this.mode = PEST;
-            pestSettings.begin();
+            farmingSettings.originalSlot = Player.getHeldItemIndex();
         }
-        if (!pestSettings.selectVacuum()) return true;
+        if (!farmingSettings.selectVacuum()) return true;
         Keybind.setKey('rightclick', true);
         Rotations.trackEntity(this.pestTarget);
         return true;
@@ -214,11 +181,10 @@ export class FarmingMacro extends ModuleBase {
     isPestInRange(pest) {
         const eyes = Player.getPlayer()?.getEyePosition();
         if (!eyes) return false;
-
         const dx = pest.getX() - eyes.x();
         const dy = pest.getY() - eyes.y();
         const dz = pest.getZ() - eyes.z();
-        return dx * dx + dy * dy + dz * dz <= MAX_PEST_TRACK_DISTANCE_SQ;
+        return dx * dx + dy * dy + dz * dz <= MAX_PEST_TRACK_DISTANCE ** 2;
     }
 
     finishPest() {
@@ -229,7 +195,7 @@ export class FarmingMacro extends ModuleBase {
         this.mode = RESTORING_PEST;
         Rotations.stop();
         Keybind.unpressKeys();
-        pestSettings.restoreSlot();
+        farmingSettings.restoreSlot();
         if (!rotation || !this.enabled) return;
 
         const resume = () => {
@@ -237,7 +203,7 @@ export class FarmingMacro extends ModuleBase {
             if (this.enabled && player) this.resumeFarming(player, farmState, rotation);
         };
         ScheduleTask(() => {
-            if (farmingSettings.rotationMethod !== 'Mousemat') {
+            if (!farmingSettings.useMousemat) {
                 if (!this.rotateTo(rotation.yaw, rotation.pitch, resume)) resume();
                 return;
             }
@@ -251,8 +217,8 @@ export class FarmingMacro extends ModuleBase {
     }
 
     resumeFarming(player, farmState, rotation) {
-        if (farmingSettings.rotationMethod !== 'Mousemat') {
-            this.onFarmStart(player);
+        if (!farmingSettings.useMousemat) {
+            this.startFarming(player);
             Rotations.lookAtAngles(rotation.yaw, rotation.pitch);
         }
         Object.assign(this, farmState);
@@ -263,8 +229,19 @@ export class FarmingMacro extends ModuleBase {
         this.mode = FARMING;
     }
 
+    startFarming(player) {
+        this.stationaryTicks = 0;
+        this.updatePosition(player);
+        this.onFarmStart(player);
+    }
+
     rotateTo(yaw, pitch, callback = null) {
-        if (farmingSettings.rotationMethod !== 'Mousemat') {
+        if (this.mode === FARMING && callback === null) {
+            if (!this.farmingRotation) this.farmingRotation = { yaw, pitch };
+            ({ yaw, pitch } = this.farmingRotation);
+        }
+
+        if (!farmingSettings.useMousemat) {
             const started = Rotations.lookAtAngles(yaw, pitch);
             if (started && callback) Rotations.onComplete(callback);
             return started;
@@ -281,13 +258,9 @@ export class FarmingMacro extends ModuleBase {
         return true;
     }
 
-    hold(left, backward, sneak = false, right = false, forward = false) {
-        Keybind.setKey('a', left);
-        Keybind.setKey('d', right);
-        Keybind.setKey('w', forward);
-        Keybind.setKey('s', backward);
+    hold(key = '') {
+        ['a', 'd', 'w', 's', 'shift'].forEach((movement) => Keybind.setKey(movement, movement === key));
         Keybind.setKey('leftclick', true);
-        Keybind.setKey('shift', sneak);
         Keybind.setKey('sprint', false);
     }
 
@@ -300,24 +273,20 @@ export class FarmingMacro extends ModuleBase {
         this.message(`&aRewarp ${name} saved.`);
     }
 
-    hasRewarpPoints() {
-        return this.isPoint(this.points.start) && this.isPoint(this.points.end);
-    }
-
     isAtPoint(player, point) {
         if (!this.isPoint(point)) return false;
         const dx = player.getX() - point.x;
         const dy = player.getY() - point.y;
         const dz = player.getZ() - point.z;
-        return dx * dx + dy * dy + dz * dz <= rewarpSettings.triggerRadius ** 2;
+        return dx * dx + dy * dy + dz * dz <= farmingSettings.triggerRadius ** 2;
     }
 
     isPoint(point) {
         return Number.isFinite(point?.x) && Number.isFinite(point?.y) && Number.isFinite(point?.z);
     }
 
-    getLaneSwitchDelay() {
-        return Utils.randomInt(this.laneSwitchDelayMin, this.laneSwitchDelayMax);
+    getLaneSwitchDelayTicks() {
+        return Math.round(Utils.randomInt(this.laneSwitchDelayMin, this.laneSwitchDelayMax) / 50);
     }
 
     addLaneSwitchDelaySettings() {
@@ -330,7 +299,7 @@ export class FarmingMacro extends ModuleBase {
     }
 
     snapYaw(startingYaw, macroYaw) {
-        return Math.round((startingYaw - macroYaw) / 90) * 90 + macroYaw;
+        return this.farmingRotation?.yaw ?? Math.round((startingYaw - macroYaw) / 90) * 90 + macroYaw;
     }
 
     updatePosition(player) {
@@ -338,10 +307,19 @@ export class FarmingMacro extends ModuleBase {
         this.previousTickZ = player.getZ();
     }
 
+    consumeIgnoreTicks(player) {
+        if (this.ignoreTicks <= 0) return false;
+        this.ignoreTicks--;
+        this.updatePosition(player);
+        return true;
+    }
+
     isStationaryForTicks(player, ticks) {
         const stationary = player.getX() === this.previousTickX && player.getZ() === this.previousTickZ;
         this.updatePosition(player);
         this.stationaryTicks = stationary ? this.stationaryTicks + 1 : 0;
-        return this.stationaryTicks >= ticks;
+        if (!stationary || this.stationaryTicks < ticks) return false;
+        this.stationaryTicks = 0;
+        return true;
     }
 }

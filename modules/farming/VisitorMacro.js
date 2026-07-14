@@ -14,34 +14,28 @@ const STATES = {
     OFFER: 'Checking offer',
     BUYING: 'Buying items',
     ADVANCING: 'Next visitor',
-    DONE: 'Done',
 };
 
 const INTERACT_DISTANCE = 3;
 const OPEN_TIMEOUT_MS = 1000;
 const VISITOR_TIMEOUT_MS = 15_000;
 const TELEPORT_RETRY_MS = 1000;
-const MISSING_VISITOR_TIMEOUT_MS = 5000;
 const VISITOR_BLACKLIST = ['Vinyl Collector', 'Gold Forger'];
+const cleanText = (value) => ChatLib.removeFormatting(String(value ?? '')).trim();
 
-export function parseRequiredItems(lore) {
-    const items = [];
-    let reading = false;
+function parseRequiredItems(lore) {
+    const lines = (lore || []).map(cleanText);
+    const start = lines.indexOf('Items Required:');
+    if (start < 0) return [];
 
-    for (const line of lore || []) {
-        const text = ChatLib.removeFormatting(String(line)).trim();
-        if (text === 'Items Required:') {
-            reading = true;
-            continue;
-        }
-        if (!reading) continue;
-        if (text === 'Rewards:') break;
-
-        const match = text.match(/^(.*?)\s+x([\d,]+)$/);
-        items.push({ name: match ? match[1].trim() : text, count: match ? Number(match[2].replace(/,/g, '')) : 1 });
-    }
-
-    return items.filter((item) => item.name && Number.isFinite(item.count) && item.count > 0);
+    const end = lines.indexOf('Rewards:', start + 1);
+    return lines
+        .slice(start + 1, end < 0 ? undefined : end)
+        .map((text) => {
+            const match = text.match(/^(.*?)\s+x([\d,]+)$/);
+            return { name: match ? match[1].trim() : text, count: match ? Number(match[2].replace(/,/g, '')) : 1 };
+        })
+        .filter((item) => item.name && Number.isFinite(item.count) && item.count > 0);
 }
 
 class VisitorMacro extends ModuleBase {
@@ -57,19 +51,8 @@ class VisitorMacro extends ModuleBase {
         });
 
         this.bindToggleKey();
-        this.visitors = [];
-        this.visitorIndex = 0;
-        this.state = STATES.DONE;
-        this.nextActionAt = 0;
-        this.pathRequestActive = false;
-        this.purchaseIndex = 0;
-        this.requiredItems = [];
-        this.firstSeek = true;
-        this.purchaseFailureAction = 'Decline';
-        this.declineCurrentVisitor = false;
+        this.declinePurchaseFailures = false;
         this.maxPrice = 500_000;
-        this.visitorStartedAt = 0;
-        this.visitorMissingSince = 0;
         this.addSlider(
             'Max Price',
             0,
@@ -78,29 +61,26 @@ class VisitorMacro extends ModuleBase {
             (value) => (this.maxPrice = Number(value)),
             'Cancels a Bazaar purchase when its total price is above this amount.'
         );
-        this.addMultiToggle(
-            'Purchase Failure',
-            ['Decline', 'Skip'],
-            true,
-            (options) => (this.purchaseFailureAction = options.find((option) => option.enabled)?.name || 'Decline'),
-            'What to do with a visitor when a Bazaar purchase fails.',
-            this.purchaseFailureAction
-        );
+        this.addToggle('Decline Failed Purchases', (value) => (this.declinePurchaseFailures = !!value), 'Declines visitors when a Bazaar purchase fails.');
 
         this.on('tick', () => this.tick());
     }
 
     onEnable() {
         this.visitors = TabListUtils.readVisitors();
+        if (!this.visitors.length) {
+            this.message('&eNo visitors found.');
+            this.toggle(false);
+            return;
+        }
+
         this.visitorIndex = 0;
-        this.state = this.visitors.length ? STATES.SEEKING : STATES.DONE;
+        this.state = STATES.SEEKING;
         this.nextActionAt = 0;
-        this.pathRequestActive = false;
         this.firstSeek = true;
         this.declineCurrentVisitor = false;
         this.visitorStartedAt = Date.now();
-        this.visitorMissingSince = 0;
-        this.message(this.visitors.length ? `&aFound ${this.visitors.length} visitors.` : '&eNo visitors found.');
+        this.message(`&aFound ${this.visitors.length} visitors.`);
     }
 
     onDisable() {
@@ -108,13 +88,10 @@ class VisitorMacro extends ModuleBase {
         if (Pathfinder.isPathing()) Pathfinder.resetPath();
         Rotations.stop();
         Keybind.stopMovement();
-        this.pathRequestActive = false;
     }
 
     tick() {
-        if (!this.enabled) return;
-        if (this.state !== STATES.ADVANCING && this.state !== STATES.DONE && Date.now() - this.visitorStartedAt >= VISITOR_TIMEOUT_MS)
-            return this.skipVisitor();
+        if (this.state !== STATES.ADVANCING && Date.now() - this.visitorStartedAt >= VISITOR_TIMEOUT_MS) return this.skipVisitor();
 
         if (this.state === STATES.OPENING) {
             if (Client.isInGui()) {
@@ -130,59 +107,39 @@ class VisitorMacro extends ModuleBase {
 
         switch (this.state) {
             case STATES.SEEKING:
-                this.seekVisitor();
-                break;
+                return this.seekVisitor();
             case STATES.OFFER:
-                this.checkOffer();
-                break;
+                return this.checkOffer();
             case STATES.ADVANCING:
                 Guis.closeInv();
                 this.visitorIndex++;
                 this.visitors.push(...TabListUtils.readVisitors().filter((visitor) => !this.visitors.includes(visitor)));
                 this.firstSeek = true;
                 this.declineCurrentVisitor = false;
-                this.state = this.visitorIndex < this.visitors.length ? STATES.SEEKING : STATES.DONE;
                 this.visitorStartedAt = Date.now();
-                this.visitorMissingSince = 0;
-                if (this.state === STATES.DONE) {
+                if (this.visitorIndex >= this.visitors.length) {
                     this.message('&aAll stored visitors completed.');
                     this.toggle(false);
+                    return;
                 }
-                break;
-            case STATES.DONE:
-                this.toggle(false);
-                break;
+                this.state = STATES.SEEKING;
         }
     }
 
     seekVisitor() {
         const target = this.visitors[this.visitorIndex];
-        if (!target) {
-            this.state = STATES.DONE;
-            return;
-        }
+        if (!target) return this.toggle(false);
 
         const entity = this.findVisitor(target);
-        if (!entity) {
-            const now = Date.now();
-            if (!this.visitorMissingSince) this.visitorMissingSince = now;
-            if (now - this.visitorMissingSince >= MISSING_VISITOR_TIMEOUT_MS) {
-                this.message('&eVisitor not found after teleporting, stopping.');
-                return this.toggle(false);
-            }
-            ChatLib.command('tptoplot barn');
-            this.nextActionAt = now + TELEPORT_RETRY_MS;
-            return;
-        }
-        this.visitorMissingSince = 0;
+        if (!entity) return this.retryBarn();
 
-        if (this.distanceTo(entity) > 15) {
-            ChatLib.command('tptoplot barn');
-            this.nextActionAt = Date.now() + TELEPORT_RETRY_MS;
-            return;
-        }
+        const dx = entity.getX() - Player.getX();
+        const dy = entity.getY() - Player.getY();
+        const dz = entity.getZ() - Player.getZ();
+        const distanceSq = dx * dx + dy * dy + dz * dz;
+        if (distanceSq > 15 ** 2) return this.retryBarn();
 
-        if (this.distanceTo(entity) > INTERACT_DISTANCE) return this.pathTo(entity);
+        if (distanceSq > INTERACT_DISTANCE ** 2) return this.pathTo(entity);
         if (Rotations.active) return;
 
         const aimPoint = Rotations.getAimPoint(entity);
@@ -202,29 +159,26 @@ class VisitorMacro extends ModuleBase {
         });
     }
 
+    retryBarn() {
+        ChatLib.command('tptoplot barn');
+        this.nextActionAt = Date.now() + TELEPORT_RETRY_MS;
+    }
+
     findVisitor(target) {
-        const expected = String(target).toLowerCase();
+        const expected = cleanText(target).toLowerCase();
         return World.getAllEntities().find((entity) => {
-            const name = ChatLib.removeFormatting(String(entity.getName?.() || ''))
-                .trim()
-                .toLowerCase();
+            const name = cleanText(entity.getName?.()).toLowerCase();
             return name && (name.includes(expected) || expected.includes(name));
         });
     }
 
-    distanceTo(entity) {
-        return Math.hypot(entity.getX() - Player.getX(), entity.getY() - Player.getY(), entity.getZ() - Player.getZ());
-    }
-
     pathTo(entity) {
-        if (this.pathRequestActive || Pathfinder.isPathing()) return;
+        if (Pathfinder.isPathing()) return;
 
         const visitorIndex = this.visitorIndex;
-        this.pathRequestActive = true;
         this.state = STATES.PATHING;
         Pathfinder.resetPath();
         Pathfinder.findPath([[Math.floor(entity.getX()), Math.floor(entity.getY()) - 1, Math.floor(entity.getZ())]], () => {
-            this.pathRequestActive = false;
             if (!this.enabled || this.state !== STATES.PATHING || this.visitorIndex !== visitorIndex) return;
             this.retrySeeking();
         });
@@ -233,54 +187,30 @@ class VisitorMacro extends ModuleBase {
     checkOffer() {
         if (!Client.isInGui()) return this.retrySeeking();
 
-        if (VISITOR_BLACKLIST.includes(this.visitors[this.visitorIndex])) this.declineCurrentVisitor = true;
-        if (this.declineCurrentVisitor) {
-            const refusal = this.getOffer('Refuse Offer');
-            if (!refusal) return this.retrySeeking();
-            Guis.clickSlot(refusal.slot, false, 'LEFT');
+        if (this.declineCurrentVisitor || VISITOR_BLACKLIST.includes(this.visitors[this.visitorIndex])) {
+            if (!Guis.clickItem('Refuse Offer', false, 'LEFT')) return this.retrySeeking();
             return this.advanceVisitor();
         }
 
-        const offer = this.getOffer('Accept Offer');
-        if (!offer) return;
-        if (offer.lore.some((line) => ChatLib.removeFormatting(String(line)).includes('Click to give!'))) {
-            Guis.clickSlot(offer.slot, false, 'LEFT');
-            this.state = STATES.ADVANCING;
-            this.nextActionAt = Date.now() + 750;
-            return;
+        const container = Player.getContainer();
+        const offerSlot = Guis.findFirst(container, 'Accept Offer');
+        if (offerSlot < 0) return;
+        const lore = container.getStackInSlot(offerSlot).getLore() || [];
+        if (lore.some((line) => cleanText(line).includes('Click to give!'))) {
+            Guis.clickSlot(offerSlot, false, 'LEFT');
+            return this.advanceVisitor(750);
         }
 
-        this.requiredItems = parseRequiredItems(offer.lore);
+        this.requiredItems = parseRequiredItems(lore);
         if (!this.requiredItems.length) return this.retrySeeking();
-        if (!this.hasInventorySpace()) return this.handlePurchaseFailure();
-        this.purchaseIndex = 0;
+        const inventory = Player.getInventory();
+        const requiredSlots = this.requiredItems.reduce((slots, item) => slots + Math.ceil(item.count / 64), 0);
+        if (!inventory || inventory.getItems().filter((item) => item === null).length < requiredSlots) return this.handlePurchaseFailure();
         this.buyNextItem();
     }
 
-    getOffer(name) {
-        const container = Player.getContainer();
-        if (!container) return null;
-
-        for (let slot = 0; slot < container.getSize(); slot++) {
-            const item = container.getStackInSlot(slot);
-            if (!item || !ChatLib.removeFormatting(String(item.getName())).includes(name)) continue;
-            return { slot, lore: item.getLore() || [] };
-        }
-
-        return null;
-    }
-
-    hasInventorySpace() {
-        const inventory = Player.getInventory();
-        if (!inventory) return false;
-
-        const emptySlots = inventory.getItems().filter((item) => item === null).length;
-        const requiredSlots = this.requiredItems.reduce((slots, item) => slots + Math.ceil(item.count / 64), 0);
-        return emptySlots >= requiredSlots;
-    }
-
     buyNextItem() {
-        const item = this.requiredItems[this.purchaseIndex];
+        const item = this.requiredItems.shift();
         if (!item) {
             this.state = STATES.SEEKING;
             this.nextActionAt = Date.now();
@@ -292,20 +222,21 @@ class VisitorMacro extends ModuleBase {
         bazaarUtil.buy(item.name, item.count, this.maxPrice, (success) => {
             if (!this.enabled || this.state !== STATES.BUYING || this.visitorIndex !== visitorIndex) return;
             if (!success) return this.handlePurchaseFailure();
-            this.purchaseIndex++;
             this.buyNextItem();
         });
     }
 
     handlePurchaseFailure() {
-        if (this.purchaseFailureAction === 'Skip') return this.advanceVisitor();
-        this.declineCurrentVisitor = true;
-        this.retrySeeking();
+        if (this.declinePurchaseFailures) {
+            this.declineCurrentVisitor = true;
+            return this.retrySeeking();
+        }
+        this.advanceVisitor();
     }
 
-    advanceVisitor() {
+    advanceVisitor(delay = 250) {
         this.state = STATES.ADVANCING;
-        this.nextActionAt = Date.now() + 250;
+        this.nextActionAt = Date.now() + delay;
     }
 
     skipVisitor() {
@@ -313,7 +244,6 @@ class VisitorMacro extends ModuleBase {
         Rotations.stop();
         Keybind.stopMovement();
         Guis.closeInv();
-        this.pathRequestActive = false;
         this.message('&eVisitor timed out, skipping.');
         bazaarUtil.cancel();
         this.advanceVisitor();
@@ -325,4 +255,4 @@ class VisitorMacro extends ModuleBase {
     }
 }
 
-new VisitorMacro();
+export const visitorMacro = new VisitorMacro();

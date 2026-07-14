@@ -25,18 +25,14 @@ class CocoaBeansMacro extends FarmingMacro {
     onFarmStart(player) {
         this.state = STATES.FORWARD;
         this.lastDirection = STATES.FORWARD;
-        this.stationaryTicks = 0;
-        this.updatePosition(player);
-        this.rotateTo(0, -45);
+        this.rotateTo(this.snapYaw(player.getYRot(), 0), -45);
     }
 
     updateFarmState(player) {
         if (!this.isStationaryForTicks(player, 2)) return;
 
-        this.stationaryTicks = 0;
         if (this.state === STATES.SWITCHING_LANE) {
             this.state = this.lastDirection === STATES.FORWARD ? STATES.BACKWARD : STATES.FORWARD;
-            this.lastDirection = this.state;
             return;
         }
 
@@ -45,9 +41,9 @@ class CocoaBeansMacro extends FarmingMacro {
     }
 
     invokeFarmState() {
-        if (this.state === STATES.FORWARD) return this.hold(false, false, false, false, true);
-        if (this.state === STATES.BACKWARD) return this.hold(false, true);
-        this.hold(this.moveLeft, false, false, !this.moveLeft);
+        if (this.state === STATES.FORWARD) return this.hold('w');
+        if (this.state === STATES.BACKWARD) return this.hold('s');
+        this.hold(this.moveLeft ? 'a' : 'd');
     }
 }
 

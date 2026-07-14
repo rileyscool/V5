@@ -1,1 +1,2 @@
 - More pest options (flight killer, disco)
+- Sprayonator
