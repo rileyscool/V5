@@ -41,7 +41,6 @@ class Bot extends ModuleBase {
             description: 'Universal settings for Mining & block miner',
             tooltip: 'Automatically mines.',
             theme: '#5a7cbb',
-            showEnabledToggle: false,
             isMacro: true,
         });
 

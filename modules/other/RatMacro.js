@@ -71,7 +71,6 @@ class RatMacro extends ModuleBase {
             description: 'VIBECODED SLOP. Etherwarps to Hub rats and uses your held gun.',
             tooltip: 'VIBECODED SLOP. Etherwarps to Hub rats and uses your held gun.',
             theme: '#d7b24a',
-            showEnabledToggle: false,
             isMacro: true,
         });
         this.bindToggleKey();

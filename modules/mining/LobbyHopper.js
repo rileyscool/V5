@@ -10,7 +10,6 @@ class LobbyHopper extends ModuleBase {
             description: 'Switches between CH lobbies',
             tooltip: 'Switches between CH lobbies',
             theme: '#e0dd04',
-            showEnabledToggle: true,
         });
 
         this.maxDay = 0;

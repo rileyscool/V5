@@ -17,7 +17,6 @@ class NukerClass extends ModuleBase {
             tooltip: 'Automatically nukes nearby blocks',
             theme: '#e23737',
             autoDisableOnWorldUnload: true,
-            showEnabledToggle: false,
             isMacro: true,
         });
         this.bindToggleKey();

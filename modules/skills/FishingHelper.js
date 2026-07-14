@@ -11,7 +11,6 @@ class FishingHelper extends ModuleBase {
             description: 'Auto reel + recast + pet swap',
             tooltip: 'Auto stuff',
             autoDisableOnWorldUnload: true,
-            showEnabledToggle: false,
             isMacro: true,
         });
         this.bindToggleKey();

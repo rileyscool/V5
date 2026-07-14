@@ -34,7 +34,6 @@ class Beachballer extends ModuleBase {
             description: 'Automatically bounces beach balls',
             tooltip: 'Bounces beach balls and returns to start position at 40 bounces',
             theme: '#ffb347',
-            showEnabledToggle: false,
             isMacro: true,
         });
         this.bindToggleKey();

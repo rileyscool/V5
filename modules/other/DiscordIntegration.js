@@ -10,7 +10,6 @@ class DiscordIntegration extends ModuleBase {
             subcategory: 'Core',
             description: 'Discord Integration',
             theme: '#7289da',
-            showEnabledToggle: true,
             hideInModules: true,
         });
 

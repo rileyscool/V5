@@ -21,7 +21,7 @@ const REWARPING = 'Rewarping';
 
 export class FarmingMacro extends ModuleBase {
     constructor(options, commandPrefix) {
-        super({ subcategory: 'Farming', isMacro: true, showEnabledToggle: false, ...options, autoDisableOnWorldUnload: true });
+        super({ subcategory: 'Farming', isMacro: true, ...options, autoDisableOnWorldUnload: true });
 
         this.pointsPath = `FarmingMacro/${commandPrefix.replaceAll(' ', '_')}_points.json`;
         this.points = Utils.getConfigFile(this.pointsPath) || {};

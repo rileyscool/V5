@@ -19,7 +19,6 @@ class MacroScheduler extends ModuleBase {
             subcategory: 'Core',
             description: 'Automates macro sessions, breaks, and relogging.',
             theme: '#7c8cff',
-            showEnabledToggle: false,
             hideInModules: true,
         });
 

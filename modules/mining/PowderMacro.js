@@ -39,7 +39,6 @@ class PowderMacro extends ModuleBase {
             name: 'Powder Macro',
             description: 'Powder Macro',
             subcategory: 'Mining',
-            showEnabledToggle: false,
             isMacro: true,
         });
 

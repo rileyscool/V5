@@ -315,7 +315,7 @@ export const createCategoriesManager = (deps) => {
         if (!Categories.selectedItem || Categories.selected !== 'Modules') return null;
         const module = MacroState.getModule(Categories.selectedItem.title);
         if (!module) return null;
-        return module.isMacro || module.showEnabledToggle ? module : null;
+        return module.showEnabledToggle ? module : null;
     };
 
     const calculateContentHeight = () => {

@@ -37,7 +37,6 @@ class StridersurferMacro extends ModuleBase {
             description: 'Automates the stridersurfer fishing loop and kill sequence',
             tooltip: 'Automates the stridersurfer fishing loop and kill sequence',
             autoDisableOnWorldUnload: true,
-            showEnabledToggle: false,
             isMacro: true,
         });
         this.bindToggleKey();

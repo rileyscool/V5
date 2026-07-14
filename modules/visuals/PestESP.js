@@ -33,7 +33,6 @@ class PestESP extends ModuleBase {
             name: 'Pest ESP',
             subcategory: 'Visuals',
             description: 'Scans and remembers pest locations even in distant chunks.',
-            showEnabledToggle: true,
         });
 
         this.persistentPests = new Map();

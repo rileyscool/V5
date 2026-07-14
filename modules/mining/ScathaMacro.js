@@ -23,7 +23,6 @@ class ScathaMacro extends ModuleBase {
             description: 'Automatically mines and kills Scappas for you',
             tooltip: 'Automatically mines and kills Scappas for you',
             theme: '#5a7cbb',
-            showEnabledToggle: false,
             isMacro: true,
         });
 

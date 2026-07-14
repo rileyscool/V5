@@ -7,7 +7,6 @@ class Controller extends ModuleBase {
             name: 'Controller',
             subcategory: 'Core',
             description: 'Various toggles to improve peformance while game is minimized.',
-            showEnabledToggle: false,
             hideInModules: true,
         });
 

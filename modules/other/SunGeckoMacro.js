@@ -99,7 +99,6 @@ class SunGecko extends ModuleBase {
             subcategory: 'Other',
             description: 'Automatically does the rift sun gecko',
             tooltip: 'Automatically does the rift sun gecko',
-            showEnabledToggle: false,
             isMacro: true,
         });
         this.bindToggleKey();

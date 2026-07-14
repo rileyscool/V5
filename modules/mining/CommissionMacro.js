@@ -37,7 +37,6 @@ class CommissionMacro extends ModuleBase {
             description: 'Completes Commissions for you',
             tooltip: 'Completes Commissions for you (Dwarven).',
             theme: '#4cdfd2',
-            showEnabledToggle: false,
             autoDisableOnWorldUnload: false,
             isMacro: true,
         });

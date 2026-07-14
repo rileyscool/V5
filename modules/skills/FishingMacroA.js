@@ -11,7 +11,6 @@ class FishingMacro extends ModuleBase {
             subcategory: 'Skills',
             description: 'Fishing Macro general hype',
             tooltip: 'Fishing Macro general hype',
-            showEnabledToggle: false,
             isMacro: true,
         });
         this.bindToggleKey();

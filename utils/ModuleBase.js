@@ -41,12 +41,12 @@ export class ModuleBase {
         this.oid = null;
         this.hexCode = null;
         this.hideInModules = opts.hideInModules === true;
-        this.showEnabledToggle = opts.showEnabledToggle !== false;
+        this.isMacro = opts.isMacro === true;
+        this.showEnabledToggle = opts.showEnabledToggle ?? !this.isMacro;
         this.setTheme(opts.theme || ModuleBase.getDefaultTheme(this.subcategory));
 
         this.isParentManaged = false;
 
-        this.isMacro = opts.isMacro === true;
         this.ignoreFailsafes = opts.ignoreFailsafes === true;
 
         MacroState.registerModule(this);

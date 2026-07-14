@@ -21,7 +21,6 @@ class ClippingManager extends ModuleBase {
             subcategory: 'Core',
             description: 'Background recording and clipping utility. Supposed to be used by failsafes.',
             tooltip: 'Records rolling buffer. Use /clip to save.',
-            showEnabledToggle: true,
             hideInModules: true,
         });
 

@@ -23,7 +23,6 @@ class GemstoneMacro extends ModuleBase {
             description: 'Macro for gemstones',
             tooltip: 'Macro for gemstones',
             theme: '#fb42f5',
-            showEnabledToggle: false,
             isMacro: true,
             autoDisableOnWorldUnload: true,
         });

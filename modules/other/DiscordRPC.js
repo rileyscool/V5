@@ -11,7 +11,6 @@ class RPC extends ModuleBase {
             description: "Show you're playing V5!",
             tooltip: "Shows you're playing V5 in Discord RPC.",
             hideInModules: true,
-            showEnabledToggle: false,
         });
 
         this.lastState = 'IDLE';

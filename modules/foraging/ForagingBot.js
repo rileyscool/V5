@@ -24,7 +24,6 @@ class ForagingBot extends ModuleBase {
             subcategory: 'Foraging',
             description: 'unfinished.',
             tooltip: 'unfinished.',
-            showEnabledToggle: false,
             isMacro: true,
         });
 

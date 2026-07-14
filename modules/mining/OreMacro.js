@@ -26,7 +26,6 @@ class OreMacro extends ModuleBase {
             description: 'Walks and Etherwarps to set mine points or uses MiningBot',
             tooltip: 'Universal pure Ore Miner',
             theme: '#815bf5',
-            showEnabledToggle: false,
             isMacro: true,
         });
 

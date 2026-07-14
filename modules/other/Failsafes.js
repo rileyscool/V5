@@ -16,7 +16,6 @@ class Failsafes extends ModuleBase {
             subcategory: 'Core',
             description: 'Failsafe settings.',
             tooltip: 'Failsafe config.',
-            showEnabledToggle: false,
             hideInModules: true,
         });
 

@@ -11,7 +11,6 @@ class MinionCollector extends ModuleBase {
             subcategory: 'Skills',
             description: 'Auto Collects Minions using Aura - Caution!',
             tooltip: 'Auto Collects Minions using Aura - Caution!',
-            showEnabledToggle: true,
         });
 
         this.unopenedMinions = [];

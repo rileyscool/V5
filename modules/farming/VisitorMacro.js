@@ -47,7 +47,6 @@ class VisitorMacro extends ModuleBase {
             tooltip: 'Automatically used in farming macro by rewarp.',
             isMacro: true,
             autoDisableOnWorldUnload: true,
-            showEnabledToggle: false,
         });
 
         this.bindToggleKey();

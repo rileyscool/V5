@@ -111,7 +111,6 @@ class PeltMacro extends ModuleBase {
             description: 'Pathfinds to Trevor hunt coordinates from chat.',
             theme: '#d99a3e',
             isMacro: true,
-            showEnabledToggle: false,
         });
 
         this.bindToggleKey();

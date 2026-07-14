@@ -8,7 +8,6 @@ class PathFindingConfig extends ModuleBase {
             subcategory: 'Core',
             description: 'Pathfinding Utilities',
             tooltip: 'Pathfinding Utilities',
-            showEnabledToggle: false,
             hideInModules: true,
         });
 

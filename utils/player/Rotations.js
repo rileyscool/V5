@@ -13,7 +13,6 @@ class RotationConfig extends ModuleBase {
             subcategory: 'Core',
             description: 'Rotations settings for all modules - excludes Pathfinder',
             tooltip: 'Rotations settings for all modules - excludes Pathfinder',
-            showEnabledToggle: false,
             hideInModules: true,
         });
 

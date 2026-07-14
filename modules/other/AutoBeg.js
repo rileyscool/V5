@@ -7,7 +7,6 @@ class AutoBeg extends ModuleBase {
             subcategory: 'Other',
             description: 'Automatically begs for hypixel ranks periodically.',
             tooltip: 'Automatically begs for hypixel ranks periodically.',
-            showEnabledToggle: false,
             isMacro: true,
         });
         this.bindToggleKey();
