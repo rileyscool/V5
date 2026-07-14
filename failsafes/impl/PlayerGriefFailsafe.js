@@ -1,6 +1,16 @@
 import { Chat } from '../../utils/Chat';
+import { File, globalAssetsDir } from '../../utils/Constants';
 import { Failsafe } from '../Failsafe';
 import FailsafeUtils from '../FailsafeUtils';
+
+const warpPoints = (() => {
+    try {
+        return JSON.parse(FileLib.read(new File(globalAssetsDir, 'WarpPoints.json').getPath()) || '{}').warps || [];
+    } catch (e) {
+        console.error('V5 Caught error' + e + e.stack);
+        return [];
+    }
+})();
 
 class PlayerGriefFailsafe extends Failsafe {
     constructor() {
@@ -23,11 +33,24 @@ class PlayerGriefFailsafe extends Failsafe {
 
             this.settings = FailsafeUtils.getFailsafeSettings('Player Grief');
             if (!this.settings.isEnabled) return;
+            if (this.isNearWarpPoint()) return;
 
             const now = Date.now();
             if (now - this.lastInsideTrigger >= this.insideCooldownMs) this.checkPlayerInside(now);
             if (now - this.lastNearbyTrigger >= this.nearbyCooldownMs) this.checkPlayerNearby(now);
         }).setDelay(1);
+    }
+
+    isNearWarpPoint() {
+        const px = Player.getX();
+        const py = Player.getY();
+        const pz = Player.getZ();
+        return warpPoints.some((warp) => {
+            const dx = warp.x - px;
+            const dy = warp.y - py;
+            const dz = warp.z - pz;
+            return dx * dx + dy * dy + dz * dz <= 25;
+        });
     }
 
     checkPlayerInside(now) {

@@ -11,11 +11,14 @@ import { Keybind } from '../../utils/player/Keybinding';
 import { Rotations } from '../../utils/player/Rotations';
 import { Raytrace } from '../../utils/Raytrace';
 import { NukerUtils } from '../../utils/NukerUtils';
+import { Utils } from '../../utils/Utils';
 import { getTrackedGlowingMushrooms, isGlowingMushroomBlock } from '../visuals/GlowingMushroomESP';
 import { ScheduleTask } from '../../utils/ScheduleTask';
 
 const MAX_REACH = 4.5;
+const NUKER_PATH_LOOKAHEAD = 12;
 const AIM_FAIL_BLACKLIST_MS = 3000;
+const PATH_FAIL_BLACKLIST_MS = 10000;
 const MAX_TARGET_CLICK_RETRIES = 2;
 const HARVEST_MODES = ['Click', 'Nuker'];
 const WAITING_PATH_GOAL = [214, 41, -505];
@@ -48,7 +51,9 @@ class GlowingMushroomMacro extends ModuleBase {
         this.pathRequestActive = false;
         this.waitingPathActive = false;
         this.pathRequestId = 0;
+        this.nukerPathTarget = null;
         this.harvestRequestActive = false;
+        this.warpStartedAt = 0;
         this.harvestMode = HARVEST_MODES[0];
         this.pathsCompleted = 0;
         this.lastClickCount = 0;
@@ -56,6 +61,13 @@ class GlowingMushroomMacro extends ModuleBase {
         this.reachableCount = 0;
         this.blacklistedMushrooms = new Map();
         this.on('tick', () => this.runLoop(this.loopToken));
+        this.on('chat', (event) => {
+            const message = event.message.getUnformattedText().toLowerCase();
+            if (!this.warpStartedAt || !message.includes("you haven't unlocked this fast travel destination")) return;
+
+            this.message("&cYou haven't unlocked the Glowing Mushroom Cave warp.");
+            this.toggle(false);
+        });
 
         this.addMultiToggle(
             'Harvest Mode',
@@ -90,7 +102,9 @@ class GlowingMushroomMacro extends ModuleBase {
         this.pathRequestActive = false;
         this.waitingPathActive = false;
         this.pathRequestId = 0;
+        this.nukerPathTarget = null;
         this.harvestRequestActive = false;
+        this.warpStartedAt = 0;
         this.pathsCompleted = 0;
         this.lastClickCount = 0;
         this.trackedCount = 0;
@@ -129,6 +143,7 @@ class GlowingMushroomMacro extends ModuleBase {
 
     runLoop(token) {
         if (!this.enabled || token !== this.loopToken) return;
+        if (!this.ensureFarmingIslands()) return;
         const mushrooms = this.getFreshMushrooms();
         this.trackedCount = mushrooms.length;
         let nearbyNukerTargets = null;
@@ -142,6 +157,10 @@ class GlowingMushroomMacro extends ModuleBase {
                     this.lastClickCount += clicks;
                 });
             }
+        }
+
+        if (this.nukerPathTarget && !isGlowingMushroomBlock(this.nukerPathTarget.x, this.nukerPathTarget.y, this.nukerPathTarget.z)) {
+            this.cancelCurrentPathing();
         }
 
         if (this.pathRequestActive || Pathfinder.isPathing()) {
@@ -167,9 +186,8 @@ class GlowingMushroomMacro extends ModuleBase {
         const nearby = this.harvestMode === 'Nuker' && nearbyNukerTargets ? nearbyNukerTargets : this.getHarvestTargets(mushrooms);
         this.reachableCount = nearby.length;
 
-        if (nearby.length) {
+        if (nearby.length && this.harvestMode !== 'Nuker') {
             this.status = 'Harvesting';
-            if (this.harvestMode === 'Nuker') return;
             this.harvestRequestActive = true;
             this.harvestMushrooms(nearby, token, (clicks) => {
                 this.harvestRequestActive = false;
@@ -184,18 +202,43 @@ class GlowingMushroomMacro extends ModuleBase {
             return;
         }
 
-        const goals = pathTargets.map((mushroom) => [mushroom.x, mushroom.y - 1, mushroom.z]);
+        const goals =
+            this.harvestMode === 'Nuker' ? [this.getNukerDriveByGoal(pathTargets)] : pathTargets.map((mushroom) => [mushroom.x, mushroom.y - 1, mushroom.z]);
         this.startPathRequest(goals, token, {
             waitingPath: false,
             failStatus: 'Path Failed',
             completeStatus: 'Path Complete',
+            failedTargets: this.harvestMode === 'Nuker' ? [this.nukerPathTarget] : pathTargets,
         });
+    }
+
+    ensureFarmingIslands() {
+        if (Utils.area() === 'The Farming Islands') {
+            this.warpStartedAt = 0;
+            return true;
+        }
+
+        if (!this.warpStartedAt) {
+            this.cancelCurrentPathing();
+            Rotations.stop();
+            Keybind.stopMovement();
+            this.status = 'Warping to Glowing Cave';
+            this.message('&eNot in The Farming Islands, warping...');
+        }
+
+        if (!this.warpStartedAt || Date.now() - this.warpStartedAt >= 10000) {
+            ChatLib.command('warp glowing');
+            this.warpStartedAt = Date.now();
+        }
+
+        return false;
     }
 
     cancelCurrentPathing() {
         this.pathRequestId++;
         this.pathRequestActive = false;
         this.waitingPathActive = false;
+        this.nukerPathTarget = null;
         Pathfinder.resetPath();
     }
 
@@ -211,7 +254,7 @@ class GlowingMushroomMacro extends ModuleBase {
         });
     }
 
-    startPathRequest(goals, token, { waitingPath = false, failStatus = 'Path Failed', completeStatus = 'Path Complete' } = {}) {
+    startPathRequest(goals, token, { waitingPath = false, failStatus = 'Path Failed', completeStatus = 'Path Complete', failedTargets = [] } = {}) {
         if (!Array.isArray(goals) || !goals.length) return;
 
         const requestId = ++this.pathRequestId;
@@ -227,10 +270,18 @@ class GlowingMushroomMacro extends ModuleBase {
 
             this.pathRequestActive = false;
             this.waitingPathActive = false;
+            this.nukerPathTarget = null;
             this.pathsCompleted++;
 
             if (!success) {
+                failedTargets.forEach((target) => this.blacklistMushroom(target.x, target.y, target.z, PATH_FAIL_BLACKLIST_MS));
+                this.message('AAAAAAA');
                 this.status = failStatus;
+                return;
+            }
+
+            if (this.harvestMode === 'Nuker') {
+                this.status = completeStatus;
                 return;
             }
 
@@ -249,6 +300,21 @@ class GlowingMushroomMacro extends ModuleBase {
                 this.lastClickCount += clicks;
             });
         });
+    }
+
+    getNukerDriveByGoal(mushrooms) {
+        const playerX = Player.getX();
+        const playerZ = Player.getZ();
+        const targets = mushrooms
+            .map((mushroom) => ({
+                mushroom,
+                distance: Math.hypot(mushroom.x + 0.5 - playerX, mushroom.z + 0.5 - playerZ),
+            }))
+            .sort((a, b) => a.distance - b.distance);
+        const target = targets.filter(({ distance }) => distance <= NUKER_PATH_LOOKAHEAD).pop() || targets[0];
+        this.nukerPathTarget = target.mushroom;
+
+        return [target.mushroom.x, target.mushroom.y - 1, target.mushroom.z];
     }
 
     getFreshMushrooms() {
@@ -322,16 +388,10 @@ class GlowingMushroomMacro extends ModuleBase {
     }
 
     getHarvestTargets(mushrooms = this.getFreshMushrooms()) {
-        if (this.harvestMode === 'Nuker') return this.getReachableNukerMushrooms(mushrooms);
         return this.getReachableVisibleMushrooms(mushrooms);
     }
 
     harvestMushrooms(targets, token, onDone) {
-        if (this.harvestMode === 'Nuker') {
-            this.nukeMushroomBatch(targets, token, onDone);
-            return;
-        }
-
         this.clickMushroomChain(targets, 0, token, 0, onDone);
     }
 
@@ -482,9 +542,9 @@ class GlowingMushroomMacro extends ModuleBase {
         return true;
     }
 
-    blacklistMushroom(x, y, z) {
+    blacklistMushroom(x, y, z, duration = AIM_FAIL_BLACKLIST_MS) {
         const key = this.getMushroomKey(x, y, z);
-        this.blacklistedMushrooms.set(key, Date.now() + AIM_FAIL_BLACKLIST_MS);
+        this.blacklistedMushrooms.set(key, Date.now() + duration);
     }
 }
 
