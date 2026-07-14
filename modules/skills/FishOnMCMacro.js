@@ -18,6 +18,10 @@ const FISH_POSITIONS = [
 ];
 
 const VALUE_LORE = 'ᴠᴀʟᴜᴇ:';
+const QUEST_READY_LORE = 'ʀᴇᴀᴅʏ ᴛᴏ ᴄʟᴀɪᴍ';
+const QUEST_TYPE_LORE = 'ᴄʟɪᴄᴋ ᴛᴏ sᴛᴀʀᴛ ᴀ ꞯᴜᴇsᴛ';
+const EASY_QUEST_LORE = 'Click to start an easy quest.';
+const START_QUEST_LORE = 'Click to start.';
 
 const STATES = {
     FISHING: 0,
@@ -26,6 +30,10 @@ const STATES = {
     SELLING: 3,
     RETURNING: 4,
     RESTORING_ROTATION: 5,
+    QUEST_OPENING: 6,
+    QUEST_CLAIMING: 7,
+    QUEST_SELECTING_DIFFICULTY: 8,
+    QUEST_STARTING: 9,
 };
 
 class FishOnMCMacro extends ModuleBase {
@@ -46,6 +54,8 @@ class FishOnMCMacro extends ModuleBase {
         this.start = null;
         this.merchant = null;
         this.inventoryWasFull = false;
+        this.questPending = false;
+        this.lastQuestActionAt = 0;
 
         this.on('packetReceived', (packet) => {
             if (this.state !== STATES.FISHING) return;
@@ -70,10 +80,23 @@ class FishOnMCMacro extends ModuleBase {
             if (title === 'BITE!') Keybind.rightClick();
         }).setFilteredClass(ClientboundSetTitleTextPacket);
 
+        this.on('chat', (event) => {
+            const message = ChatLib.removeFormatting(String(event.message));
+            if (message.includes('is available to turn in! Type /quests to claim it.')) {
+                this.questPending = true;
+                this.message('&eQuest queued.');
+            }
+        });
+
         this.on('tick', () => {
             const inventoryFull = this.isInventoryFull();
             const inventoryBecameFull = inventoryFull && !this.inventoryWasFull;
             this.inventoryWasFull = inventoryFull;
+
+            if (this.state >= STATES.QUEST_OPENING) {
+                this.handleQuests();
+                return;
+            }
 
             if (this.state === STATES.OPENING_MERCHANT) {
                 if (Player.getContainer()) this.state = STATES.SELLING;
@@ -114,6 +137,8 @@ class FishOnMCMacro extends ModuleBase {
         this.lastCastAt = 0;
         this.state = STATES.FISHING;
         this.inventoryWasFull = false;
+        this.questPending = false;
+        this.lastQuestActionAt = 0;
         this.start = {
             position: [Math.floor(Player.getX()), Math.floor(Player.getY()) - 1, Math.floor(Player.getZ())],
             yaw: Player.getYaw(),
@@ -129,7 +154,7 @@ class FishOnMCMacro extends ModuleBase {
         Keybind.setKey('shift', false);
         Pathfinder.resetPath();
         Rotations.stop();
-        if (this.state === STATES.OPENING_MERCHANT || this.state === STATES.SELLING) Guis.closeInv();
+        if (this.state === STATES.OPENING_MERCHANT || this.state === STATES.SELLING || this.state >= STATES.QUEST_OPENING) Guis.closeInv();
         Mouse.regrab();
     }
 
@@ -244,7 +269,77 @@ class FishOnMCMacro extends ModuleBase {
         this.castRod();
     }
 
+    claimAndStartQuests() {
+        this.questPending = false;
+        this.state = STATES.QUEST_OPENING;
+        this.lastQuestActionAt = 0;
+        this.message('&eOpening quests...');
+        if (this.hasFishingHook()) Keybind.rightClick();
+        ScheduleTask(3, () => {
+            if (this.enabled && this.state >= STATES.QUEST_OPENING) ChatLib.command('quests');
+        });
+    }
+
+    handleQuests() {
+        const container = Player.getContainer();
+        if (this.state === STATES.QUEST_OPENING) {
+            if (container) this.state = STATES.QUEST_CLAIMING;
+            return;
+        }
+
+        if (!container || Date.now() - this.lastQuestActionAt < 250) return;
+
+        if (this.state === STATES.QUEST_CLAIMING) {
+            const readySlots = this.findLoreSlots(QUEST_READY_LORE);
+            if (readySlots.length) return this.clickQuestSlot(readySlots[0]);
+
+            const typeSlots = this.findLoreSlots(QUEST_TYPE_LORE);
+            if (typeSlots.length) {
+                this.state = STATES.QUEST_SELECTING_DIFFICULTY;
+                return this.clickQuestSlot(typeSlots[0]);
+            }
+
+            Guis.closeInv();
+            this.resumeFishing();
+            return;
+        }
+
+        if (this.state === STATES.QUEST_SELECTING_DIFFICULTY) {
+            const easySlots = this.findLoreSlots(EASY_QUEST_LORE);
+            if (!easySlots.length) return;
+
+            this.state = STATES.QUEST_STARTING;
+            return this.clickQuestSlot(easySlots[easySlots.length - 1]);
+        }
+
+        if (this.state === STATES.QUEST_STARTING) {
+            const startSlots = this.findLoreSlots(START_QUEST_LORE);
+            if (!startSlots.length) return;
+
+            this.state = STATES.QUEST_CLAIMING;
+            return this.clickQuestSlot(startSlots[Math.floor(Math.random() * startSlots.length)]);
+        }
+    }
+
+    findLoreSlots(target) {
+        const items = Player.getContainer()?.getItems() || [];
+        const slots = [];
+        for (let slot = 0; slot < items.length; slot++) {
+            if (items[slot]?.getLore?.()?.some((line) => ChatLib.removeFormatting(String(line)).includes(target))) slots.push(slot);
+        }
+        return slots;
+    }
+
+    clickQuestSlot(slot) {
+        if (Guis.clickSlot(slot, false, 'LEFT')) this.lastQuestActionAt = Date.now();
+    }
+
     castRod() {
+        if (this.questPending) {
+            this.claimAndStartQuests();
+            return;
+        }
+
         this.lastCastAt = Date.now();
         if (!this.hasFishingHook()) {
             Keybind.rightClick();
