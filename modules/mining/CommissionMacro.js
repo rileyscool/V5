@@ -16,7 +16,6 @@ import { Utils } from '../../utils/Utils';
 import { CombatBot } from '../combat/CombatBot';
 import { COMMISSION_DATA, EMISSARY_LOCATIONS, MOB_CONFIGS, TRASH_ITEMS } from './CommissionData';
 import { MiningBot } from './MiningBot';
-import { ScheduleTask } from '../../utils/ScheduleTask';
 
 const STATES = {
     IDLE: 'Idle',
@@ -123,7 +122,7 @@ class CommissionMacro extends ModuleBase {
         });
 
         manager.subscribe('emptydrill', () => {
-            if (this.enabled && this.currentState === STATES.MINING) this.onDrillEmpty();
+            if (this.enabled && (this.currentState === STATES.MINING || this.currentState === STATES.CLAIMING)) this.onDrillEmpty();
         });
 
         manager.subscribe('death', () => {
@@ -638,21 +637,20 @@ class CommissionMacro extends ModuleBase {
 
         if (closestDist < 4 && !Pathfinder.isPathing()) {
             if (!this.ensureDrillEquippedForEmissaryClaim()) return;
+            if (Math.abs(Player.getMotionX()) + Math.abs(Player.getMotionZ()) >= 0.04) return;
 
             const adjustedTarget = [closest[0] + 0.5, closest[1] + 2.2, closest[2] + 0.5];
-            if (!this.npcRotationPending && !Rotations.active) {
+            if (!Rotations.active) {
                 this.npcRotationPending = true;
                 const token = ++this.npcRotationToken;
                 Rotations.lookAtVector(adjustedTarget);
                 Rotations.onComplete(() => {
-                    ScheduleTask(5, () => {
-                        if (Pathfinder.isPathing()) return;
-                        if (!this.npcRotationPending || this.npcRotationToken !== token) return;
-                        this.npcRotationPending = false;
-                        if (this.emissariesUnlocked && !this.checkEmissaryUnlocked()) return;
-                        Keybind.rightClick();
-                        this.delay(10);
-                    });
+                    if (!this.npcRotationPending || this.npcRotationToken !== token) return;
+                    this.npcRotationPending = false;
+                    if (this.currentState !== STATES.CLAIMING || Pathfinder.isPathing()) return;
+                    if (this.emissariesUnlocked && !this.checkEmissaryUnlocked()) return;
+                    Keybind.leftClick();
+                    this.delay(10);
                 });
             }
             return;
@@ -976,6 +974,8 @@ class CommissionMacro extends ModuleBase {
     }
 
     onCommissionComplete() {
+        if (this.currentState === STATES.REFUELING) return;
+
         Pathfinder.resetPath();
         MiningBot.toggle(false, true);
 
@@ -1004,6 +1004,11 @@ class CommissionMacro extends ModuleBase {
             return;
         }
 
+        const stateAfterRefueling = this.currentState === STATES.CLAIMING ? STATES.CLAIMING : STATES.IDLE;
+        this.npcRotationPending = false;
+        this.npcRotationToken++;
+        if (Rotations.active) Rotations.stop();
+
         this.message('&eDrill empty! Refueling...');
         MiningBot.toggle(false, true);
         this.setState(STATES.REFUELING);
@@ -1025,7 +1030,7 @@ class CommissionMacro extends ModuleBase {
                 this.isActualDrill = itemName.includes('Drill') || itemName.includes('Gauntlet');
             }
 
-            this.setState(STATES.IDLE);
+            this.setState(stateAfterRefueling);
         });
     }
 
