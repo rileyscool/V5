@@ -45,6 +45,7 @@ import './visuals/GlowingMushroomESP';
 import './skills/AutoExperiments';
 import './skills/ChocolateFactory';
 import './skills/FishingHelper';
+import './skills/FishOnMCMacro';
 import './skills/StridersurferMacro';
 import './skills/JerryBoxMacro';
 import './skills/MinionCollector';
