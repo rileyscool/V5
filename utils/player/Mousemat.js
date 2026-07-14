@@ -73,7 +73,7 @@ class MousematController {
         const rotation = this.rotation;
         if (!rotation) return;
         if (rotation.waitingForClose) {
-            if (!Client.isInGui()) this.snap(rotation);
+            if (!Client.isInGui()) this.snap(rotation, 6);
             return;
         }
         if (!rotation.waitingForSign) return;
