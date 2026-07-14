@@ -3,10 +3,13 @@ import { Sign } from '../Sign';
 import { Guis } from './Inventory';
 import { Keybind } from './Keybinding';
 
+const CLICK_COOLDOWN_MS = 6_000;
+
 class MousematController {
     constructor() {
         this.rotation = null;
         this.callbacks = [];
+        this.lastClickAt = 0;
         register('tick', () => this.tick());
     }
 
@@ -95,14 +98,26 @@ class MousematController {
     snap(rotation) {
         if (this.rotation !== rotation) return;
 
-        const callbacks = this.callbacks;
-        this.rotation = null;
-        this.callbacks = [];
-        Keybind.leftClick();
-        ScheduleTask(2, () => {
-            Guis.setItemSlot(rotation.originalSlot);
-            callbacks.forEach((callback) => ScheduleTask(callback));
-        });
+        rotation.waitingForClose = false;
+        const click = () => {
+            if (this.rotation !== rotation) return;
+
+            const cooldown = this.lastClickAt + CLICK_COOLDOWN_MS - Date.now();
+            if (cooldown > 0) return ScheduleTask(Math.ceil(cooldown / 50), click);
+
+            Keybind.leftClick();
+            this.lastClickAt = Date.now();
+            ScheduleTask(2, () => {
+                if (this.rotation !== rotation) return;
+
+                const callbacks = this.callbacks;
+                this.rotation = null;
+                this.callbacks = [];
+                Guis.setItemSlot(rotation.originalSlot);
+                callbacks.forEach((callback) => ScheduleTask(callback));
+            });
+        };
+        ScheduleTask(2, click);
     }
 }
 
