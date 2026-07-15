@@ -108,8 +108,7 @@ new CycleMacro(
         pitch: 6.7,
         movements: [
             ['Left', 'a'],
-            ['Backward', 's'],
-            ['Right', 'd'],
+            ['Right', 'sd'],
         ],
     }
 );

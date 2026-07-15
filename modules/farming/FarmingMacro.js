@@ -259,7 +259,7 @@ export class FarmingMacro extends ModuleBase {
     }
 
     hold(key = '') {
-        ['a', 'd', 'w', 's', 'shift'].forEach((movement) => Keybind.setKey(movement, movement === key));
+        ['a', 'd', 'w', 's', 'shift'].forEach((movement) => Keybind.setKey(movement, key.includes(movement)));
         Keybind.setKey('leftclick', true);
         Keybind.setKey('sprint', false);
     }
