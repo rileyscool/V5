@@ -468,7 +468,11 @@ const drawItemBox = (item, itemX, itemY, itemWidth, mouseX, mouseY, cachedItemLa
     const isThemeComponent = item && item.type === 'theme-component';
     const isStacked = isDirectComponent || isModuleComponent || isThemeComponent;
     const moduleBorderColor =
-        item.moduleType === 'developer' ? colorWithAlpha(THEME.NOTIF_WARNING, 0.75) : item.moduleType === 'user' ? colorWithAlpha(THEME.NOTIF_ERROR, 0.75) : null;
+        item.moduleType === 'developer'
+            ? colorWithAlpha(THEME.NOTIF_WARNING, 0.75)
+            : item.moduleType === 'user'
+              ? colorWithAlpha(THEME.NOTIF_ERROR, 0.75)
+              : null;
     const itemHeight = 48;
     const itemRect = {
         x: itemX,
