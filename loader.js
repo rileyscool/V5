@@ -31,6 +31,7 @@ import './utils/SkyblockEvents';
 
 /* Modules */
 import './modules/loader';
+import './utils/UserScripts';
 
 import { loadSettings } from './gui/GuiSave';
 registerV5Commands();
