@@ -6,6 +6,8 @@ const isLinux = os.includes('nux') || os.includes('nix');
 
 class UngrabManager {
     constructor() {
+        this.requestedUngrab = false;
+        this.forcedGrab = false;
         Mixin.set('ungrabbed', false);
         Mixin.set('inputLocked', false);
     }
@@ -14,8 +16,14 @@ class UngrabManager {
      * Prevents the player from controlling the camera and locks inventory interaction.
      */
     ungrab() {
+        this.requestedUngrab = true;
+        if (this.forcedGrab) return;
         if (Mixin.get('ungrabbed')) return;
 
+        this.applyUngrab();
+    }
+
+    applyUngrab() {
         Mixin.set('ungrabbed', true);
         Mixin.set('inputLocked', true);
 
@@ -33,8 +41,24 @@ class UngrabManager {
      * Returns control to the player.
      */
     regrab() {
+        this.requestedUngrab = false;
+        if (this.forcedGrab) return;
         if (!Mixin.get('ungrabbed')) return;
 
+        this.applyRegrab();
+    }
+
+    forceGrab() {
+        this.forcedGrab = true;
+        this.applyRegrab();
+    }
+
+    releaseForcedGrab() {
+        this.forcedGrab = false;
+        if (this.requestedUngrab) this.applyUngrab();
+    }
+
+    applyRegrab() {
         Mixin.set('ungrabbed', false);
         Mixin.set('inputLocked', false);
 

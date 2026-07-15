@@ -4,9 +4,11 @@ import { Mixin } from '../../utils/MixinManager';
 import { ModuleBase } from '../../utils/ModuleBase';
 import { MathUtils } from '../../utils/Math';
 import { Keybind } from '../../utils/player/Keybinding';
+import { Mouse } from '../../utils/Ungrab';
 import { mc } from '../../utils/Utils';
 
 const Perspective = net.minecraft.client.CameraType;
+const InputConstants = com.mojang.blaze3d.platform.InputConstants;
 const THIRD_PERSON_DISTANCE = 4.0;
 
 class Freecam extends ModuleBase {
@@ -28,7 +30,7 @@ class Freecam extends ModuleBase {
         this.velocity = new Vec3d(0, 0, 0);
         this.savedPerspective = null;
 
-        this.addSlider('Move Speed', 1, 30, 10, (value) => (this.moveSpeed = Number(value) / 25), 'Freecam move speed.');
+        this.addSlider('Move Speed', 10, 35, 20, (value) => (this.moveSpeed = Number(value) / 25), 'Freecam move speed.');
 
         this.on('step', () => this.onTick()).setFps(100);
     }
@@ -41,8 +43,6 @@ class Freecam extends ModuleBase {
             this.savedPerspective = null;
             Mixin.set('freecamEnabled', false);
             Camera.clearCameraPosition();
-            Mixin.delete('freecamFrozenYaw');
-            Mixin.delete('freecamFrozenPitch');
             Mixin.delete('cameraOverrideYaw');
             Mixin.delete('cameraOverridePitch');
             return;
@@ -53,11 +53,10 @@ class Freecam extends ModuleBase {
         this.velocity = new Vec3d(0, 0, 0);
         this.savedPerspective = mc.options.getCameraType();
         Keybind.unpressKeys();
+        Mouse.forceGrab();
+        Mixin.set('cameraOverrideYaw', MathUtils.wrapTo180(player.getYRot()));
+        Mixin.set('cameraOverridePitch', player.getXRot());
         Mixin.set('freecamEnabled', true);
-        Mixin.delete('freecamFrozenYaw');
-        Mixin.delete('freecamFrozenPitch');
-        Mixin.delete('cameraOverrideYaw');
-        Mixin.delete('cameraOverridePitch');
         mc.options.setCameraType(Perspective.THIRD_PERSON_BACK);
         Camera.setCameraPosition(this.cameraPos);
     }
@@ -68,8 +67,6 @@ class Freecam extends ModuleBase {
         this.velocity = new Vec3d(0, 0, 0);
         Keybind.unpressKeys();
         Mixin.set('freecamEnabled', false);
-        Mixin.delete('freecamFrozenYaw');
-        Mixin.delete('freecamFrozenPitch');
         Mixin.delete('cameraOverrideYaw');
         Mixin.delete('cameraOverridePitch');
         Camera.clearCameraPosition();
@@ -79,6 +76,7 @@ class Freecam extends ModuleBase {
         }
 
         this.savedPerspective = null;
+        Mouse.releaseForcedGrab();
     }
 
     onTick() {
@@ -97,7 +95,7 @@ class Freecam extends ModuleBase {
         }
 
         const options = mc.options;
-        const yaw = (MathUtils.wrapTo180(player.getYRot()) * Math.PI) / 180;
+        const yaw = (Number(Mixin.get('cameraOverrideYaw', player.getYRot())) * Math.PI) / 180;
 
         let moveX = 0;
         let moveY = 0;
@@ -108,26 +106,26 @@ class Freecam extends ModuleBase {
         const leftX = Math.cos(yaw);
         const leftZ = Math.sin(yaw);
 
-        if (options.keyUp.isDown()) {
+        if (this.isKeyDown(options.keyUp)) {
             moveX += forwardX;
             moveZ += forwardZ;
         }
-        if (options.keyDown.isDown()) {
+        if (this.isKeyDown(options.keyDown)) {
             moveX -= forwardX;
             moveZ -= forwardZ;
         }
-        if (options.keyLeft.isDown()) {
+        if (this.isKeyDown(options.keyLeft)) {
             moveX += leftX;
             moveZ += leftZ;
         }
-        if (options.keyRight.isDown()) {
+        if (this.isKeyDown(options.keyRight)) {
             moveX -= leftX;
             moveZ -= leftZ;
         }
-        if (options.keyJump.isDown()) {
+        if (this.isKeyDown(options.keyJump)) {
             moveY += 1;
         }
-        if (options.keyShift.isDown()) {
+        if (this.isKeyDown(options.keyShift)) {
             moveY -= 1;
         }
 
@@ -157,6 +155,10 @@ class Freecam extends ModuleBase {
         this.cameraPos = new Vec3d(this.cameraPos.x() + this.velocity.x(), this.cameraPos.y() + this.velocity.y(), this.cameraPos.z() + this.velocity.z());
 
         Camera.setCameraPosition(this.cameraPos);
+    }
+
+    isKeyDown(keybind) {
+        return mc.screen == null && InputConstants.isKeyDown(mc.getWindow(), InputConstants.getKey(keybind.saveString()).getValue());
     }
 
     getInitialCameraPos(player, yaw, pitch) {
