@@ -459,6 +459,7 @@ export const createCategoriesManager = (deps) => {
             pendingModuleComponent = null;
         }
 
+        if (Categories.transitionType === 'page' && Categories.transitionDirection === -1 && SearchBar.query) SearchBar.resetSearch();
         const rawQuery = SearchBar.query.trim();
         const query = rawQuery.toLowerCase();
         if (query !== lastQuery) {
