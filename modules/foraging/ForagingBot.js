@@ -22,6 +22,7 @@ class ForagingBot extends ModuleBase {
         super({
             name: 'Foraging Bot',
             subcategory: 'Foraging',
+            developerMode: true,
             description: 'unfinished.',
             tooltip: 'unfinished.',
             isMacro: true,

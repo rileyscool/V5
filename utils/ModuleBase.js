@@ -11,6 +11,7 @@ import { Utils } from './Utils';
 export class ModuleBase {
     static conditions = [];
     static conditionChecker = null;
+    static loadingUserScript = false;
     static defaultThemes = {
         Combat: '#c74d4d',
         Core: '#7c8cff',
@@ -28,7 +29,7 @@ export class ModuleBase {
      * @param {string} [subcategory] - Subcategory name (required if nameOrOpts is string)
      * @param {string} [description=''] - Module description (required if nameOrOpts is string)
      * @param {string} [tooltip=null] - Tooltip text (required if nameOrOpts is string)
-     * @param {object} [opts] - Options object with properties: name, subcategory, description, tooltip, theme, showEnabledToggle, autoDisableOnWorldUnload, isMacro, ignoreFailsafes
+     * @param {object} [opts] - Options object with properties: name, subcategory, description, tooltip, theme, developerMode, showEnabledToggle, autoDisableOnWorldUnload, isMacro, ignoreFailsafes
      */
     constructor(nameOrOpts, subcategory, description = '', tooltip = null) {
         const opts = typeof nameOrOpts === 'object' ? nameOrOpts : { name: nameOrOpts, subcategory, description, tooltip };
@@ -55,7 +56,8 @@ export class ModuleBase {
 
         // add to gui
         if (!this.hideInModules) {
-            Categories.addCategoryItem(this.subcategory, this.name, this.description, this.tooltip);
+            const moduleType = opts.developerMode === true ? 'developer' : ModuleBase.loadingUserScript ? 'user' : null;
+            Categories.addCategoryItem(this.subcategory, this.name, this.description, this.tooltip, moduleType);
         }
 
         if (opts.autoDisableOnWorldUnload) {

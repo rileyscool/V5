@@ -9,6 +9,7 @@ class StructureESP extends ModuleBase {
         super({
             name: 'Structure ESP',
             subcategory: 'Visuals',
+            developerMode: true,
             description: 'Super quick Structure ESP',
         });
 

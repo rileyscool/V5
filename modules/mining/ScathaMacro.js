@@ -20,6 +20,7 @@ class ScathaMacro extends ModuleBase {
         super({
             name: 'Scatha Macro',
             subcategory: 'Mining',
+            developerMode: true,
             description: 'Automatically mines and kills Scappas for you',
             tooltip: 'Automatically mines and kills Scappas for you',
             theme: '#5a7cbb',

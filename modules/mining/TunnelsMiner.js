@@ -9,6 +9,7 @@ class TunnelsMiner extends ModuleBase {
         super({
             name: 'Tunnels Miner',
             subcategory: 'Mining',
+            developerMode: true,
             description: 'Pathfind to recorded tunnels veins and hand off to MiningBot',
             tooltip: 'Select an ore type, find the closest vein edge, path, then mine.',
             autoDisableOnWorldUnload: true,

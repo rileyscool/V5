@@ -252,6 +252,7 @@ export const createCategoriesManager = (deps) => {
                 description: component.description,
                 moduleTitle: item.title,
                 tooltip: component.description || null,
+                moduleType: item.moduleType,
             });
         };
 

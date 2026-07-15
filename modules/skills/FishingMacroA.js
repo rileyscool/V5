@@ -9,6 +9,7 @@ class FishingMacro extends ModuleBase {
         super({
             name: 'Fishing Macro',
             subcategory: 'Skills',
+            developerMode: true,
             description: 'Fishing Macro general hype',
             tooltip: 'Fishing Macro general hype',
             isMacro: true,

@@ -20,6 +20,7 @@ class GemstoneMacro extends ModuleBase {
         super({
             name: 'Gemstone Macro',
             subcategory: 'Mining',
+            developerMode: true,
             description: 'Macro for gemstones',
             tooltip: 'Macro for gemstones',
             theme: '#fb42f5',

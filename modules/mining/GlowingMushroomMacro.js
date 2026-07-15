@@ -36,6 +36,7 @@ class GlowingMushroomMacro extends ModuleBase {
         super({
             name: 'Glowing Mushroom Macro',
             subcategory: 'Mining',
+            developerMode: true,
             description: 'Pathfinds to tracked glowing mushrooms and harvests nearby mushrooms.',
             tooltip: 'Uses Glowing Mushroom ESP targets, pathfinds to them, then harvests nearby mushrooms in a loop.',
             theme: '#89d85e',

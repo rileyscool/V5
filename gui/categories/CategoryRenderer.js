@@ -467,6 +467,8 @@ const drawItemBox = (item, itemX, itemY, itemWidth, mouseX, mouseY, cachedItemLa
     const isModuleComponent = item && item.type === 'module-component';
     const isThemeComponent = item && item.type === 'theme-component';
     const isStacked = isDirectComponent || isModuleComponent || isThemeComponent;
+    const moduleBorderColor =
+        item.moduleType === 'developer' ? colorWithAlpha(THEME.NOTIF_WARNING, 0.75) : item.moduleType === 'user' ? colorWithAlpha(THEME.NOTIF_ERROR, 0.75) : null;
     const itemHeight = 48;
     const itemRect = {
         x: itemX,
@@ -476,7 +478,7 @@ const drawItemBox = (item, itemX, itemY, itemWidth, mouseX, mouseY, cachedItemLa
         radius: 10,
         color: THEME.BG_COMPONENT,
         borderWidth: 1,
-        borderColor: THEME.BORDER,
+        borderColor: moduleBorderColor || THEME.BORDER,
     };
     const isHovered = isInside(mouseX, mouseY, itemRect);
     itemRect.color = isHovered ? THEME.HOVER : THEME.BG_COMPONENT;

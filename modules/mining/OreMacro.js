@@ -23,6 +23,7 @@ class OreMacro extends ModuleBase {
         super({
             name: 'Ore Macro',
             subcategory: 'Mining',
+            developerMode: true,
             description: 'Walks and Etherwarps to set mine points or uses MiningBot',
             tooltip: 'Universal pure Ore Miner',
             theme: '#815bf5',

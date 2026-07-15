@@ -67,7 +67,7 @@ export const Categories = {
         return Categories.categories.filter((category) => !category.hiddenInSidebar);
     },
 
-    addCategoryItem(subcategoryName, title, description, tooltip = null) {
+    addCategoryItem(subcategoryName, title, description, tooltip = null, moduleType = null) {
         const category = Categories.categories.find((c) => c.name === 'Modules');
         if (!category) return;
 
@@ -80,6 +80,7 @@ export const Categories = {
             components: [],
             type: 'item',
             subcategoryName: subcategoryName,
+            moduleType,
         };
 
         if (subcategoryName) {

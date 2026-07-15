@@ -7,6 +7,7 @@ class SeaLumie extends ModuleBase {
         super({
             name: 'Sea Lumie',
             subcategory: 'Foraging',
+            developerMode: true,
             description: 'Automatically farms sea lumies',
             tooltip: 'Automatically farms sea lumies',
             isMacro: true,

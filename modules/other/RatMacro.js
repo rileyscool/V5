@@ -68,6 +68,7 @@ class RatMacro extends ModuleBase {
         super({
             name: 'Rat Macro',
             subcategory: 'Other',
+            developerMode: true,
             description: 'VIBECODED SLOP. Etherwarps to Hub rats and uses your held gun.',
             tooltip: 'VIBECODED SLOP. Etherwarps to Hub rats and uses your held gun.',
             theme: '#d7b24a',

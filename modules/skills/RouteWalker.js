@@ -17,6 +17,7 @@ class RouteWalkerer extends ModuleBase {
         super({
             name: 'Route Walker',
             subcategory: 'Skills',
+            developerMode: true,
             description: 'Follows multiple points in a route',
             tooltip: 'Etherwarps and walks to multiple points in a route',
             theme: '#65a6f0',

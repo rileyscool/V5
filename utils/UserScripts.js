@@ -1,4 +1,5 @@
 import { File } from './Constants';
+import { ModuleBase } from './ModuleBase';
 
 const USER_SCRIPTS_DIR = new File('./config/ChatTriggers/modules/V5Config/UserScripts');
 const EXAMPLE_SCRIPT = `
@@ -47,9 +48,12 @@ if (!new File(USER_SCRIPTS_DIR, 'Example.js').exists()) {
 for (const file of Array.from(USER_SCRIPTS_DIR.listFiles() || []).sort((a, b) => a.getName().localeCompare(b.getName()))) {
     if (!file.isFile() || !file.getName().endsWith('.js')) continue;
 
+    ModuleBase.loadingUserScript = true;
     try {
         require(`../../V5Config/UserScripts/${file.getName().slice(0, -3)}`);
     } catch (e) {
         console.error(`Failed to load user script ${file.getName()}:`, e);
+    } finally {
+        ModuleBase.loadingUserScript = false;
     }
 }

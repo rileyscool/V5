@@ -32,6 +32,7 @@ class GlaciteCommissionMacro extends ModuleBase {
         super({
             name: 'Glacite Commission Macro',
             subcategory: 'Mining',
+            developerMode: true,
             description: 'Completes Glacite mining commissions with Tunnels Miner',
             tooltip: 'Reads Glacite commissions from tab, mines required tunnel ores, and claims with pigeon or emissary.',
             theme: '#88d7ff',
