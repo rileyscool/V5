@@ -106,7 +106,12 @@ class MiningStatsCollector {
 
             ChatLib.command('hotm');
             if (!this.waitForGui('Heart of the Mountain')) return this.timeout();
-            if (!this.waitForItem('Tier 5')) return this.timeout();
+            let hotmPage = this.waitForItem(['Tier 5', 'Tier 10']);
+            if (!hotmPage) return this.timeout();
+            if (hotmPage === 'Tier 10') {
+                Guis.clickSlot(53, false, 'RIGHT');
+                if (!this.waitForItem('Tier 5')) return this.timeout();
+            }
             Thread.sleep(100);
 
             this.collectedData.cotm = this.extractNumericFromSlot(4, /Level[:\s]*(\d+)/i);
@@ -159,10 +164,12 @@ class MiningStatsCollector {
     }
 
     waitForItem(itemName, timeoutMs = 4000) {
+        let itemNames = Array.isArray(itemName) ? itemName : [itemName];
         let waited = 0;
         while (waited < timeoutMs) {
             let inventory = Player.getContainer();
-            if (Guis.findFirst(inventory, itemName) != -1) return true;
+            let found = itemNames.find((name) => Guis.findFirst(inventory, name) != -1);
+            if (found) return found;
             Thread.sleep(50);
             waited += 50;
         }
