@@ -17,30 +17,52 @@ class MousematController {
         return this.rotation !== null;
     }
 
+    isAtRotation(yaw, pitch) {
+        const player = Player.getPlayer();
+        if (!player) return false;
+
+        const yawDifference = Math.abs(((((player.getYRot() - yaw + 180) % 360) + 360) % 360) - 180);
+        return yawDifference <= 0.01 && Math.abs(player.getXRot() - pitch) <= 0.01;
+    }
+
+    getSelectedRotation(slot) {
+        const item = Player.getInventory()?.getStackInSlot(slot);
+        const lore = ChatLib.removeFormatting(item?.getLore?.().join('\n') || '');
+        const yaw = lore.match(/Selected Yaw: (-?[\d.]+)/);
+        const pitch = lore.match(/Selected Pitch: (-?[\d.]+)/);
+        return yaw && pitch ? { yaw: Number(yaw[1]), pitch: Number(pitch[1]) } : null;
+    }
+
     rotateTo(yaw, pitch) {
+        const targetYaw = (((((yaw + 180) % 360) + 360) % 360) - 180).toFixed(2);
+        const targetPitch = Math.max(-90, Math.min(90, pitch)).toFixed(2);
+
+        this.stop();
+        if (this.isAtRotation(Number(targetYaw), Number(targetPitch))) {
+            const rotation = (this.rotation = { originalSlot: Player.getHeldItemIndex() });
+            ScheduleTask(() => this.complete(rotation));
+            return true;
+        }
+
         const slot = Guis.findItemInHotbar('Squeaky Mousemat');
         if (slot < 0) return false;
 
-        this.stop();
         const rotation = (this.rotation = {
-            yaw: (((((yaw + 180) % 360) + 360) % 360) - 180).toFixed(2),
-            pitch: Math.max(-90, Math.min(90, pitch)).toFixed(2),
+            yaw: targetYaw,
+            pitch: targetPitch,
             originalSlot: Player.getHeldItemIndex(),
             waitingForSign: false,
             waitingForClose: false,
         });
 
         Guis.setItemSlot(slot);
-        const item = Player.getInventory()?.getStackInSlot(slot);
-        const lore = ChatLib.removeFormatting(item?.getLore?.().join('\n') || '');
-        const selectedYaw = lore.match(/Selected Yaw: (-?[\d.]+)/);
-        const selectedPitch = lore.match(/Selected Pitch: (-?[\d.]+)/);
-        if (selectedYaw && selectedPitch && Number(selectedYaw[1]) === Number(rotation.yaw) && Number(selectedPitch[1]) === Number(rotation.pitch)) {
-            this.snap(rotation, 6);
+        const selectedRotation = this.getSelectedRotation(slot);
+        if (selectedRotation && selectedRotation.yaw === Number(rotation.yaw) && selectedRotation.pitch === Number(rotation.pitch)) {
+            this.snap(rotation, 2);
             return true;
         }
 
-        ScheduleTask(6, () => {
+        ScheduleTask(2, () => {
             if (this.rotation !== rotation) return;
 
             rotation.waitingForSign = true;
@@ -54,14 +76,24 @@ class MousematController {
         if (slot < 0) return false;
 
         this.stop();
-        const rotation = (this.rotation = { originalSlot: Player.getHeldItemIndex() });
+        const rotation = (this.rotation = { originalSlot: Player.getHeldItemIndex(), ...(this.getSelectedRotation(slot) || {}) });
         Guis.setItemSlot(slot);
-        this.snap(rotation, 6);
+        this.snap(rotation, 2);
         return true;
     }
 
     onComplete(callback) {
         if (typeof callback === 'function') this.callbacks.push(callback);
+    }
+
+    complete(rotation) {
+        if (this.rotation !== rotation) return;
+
+        const callbacks = this.callbacks;
+        this.rotation = null;
+        this.callbacks = [];
+        Guis.setItemSlot(rotation.originalSlot);
+        callbacks.forEach((callback) => ScheduleTask(callback));
     }
 
     stop() {
@@ -74,7 +106,7 @@ class MousematController {
         const rotation = this.rotation;
         if (!rotation) return;
         if (rotation.waitingForClose) {
-            if (!Client.isInGui()) this.snap(rotation, 6);
+            if (!Client.isInGui()) this.snap(rotation, 2);
             return;
         }
         if (!rotation.waitingForSign) return;
@@ -94,23 +126,23 @@ class MousematController {
         if (this.rotation !== rotation) return;
 
         rotation.waitingForClose = false;
-        const click = () => {
+        const checkRotation = (ticks = 1) => {
+            if (this.rotation !== rotation) return;
+            const yaw = Number(rotation.yaw);
+            const pitch = Number(rotation.pitch);
+            if (!Number.isFinite(yaw) || !Number.isFinite(pitch) || this.isAtRotation(yaw, pitch)) return this.complete(rotation);
+            if (ticks >= 10) return click(true);
+            ScheduleTask(() => checkRotation(ticks + 1));
+        };
+        const click = (retry = false) => {
             if (this.rotation !== rotation) return;
 
             const cooldown = this.lastClickAt + CLICK_COOLDOWN_MS - Date.now();
-            if (cooldown > 0) return ScheduleTask(Math.ceil(cooldown / 50), click);
+            if (!retry && cooldown > 0) return ScheduleTask(Math.ceil(cooldown / 50), click);
 
             Keybind.leftClick();
             this.lastClickAt = Date.now();
-            ScheduleTask(2, () => {
-                if (this.rotation !== rotation) return;
-
-                const callbacks = this.callbacks;
-                this.rotation = null;
-                this.callbacks = [];
-                Guis.setItemSlot(rotation.originalSlot);
-                callbacks.forEach((callback) => ScheduleTask(callback));
-            });
+            ScheduleTask(checkRotation);
         };
         if (delay > 0) ScheduleTask(delay, click);
         else click();
