@@ -41,10 +41,17 @@ export class FarmingMacro extends ModuleBase {
     }
 
     onEnable() {
-        if (!farmingSettings.looping && (!this.isPoint(this.points.start) || !this.isPoint(this.points.end))) {
-            this.message('&cSet both Rewarp points before enabling Rewarp mode.');
-            this.toggle(false);
-            return;
+        if (!farmingSettings.looping) {
+            if (!this.isPoint(this.points.start) || !this.isPoint(this.points.end)) {
+                this.message('Set both Rewarp points before enabling Rewarp mode.');
+                this.toggle(false);
+                return;
+            }
+            if (this.rewarpPointsOverlap()) {
+                this.message('Rewarp start/end overlap detected. Ensure the points are set correctly.');
+                this.toggle(false);
+                return;
+            }
         }
         this.farmingRotation = null;
         this.mode = FARMING;
@@ -271,6 +278,13 @@ export class FarmingMacro extends ModuleBase {
         this.points[name] = { x: player.getX(), y: player.getY(), z: player.getZ() };
         Utils.writeConfigFile(this.pointsPath, this.points);
         this.message(`&aRewarp ${name} saved.`);
+        if (this.rewarpPointsOverlap()) this.message('Rewarp point currently overlap. The macro will not work.');
+    }
+
+    rewarpPointsOverlap() {
+        if (!this.isPoint(this.points.start) || !this.isPoint(this.points.end)) return false;
+        const { start, end } = this.points;
+        return Math.hypot(start.x - end.x, start.y - end.y, start.z - end.z) <= farmingSettings.triggerRadius * 2;
     }
 
     isAtPoint(player, point) {
