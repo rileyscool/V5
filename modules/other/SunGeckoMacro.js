@@ -108,6 +108,10 @@ class SunGecko extends ModuleBase {
         this.actionCooldownUntil = 0;
         this.terracottaClickCooldownUntil = 0;
 
+        this.addSlider('Minimum Rift Time (s)', 240, 600, 300, (seconds) => {
+            this.minimumRiftTime = seconds;
+        });
+
         this.createOverlay(
             [
                 {
@@ -297,7 +301,7 @@ class SunGecko extends ModuleBase {
         } else if (closestPoint == 'Boss Path') {
             this.startPathfind(this.buildPathGoals(38, 88, 19));
         } else if (closestPoint == 'Boss Enter') {
-            if (Player.getXPLevel() < 240) {
+            if (Player.getXPLevel() < this.minimumRiftTime) {
                 if (Date.now() < this.actionCooldownUntil) return;
                 ChatLib.command('warp wizard');
                 this.actionCooldownUntil = Date.now() + 40 * 50;
