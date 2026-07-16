@@ -65,7 +65,7 @@ class NetworkMonitor {
     sendPingRequest() {
         if (!Player.getPlayer()) return;
         if (!this.waitingForPing) {
-            Client.sendPacket(new ServerboundClientCommandPacket(ServerboundClientCommandPacket.Action.REQUEST_STATS)); // mojmap: ServerboundClientCommandPacket$Action.REQUEST_STATS
+            Client.sendPacket(new ServerboundClientCommandPacket(ServerboundClientCommandPacket.Action.REQUEST_STATS));
             this.pingStartNano = System.nanoTime();
             this.waitingForPing = true;
         }

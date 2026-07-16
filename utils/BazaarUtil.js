@@ -122,7 +122,7 @@ class BazaarUtil {
     }
 
     isSignOpen() {
-        return String(Client.currentGui?.get?.().class?.simpleName || '').includes('Sign');
+        return Client.currentGui?.getClassName?.().includes('Sign') || false;
     }
 
     clean(name) {

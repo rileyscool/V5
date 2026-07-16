@@ -26,7 +26,7 @@ class AutoConversation extends ModuleBase {
                     let value = null;
 
                     try {
-                        value = clickEvent.command(); // mojmap: command
+                        value = clickEvent.command();
                     } catch (e) {
                         console.error('V5 Caught error' + e + e.stack);
                     }

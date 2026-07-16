@@ -251,9 +251,7 @@ class GIFOverlay extends ModuleBase {
     }
 
     isChatOpen() {
-        const gui = Client.currentGui.get();
-        if (!gui) return false;
-        return gui.class.simpleName == 'ChatScreen'; // mojmap: ChatScreen
+        return Client.currentGui.getClassName() == 'ChatScreen';
     }
 
     getGifFiles() {

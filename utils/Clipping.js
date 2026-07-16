@@ -394,7 +394,7 @@ class ClippingManager extends ModuleBase {
 
     getWindowTitle() {
         let mcClass = Client.getMinecraft().getClass();
-        let method = mcClass.getDeclaredMethod('createTitle'); // mojmap: createTitle
+        let method = mcClass.getDeclaredMethod('createTitle');
         method.setAccessible(true);
 
         return method.invoke(Client.getMinecraft());
