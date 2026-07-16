@@ -52,7 +52,7 @@ jobs:
                   echo "REPO_NAME=${GITHUB_REPOSITORY#*/}" >> "$GITHUB_ENV"
 
                   declare -A USERS=(
-                    ["EpsilonPhoenix"]="<@899647076370092042>"
+                    ["EpsilonPhoenix"]="<@1491118400385060925>"
                     ["qxionr"]="<@790294721943699477>"
                     ["quiteboring"]="<@1441859003708866601>"
                     ["rdbtCVS"]="<@777346923232886784>"
