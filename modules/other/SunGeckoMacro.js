@@ -3,7 +3,6 @@ import { CombatBot } from '../combat/CombatBot';
 import { MacroState } from '../../utils/MacroState';
 import { MathUtils } from '../../utils/Math';
 import { ModuleBase } from '../../utils/ModuleBase';
-import { formatRoundedNumber } from '../../utils/NumberUtils';
 import Pathfinder from '../../utils/pathfinder/PathFinder';
 import { Guis } from '../../utils/player/Inventory';
 import { Keybind } from '../../utils/player/Keybinding';
@@ -99,6 +98,7 @@ class SunGecko extends ModuleBase {
             subcategory: 'Other',
             description: 'Automatically does the rift sun gecko',
             tooltip: 'Automatically does the rift sun gecko',
+            showEnabledToggle: false,
             isMacro: true,
         });
         this.bindToggleKey();
@@ -108,15 +108,19 @@ class SunGecko extends ModuleBase {
         this.actionCooldownUntil = 0;
         this.terracottaClickCooldownUntil = 0;
 
+        this.addSlider('Minimum Rift Time (s)', 240, 600, 300, (seconds) => {
+            this.minimumRiftTime = seconds;
+        });
+
         this.createOverlay(
             [
                 {
                     title: 'Status',
                     data: {
                         State: () => this.getStateName(),
-                        Kills: () => formatRoundedNumber(OverlayManager.getTrackedValue(this.oid, 'kills', 0)),
+                        Kills: () => this.formatNumber(OverlayManager.getTrackedValue(this.oid, 'kills', 0)),
                         'Kills/hr': () => this.formatHourlyRate(OverlayManager.getTrackedValue(this.oid, 'kills', 0)),
-                        Essence: () => formatRoundedNumber(OverlayManager.getTrackedValue(this.oid, 'essence', 0)),
+                        Essence: () => this.formatNumber(OverlayManager.getTrackedValue(this.oid, 'essence', 0)),
                         'Essence/hr': () => this.formatHourlyRate(OverlayManager.getTrackedValue(this.oid, 'essence', 0)),
                     },
                 },
@@ -297,7 +301,7 @@ class SunGecko extends ModuleBase {
         } else if (closestPoint == 'Boss Path') {
             this.startPathfind(this.buildPathGoals(38, 88, 19));
         } else if (closestPoint == 'Boss Enter') {
-            if (Player.getXPLevel() < 240) {
+            if (Player.getXPLevel() < this.minimumRiftTime) {
                 if (Date.now() < this.actionCooldownUntil) return;
                 ChatLib.command('warp wizard');
                 this.actionCooldownUntil = Date.now() + 40 * 50;
@@ -416,13 +420,19 @@ class SunGecko extends ModuleBase {
     formatHourlyRate(total) {
         const hours = this.getActiveHours();
         if (hours <= 0) return '0';
-        return formatRoundedNumber(total / hours);
+        return this.formatNumber(total / hours);
     }
 
     getActiveHours() {
         const elapsedMs = MacroState.getModuleElapsedMs(this.name);
         if (elapsedMs <= 0) return 0;
         return elapsedMs / 3600000;
+    }
+
+    formatNumber(value) {
+        if (!Number.isFinite(value)) return '0';
+        const rounded = Math.round(value);
+        return String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
 
     setState(newState) {
