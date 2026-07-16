@@ -111,9 +111,7 @@ class MousematController {
         }
         if (!rotation.waitingForSign) return;
 
-        const gui = Client.currentGui;
-        const screen = gui && gui.get ? gui.get() : null;
-        if (!screen || !screen.class || !String(screen.class.simpleName || '').includes('Sign')) return;
+        if (!String(Client.currentGui?.getClassName?.() || '').includes('Sign')) return;
 
         rotation.waitingForSign = false;
         rotation.waitingForClose = true;
