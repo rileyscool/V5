@@ -22,6 +22,7 @@ class CycleMacro extends FarmingMacro {
         this.initialDelay = config.initialDelay ?? 20;
         this.stationaryDelay = config.stationaryDelay ?? 2;
         this.switchDelay = config.switchDelay ?? 2;
+        this.laneChangeKey = config.laneChangeKey;
 
         if (config.adjustablePitch) {
             this.addRangeSlider(
@@ -40,6 +41,7 @@ class CycleMacro extends FarmingMacro {
     }
 
     onFarmStart(player) {
+        this.laneChanging = false;
         this.ignoreTicks = this.initialDelay;
         const pitch = farmingSettings.useMousemat ? (this.pitchMin + this.pitchMax) / 2 : Utils.randomFloat(this.pitchMin, this.pitchMax);
         this.rotateTo(this.snapYaw(player.getYRot(), this.yaw), pitch);
@@ -48,16 +50,26 @@ class CycleMacro extends FarmingMacro {
     updateFarmState(player) {
         if (this.consumeIgnoreTicks(player)) return;
 
+        this.laneChanging ||= Boolean(this.laneChangeKey) && this.state === this.movements[0][0] && this.isMovingInLaneChangeDirection(player);
+
         if (!this.stationaryTicks) this.stationaryDelayTicks = this.stationaryDelay === LANE_DELAY ? this.getLaneSwitchDelayTicks() : this.stationaryDelay;
         if (!this.isStationaryForTicks(player, this.stationaryDelayTicks)) return;
 
         const index = this.movements.findIndex(([state]) => state === this.state);
         this.state = this.movements[(index + 1) % this.movements.length][0];
+        this.laneChanging = false;
         this.ignoreTicks = this.switchDelay === LANE_DELAY ? this.getLaneSwitchDelayTicks() : this.switchDelay;
     }
 
+    isMovingInLaneChangeDirection(player) {
+        const yaw = ((this.farmingRotation?.yaw ?? player.getYRot()) * Math.PI) / 180;
+        const direction = this.laneChangeKey === 's' ? 1 : -1;
+        return ((player.getX() - this.previousTickX) * Math.sin(yaw) - (player.getZ() - this.previousTickZ) * Math.cos(yaw)) * direction > 0.01;
+    }
+
     invokeFarmState() {
-        this.hold(this.movements.find(([state]) => state === this.state)[1]);
+        const movement = this.movements.find(([state]) => state === this.state)[1];
+        this.hold(this.laneChanging ? `${movement}${this.laneChangeKey}` : movement);
     }
 }
 
@@ -110,6 +122,7 @@ new CycleMacro(
             ['Left', 'a'],
             ['Right', 'sd'],
         ],
+        laneChangeKey: 's',
     }
 );
 

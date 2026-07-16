@@ -175,7 +175,13 @@ export class FarmingMacro extends ModuleBase {
         Keybind.unpressKeys();
         if (this.mode === FARMING) {
             this.pestRotation = { yaw: player.getYRot(), pitch: player.getXRot() };
-            this.pestFarmState = { state: this.state, lastDirection: this.lastDirection, yaw: this.yaw, leftYaw: this.leftYaw };
+            this.pestFarmState = {
+                state: this.state,
+                lastDirection: this.lastDirection,
+                yaw: this.yaw,
+                leftYaw: this.leftYaw,
+                laneChanging: this.laneChanging,
+            };
             this.mode = PEST;
             farmingSettings.originalSlot = Player.getHeldItemIndex();
         }
