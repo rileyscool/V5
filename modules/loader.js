@@ -57,6 +57,7 @@ import './other/ChatQOL';
 import './other/DiscordRPC';
 import './other/Failsafes';
 import './other/Freecam';
+import './other/Freelook';
 import './other/InventoryWalk';
 import './other/LeftClickEtherwarp';
 import './other/RatProtection';

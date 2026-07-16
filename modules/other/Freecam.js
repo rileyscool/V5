@@ -29,10 +29,11 @@ class Freecam extends ModuleBase {
         this.cameraPos = null;
         this.velocity = new Vec3d(0, 0, 0);
         this.savedPerspective = null;
+        this.lastRenderAt = 0;
 
         this.addSlider('Move Speed', 10, 35, 20, (value) => (this.moveSpeed = Number(value) / 25), 'Freecam move speed.');
 
-        this.on('step', () => this.onTick()).setFps(100);
+        this.on('renderWorld', () => this.onRender());
     }
 
     onEnable() {
@@ -52,6 +53,7 @@ class Freecam extends ModuleBase {
         this.cameraPos = this.getInitialCameraPos(player, MathUtils.wrapTo180(player.getYRot()), player.getXRot());
         this.velocity = new Vec3d(0, 0, 0);
         this.savedPerspective = mc.options.getCameraType();
+        this.lastRenderAt = Date.now();
         Keybind.unpressKeys();
         Mouse.forceGrab();
         Mixin.set('cameraOverrideYaw', MathUtils.wrapTo180(player.getYRot()));
@@ -79,7 +81,7 @@ class Freecam extends ModuleBase {
         Mouse.releaseForcedGrab();
     }
 
-    onTick() {
+    onRender() {
         if (!this.enabled) return;
         if (!World.isLoaded()) return;
 
@@ -137,7 +139,10 @@ class Freecam extends ModuleBase {
         const targetY = hasInput ? (moveY / magnitude) * targetSpeed : 0;
         const targetZ = hasInput ? (moveZ / magnitude) * targetSpeed : 0;
 
-        const smoothing = hasInput ? 0.35 : 0.12;
+        const now = Date.now();
+        const frames = Math.min(5, Math.max(0.1, (now - this.lastRenderAt) / 10));
+        this.lastRenderAt = now;
+        const smoothing = 1 - Math.pow(hasInput ? 0.65 : 0.88, frames);
 
         this.velocity = new Vec3d(
             this.velocity.x() + (targetX - this.velocity.x()) * smoothing,
@@ -152,7 +157,11 @@ class Freecam extends ModuleBase {
             return;
         }
 
-        this.cameraPos = new Vec3d(this.cameraPos.x() + this.velocity.x(), this.cameraPos.y() + this.velocity.y(), this.cameraPos.z() + this.velocity.z());
+        this.cameraPos = new Vec3d(
+            this.cameraPos.x() + this.velocity.x() * frames,
+            this.cameraPos.y() + this.velocity.y() * frames,
+            this.cameraPos.z() + this.velocity.z() * frames
+        );
 
         Camera.setCameraPosition(this.cameraPos);
     }
