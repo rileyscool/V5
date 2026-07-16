@@ -20,6 +20,7 @@ import './foraging/HuntingHelpers';
 
 /* FARMING */
 import './farming/CocoaBeansMacro';
+import './farming/ADRotatingMelonMacro';
 import './farming/SShapeCropMacro';
 import './farming/WSRowMacros';
 
