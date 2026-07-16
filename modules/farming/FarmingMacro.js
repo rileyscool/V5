@@ -92,7 +92,7 @@ export class FarmingMacro extends ModuleBase {
         if (Client.isInGui()) {
             this.stationaryTicks = 0;
             this.stallGraceTicks = Math.max(this.stallGraceTicks, GUI_RESUME_GRACE_TICKS);
-            return Keybind.unpressKeys();
+            return ScheduleTask(Keybind.unpressKeys());
         }
         if (Mousemat.active) return;
 
