@@ -3,7 +3,7 @@ import { Sign } from '../Sign';
 import { Guis } from './Inventory';
 import { Keybind } from './Keybinding';
 
-const CLICK_COOLDOWN_MS = 6_000;
+const CLICK_COOLDOWN_MS = 3_050;
 
 class MousematController {
     constructor() {
