@@ -117,7 +117,7 @@ class MousematController {
         rotation.waitingForClose = true;
         Sign.setLine(1, rotation.yaw);
         Sign.setLine(4, rotation.pitch);
-        gui.close();
+        Client.currentGui.close();
     }
 
     snap(rotation, delay = 0) {
