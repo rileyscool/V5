@@ -1,14 +1,12 @@
 import { isDeveloperModeEnabled } from '../../utils/DeveloperModeState';
 import { OverlayManager } from '../../gui/OverlayUtils';
-import { MathUtils } from '../../utils/Math';
+import { CommissionClaimer } from '../../utils/CommissionUtils';
 import { MacroState } from '../../utils/MacroState';
 import { MiningUtils } from '../../utils/MiningUtils';
 import { ModuleBase } from '../../utils/ModuleBase';
 import { finiteNumber } from '../../utils/NumberUtils';
 import Pathfinder from '../../utils/pathfinder/PathFinder';
 import { Guis } from '../../utils/player/Inventory';
-import { Keybind } from '../../utils/player/Keybinding';
-import { Rotations } from '../../utils/player/Rotations';
 import { manager } from '../../utils/SkyblockEvents';
 import { TabListUtils } from '../../utils/TabListUtils';
 import { Mouse } from '../../utils/Ungrab';
@@ -54,11 +52,23 @@ class GlaciteCommissionMacro extends ModuleBase {
         this.pendingMiningStart = false;
         this.lastTunnelRestartAt = 0;
         this.noSupportedMessageAt = 0;
-        this.pigeonAttempts = 0;
-        this.firstPigeonAttemptAt = 0;
-        this.npcRotationPending = false;
-        this.npcRotationToken = 0;
         this.drill = null;
+        this.commissionClaimer = new CommissionClaimer({
+            getLocations: () => [EMISSARY_LOCATION],
+            ensureToolEquipped: () => this.ensureDrillEquippedForClaim(),
+            isClaiming: () => this.enabled && this.currentState === STATES.CLAIMING,
+            delay: (ticks) => this.delay(ticks),
+            onClaimsExhausted: (container) => {
+                this.updateCommissionsFromGui(container);
+                Guis.closeInv();
+                this.setState(STATES.WAITING_GUI_CLOSE);
+            },
+            onPathFailed: () => {
+                this.message('&cFailed to reach Glacite emissary.');
+                this.setState(STATES.CHOOSING);
+                this.delay(20);
+            },
+        });
 
         this.createOverlay(
             [
@@ -96,6 +106,7 @@ class GlaciteCommissionMacro extends ModuleBase {
         this.on('chat', (event) => {
             const msg = event.message.getUnformattedText();
             if (msg?.includes('Commission Complete! Visit the King to claim')) {
+                OverlayManager.incrementTrackedValue(this.oid, 'commissionsCompleted');
                 this.onCommissionComplete();
             }
         });
@@ -145,8 +156,7 @@ class GlaciteCommissionMacro extends ModuleBase {
         this.pendingMiningStart = false;
         this.lastTunnelRestartAt = 0;
         this.noSupportedMessageAt = 0;
-        this.resetClaimState();
-        this.cancelNpcRotation();
+        this.commissionClaimer.cancelNpcRotation();
         this.stopTunnelMiner();
         Pathfinder.resetPath(true);
     }
@@ -156,16 +166,11 @@ class GlaciteCommissionMacro extends ModuleBase {
         this.delay(delay);
     }
 
-    resetClaimState() {
-        this.pigeonAttempts = 0;
-        this.firstPigeonAttemptAt = 0;
-    }
-
     runLogic() {
         if (!this.enabled) return;
         if (!Player.getPlayer()) return;
 
-        this.cancelNpcRotationIfPathing();
+        this.commissionClaimer.cancelNpcRotationIfPathing();
 
         if (this.pauseTicks > 0) {
             this.pauseTicks--;
@@ -275,60 +280,7 @@ class GlaciteCommissionMacro extends ModuleBase {
     }
 
     handleClaiming() {
-        this.cancelNpcRotationIfPathing();
-
-        if (Guis.guiName() === 'Commissions') {
-            this.claimCompletedCommissions();
-            return;
-        }
-
-        const now = Date.now();
-        const pigeonSlot = Guis.findItemInHotbar('Royal Pigeon');
-        const pigeonTimedOut = this.firstPigeonAttemptAt && now - this.firstPigeonAttemptAt > 4000;
-
-        if (pigeonSlot !== -1 && this.pigeonAttempts < 3 && !pigeonTimedOut) {
-            if (Player.getHeldItemIndex() !== pigeonSlot) {
-                Guis.setItemSlot(pigeonSlot);
-                this.delay(3);
-            } else {
-                if (!this.firstPigeonAttemptAt) this.firstPigeonAttemptAt = now;
-                this.pigeonAttempts++;
-                Keybind.rightClick();
-                this.delay(10);
-            }
-            return;
-        }
-
-        if (Pathfinder.isPathing()) return;
-
-        const closestDist = this.getDistance(Player.getX(), Player.getY(), Player.getZ(), ...EMISSARY_LOCATION);
-        if (closestDist < 4) {
-            if (!this.ensureDrillEquippedForClaim()) return;
-
-            const adjustedTarget = [EMISSARY_LOCATION[0] + 0.5, EMISSARY_LOCATION[1] + 2.2, EMISSARY_LOCATION[2] + 0.5];
-            if (!this.npcRotationPending && !Rotations.active) {
-                this.npcRotationPending = true;
-                const token = ++this.npcRotationToken;
-                Rotations.lookAtVector(adjustedTarget);
-                Rotations.onComplete(() => {
-                    if (Pathfinder.isPathing()) return;
-                    if (!this.npcRotationPending || this.npcRotationToken !== token) return;
-                    this.npcRotationPending = false;
-                    Keybind.rightClick();
-                    this.delay(10);
-                });
-            }
-            return;
-        }
-
-        Pathfinder.findPath([EMISSARY_LOCATION], (success) => {
-            if (!this.enabled || this.currentState !== STATES.CLAIMING) return;
-            if (!success) {
-                this.message('&cFailed to reach Glacite emissary.');
-                this.setState(STATES.CHOOSING);
-                this.delay(20);
-            }
-        });
+        this.commissionClaimer.handle();
     }
 
     handleWaitingGuiClose() {
@@ -352,8 +304,6 @@ class GlaciteCommissionMacro extends ModuleBase {
         this.currentCommission = commissions[0];
         this.activeOreTypes = neededOres;
         this.noSupportedMessageAt = 0;
-        this.resetClaimState();
-
         if (Client.isInGui()) {
             this.pendingMiningStart = true;
             Guis.closeInv();
@@ -382,40 +332,18 @@ class GlaciteCommissionMacro extends ModuleBase {
     }
 
     onCommissionComplete() {
-        OverlayManager.incrementTrackedValue(this.oid, 'commissionsCompleted');
         this.stopTunnelMiner();
         Pathfinder.resetPath();
         this.pendingMiningStart = false;
         this.awaitingTabUpdate = true;
         this.lastCompletedCommissionName = this.currentCommission?.name || null;
-        this.resetClaimState();
         this.setState(STATES.CLAIMING);
-    }
-
-    claimCompletedCommissions() {
-        const container = Player.getContainer();
-        if (!container) return;
-
-        for (let i = 9; i < 17; i++) {
-            const stack = container.getStackInSlot(i);
-            if (!stack) continue;
-
-            const lore = stack.getLore() || [];
-            const hasCompleted = lore.some((line) => String(line).includes('COMPLETED'));
-            if (!hasCompleted) continue;
-
-            Guis.clickSlot(i, false);
-            this.delay(10);
-            return;
-        }
-
-        this.updateCommissionsFromGui(container);
-        Guis.closeInv();
-        this.setState(STATES.WAITING_GUI_CLOSE);
     }
 
     updateCommissionsFromGui(container) {
         const newCommissions = MiningUtils.readCommissionsFromGui(container, (name) => this.isSupportedCommissionName(name));
+        if (!newCommissions.length) return;
+
         this.commissions = newCommissions;
         this.awaitingTabUpdate = false;
         this.lastCommissionSyncSource = 'GUI';
@@ -542,19 +470,6 @@ class GlaciteCommissionMacro extends ModuleBase {
         this.message('&eNo supported Glacite mining commissions detected.');
     }
 
-    cancelNpcRotationIfPathing() {
-        if (!Pathfinder.isPathing()) return;
-        this.cancelNpcRotation();
-    }
-
-    cancelNpcRotation() {
-        if (!this.npcRotationPending && !Rotations.active) return;
-
-        this.npcRotationPending = false;
-        this.npcRotationToken++;
-        if (Rotations.active) Rotations.stop();
-    }
-
     getOreDisplay() {
         if (!this.activeOreTypes.length) return 'None';
         return this.activeOreTypes.map((ore) => `${ore.charAt(0).toUpperCase()}${ore.slice(1)}`).join(', ');
@@ -573,10 +488,6 @@ class GlaciteCommissionMacro extends ModuleBase {
         if (!Number.isFinite(rate)) return '0.00';
 
         return rate.toFixed(2);
-    }
-
-    getDistance(x1, y1, z1, x2, y2, z2) {
-        return MathUtils.fastDistance(x1, y1, z1, x2, y2, z2);
     }
 
     delay(ticks) {

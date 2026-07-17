@@ -1,5 +1,6 @@
 import { OverlayManager } from '../../gui/OverlayUtils';
 import { notificationManager } from '../../gui/NotificationManager';
+import { CommissionClaimer } from '../../utils/CommissionUtils';
 import { MathUtils } from '../../utils/Math';
 import { MacroState } from '../../utils/MacroState';
 import { MiningUtils } from '../../utils/MiningUtils';
@@ -7,8 +8,6 @@ import { ModuleBase } from '../../utils/ModuleBase';
 import { finiteNumber } from '../../utils/NumberUtils';
 import Pathfinder from '../../utils/pathfinder/PathFinder';
 import { Guis } from '../../utils/player/Inventory';
-import { Keybind } from '../../utils/player/Keybinding';
-import { Rotations } from '../../utils/player/Rotations';
 import { manager } from '../../utils/SkyblockEvents';
 import { TabListUtils } from '../../utils/TabListUtils';
 import { Mouse } from '../../utils/Ungrab';
@@ -71,8 +70,22 @@ class CommissionMacro extends ModuleBase {
         this.lastCompletedCommissionName = null;
         this.lastCommissionName = null;
         this.lastCommissionAt = null;
-        this.npcRotationPending = false;
-        this.npcRotationToken = 0;
+        this.commissionClaimer = new CommissionClaimer({
+            getLocations: () => this.getAvailableEmissaryLocations(),
+            ensureToolEquipped: () => this.ensureDrillEquippedForEmissaryClaim(),
+            isClaiming: () => this.enabled && this.currentState === STATES.CLAIMING,
+            delay: (ticks) => this.delay(ticks),
+            onClaimsExhausted: (container) => {
+                this.updateCommissionsFromGui(container);
+                Guis.closeInv();
+                this.setState(STATES.WAITING_GUI_CLOSE);
+            },
+            onPathStart: () => {
+                this.travelPurpose = 'EMISSARY';
+            },
+            onPathFailed: () => this.setState(STATES.CHOOSING),
+            canInteract: () => !this.emissariesUnlocked || this.checkEmissaryUnlocked(),
+        });
 
         this.createOverlay(
             [
@@ -281,8 +294,7 @@ class CommissionMacro extends ModuleBase {
         this.lastCompletedCommissionName = null;
         this.lastCommissionName = null;
         this.lastCommissionAt = null;
-        this.npcRotationPending = false;
-        this.npcRotationToken = 0;
+        this.commissionClaimer.cancelNpcRotation();
         this.areaCheckTime = null;
         this.pathingAvoidanceBreachAt = null;
         this.lastAvoidanceRepathAt = 0;
@@ -308,7 +320,7 @@ class CommissionMacro extends ModuleBase {
         if (!this.enabled) return;
         MiningBot.setCost(MiningBot.mithrilCosts);
 
-        this.cancelNpcRotationIfPathing();
+        this.commissionClaimer.cancelNpcRotationIfPathing();
         this.handlePathingAvoidance();
 
         if (this.pauseTicks > 0) {
@@ -595,74 +607,7 @@ class CommissionMacro extends ModuleBase {
     }
 
     handleClaiming() {
-        this.cancelNpcRotationIfPathing();
-        const emissaryLocations = this.getAvailableEmissaryLocations();
-
-        if (Guis.guiName() === 'Commissions') {
-            this.claimCompletedCommissions();
-            return;
-        }
-
-        const pigeonSlot = Guis.findItemInHotbar('Royal Pigeon');
-        if (pigeonSlot !== -1) {
-            if (Player.getHeldItemIndex() !== pigeonSlot) {
-                Guis.setItemSlot(pigeonSlot);
-                this.delay(3);
-            } else {
-                Keybind.rightClick();
-                this.delay(10);
-            }
-            return;
-        }
-
-        const closest = this.getClosestEmissary();
-        const closestDist = this.getDistance(Player.getX(), Player.getY(), Player.getZ(), ...closest);
-        const adjustedTarget = [closest[0] + 0.5, closest[1] + 2.2, closest[2] + 0.5];
-
-        const yDiff = closest[1] - Player.getY();
-        if (yDiff > 3 && closestDist < 10) {
-            if (!Pathfinder.isPathing()) {
-                this.travelPurpose = 'EMISSARY';
-
-                Pathfinder.findPath(emissaryLocations, (success) => {
-                    if (!success) {
-                        this.message('&cFailed to get to emissary ╭( ๐_๐)╮');
-                        // probably should blacklist emissary and go to different emissary
-                        this.setState(STATES.CHOOSING);
-                    }
-                });
-            }
-            return;
-        }
-
-        if (MathUtils.distanceToPlayerPoint(adjustedTarget) <= 3 && !Pathfinder.isPathing()) {
-            // entity interaction range = 3
-            if (!this.ensureDrillEquippedForEmissaryClaim()) return;
-            if (Math.abs(Player.getMotionX()) + Math.abs(Player.getMotionZ()) >= 0.04) return;
-
-            if (!Rotations.active) {
-                this.npcRotationPending = true;
-                const token = ++this.npcRotationToken;
-                Rotations.lookAtVector(adjustedTarget);
-                Rotations.onComplete(() => {
-                    if (!this.npcRotationPending || this.npcRotationToken !== token) return;
-                    this.npcRotationPending = false;
-                    if (this.currentState !== STATES.CLAIMING || Pathfinder.isPathing()) return;
-                    if (this.emissariesUnlocked && !this.checkEmissaryUnlocked()) return;
-                    Keybind.leftClick();
-                    this.delay(10);
-                });
-            }
-            return;
-        }
-
-        if (Pathfinder.isPathing()) return;
-        this.travelPurpose = 'EMISSARY';
-        Pathfinder.findPath(emissaryLocations, (success) => {
-            if (!success) {
-                this.setState(STATES.CHOOSING);
-            }
-        });
+        this.commissionClaimer.handle();
     }
 
     ensureDrillEquippedForEmissaryClaim() {
@@ -683,22 +628,6 @@ class CommissionMacro extends ModuleBase {
         return true;
     }
 
-    getClosestEmissary() {
-        const emissaryLocations = this.getAvailableEmissaryLocations();
-        const playerPos = [Player.getX(), Player.getY(), Player.getZ()];
-        let closest = emissaryLocations[0];
-        let closestDist = this.getDistance(...playerPos, ...closest);
-        for (let i = 1; i < emissaryLocations.length; i++) {
-            const current = emissaryLocations[i];
-            const currentDist = this.getDistance(...playerPos, ...current);
-            if (currentDist < closestDist) {
-                closest = current;
-                closestDist = currentDist;
-            }
-        }
-        return closest;
-    }
-
     getAvailableEmissaryLocations() {
         return this.emissariesUnlocked ? EMISSARY_LOCATIONS : [EMISSARY_LOCATIONS[0]];
     }
@@ -710,32 +639,6 @@ class CommissionMacro extends ModuleBase {
             return false;
         }
         return true;
-    }
-
-    claimCompletedCommissions() {
-        const Commissions = Player.getContainer();
-        if (!Commissions) return;
-
-        let foundCompleted = false;
-
-        for (let i = 9; i < 17; i++) {
-            const stack = Commissions.getStackInSlot(i);
-            if (!stack) continue;
-
-            const hasCompleted = stack.getLore().some((line) => line.toString().includes('COMPLETED'));
-            if (hasCompleted) {
-                Guis.clickSlot(i, false);
-                this.delay(10);
-                foundCompleted = true;
-                return;
-            }
-        }
-
-        if (!foundCompleted) {
-            this.updateCommissionsFromGui(Commissions);
-            Guis.closeInv();
-            this.setState(STATES.WAITING_GUI_CLOSE);
-        }
     }
 
     updateCommissionsFromGui(container) {
@@ -778,17 +681,6 @@ class CommissionMacro extends ModuleBase {
 
     delay(ticks) {
         this.pauseTicks = Math.max(0, Math.floor(finiteNumber(ticks)));
-    }
-
-    cancelNpcRotationIfPathing() {
-        if (!Pathfinder.isPathing()) return;
-        if (!this.npcRotationPending) return;
-
-        this.npcRotationPending = false;
-        this.npcRotationToken++;
-        if (Rotations.active) {
-            Rotations.stop();
-        }
     }
 
     isTravelMiningPathing() {
@@ -1005,9 +897,7 @@ class CommissionMacro extends ModuleBase {
         }
 
         const stateAfterRefueling = this.currentState === STATES.CLAIMING ? STATES.CLAIMING : STATES.IDLE;
-        this.npcRotationPending = false;
-        this.npcRotationToken++;
-        if (Rotations.active) Rotations.stop();
+        this.commissionClaimer.cancelNpcRotation();
 
         this.message('&eDrill empty! Refueling...');
         MiningBot.toggle(false, true);
