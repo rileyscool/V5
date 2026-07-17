@@ -91,9 +91,9 @@ class LocationDetector {
             for (const line of scoreLines) {
                 let lineStr = String(line);
 
-                if (lineStr.includes('⏣')) {
+                if (lineStr.includes('')) {
                     let cleaned = this.stripFormatting(lineStr);
-                    let segments = cleaned.split('⏣');
+                    let segments = cleaned.split('');
 
                     if (segments.length > 1) {
                         this.currentSubArea = segments[1].trim();
