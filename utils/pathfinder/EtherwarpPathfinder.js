@@ -7,6 +7,7 @@ import { finiteNumber } from '../NumberUtils';
 import { RotationGCD } from '../player/RotationGCD';
 import { ServerInfo } from '../player/ServerInfo';
 import { ScheduleTask } from '../ScheduleTask';
+import { Utils } from '../Utils';
 import { v5Command } from '../V5Commands';
 import { EtherwarpPathState } from '../Etherwarp';
 
@@ -28,6 +29,7 @@ const PATH_COLORS = {
 };
 
 const MAX_RETRIES = 7;
+const MINIMUM_MANA = 100;
 
 const readPathPoints = (pathArr) => {
     if (!pathArr || typeof pathArr.length !== 'number') return [];
@@ -109,8 +111,32 @@ class EtherwarpPathHandler {
         this.findPath(goal, { silent: false });
     }
 
+    resolveClosestGoal(goal, radius = 0) {
+        if (!Array.isArray(goal)) return goal;
+
+        const candidates = Array.isArray(goal[0]) || typeof goal[0] === 'object' ? goal : [goal];
+        const sortOrigin = this.getPlayerSupportBlock() || { x: Player.getX(), y: Player.getY(), z: Player.getZ() };
+        const closest = candidates.reduce((best, candidate) => {
+            const values = Array.isArray(candidate) ? candidate : [candidate?.x, candidate?.y, candidate?.z];
+            const [x, y, z] = values.map((value) => Math.floor(Number(value)));
+            if (![x, y, z].every(Number.isFinite)) return best;
+
+            let landing = { x, y, z };
+            if (!PathManager.isValidEtherwarpLanding(x, y, z)) {
+                const result = radius > 0 && PathManager.getEtherwarpLandingCandidates(x, y, z, radius, radius, sortOrigin.x, sortOrigin.y, sortOrigin.z);
+                if (!result?.goals || result.goals.length < 3) return best;
+                landing = { x: result.goals[0], y: result.goals[1], z: result.goals[2] };
+            }
+
+            const distance = Math.hypot(Player.getX() - landing.x, Player.getY() - landing.y, Player.getZ() - landing.z);
+            return !best || distance < best.distance ? { goal: landing, distance } : best;
+        }, null);
+        return closest?.goal || null;
+    }
+
     findPath(goal, options = {}) {
-        if (![goal.x, goal.y, goal.z].every(Number.isFinite)) {
+        goal = this.resolveClosestGoal(goal, Math.max(0, Math.floor(finiteNumber(options.goalRadius))));
+        if (!goal || ![goal.x, goal.y, goal.z].every(Number.isFinite)) {
             Chat.messagePathfinder('&cInvalid etherwarp coordinates.');
             return false;
         }
@@ -398,6 +424,12 @@ class EtherwarpPathHandler {
         if (!this.isExecutionContextValid(token)) return;
         if (!World.isLoaded()) {
             this.finishFailure('World unloaded during etherwarp.', false);
+            return;
+        }
+
+        const mana = Utils.getCurrentMana();
+        if (mana !== null && mana < MINIMUM_MANA) {
+            this.finishFailure('Not enough mana to continue etherwarping.', !this.currentRun || this.currentRun.restoreSlot !== false);
             return;
         }
 

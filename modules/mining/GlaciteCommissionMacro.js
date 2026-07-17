@@ -5,6 +5,7 @@ import { MacroState } from '../../utils/MacroState';
 import { MiningUtils } from '../../utils/MiningUtils';
 import { ModuleBase } from '../../utils/ModuleBase';
 import { finiteNumber } from '../../utils/NumberUtils';
+import { EtherwarpPathfinder } from '../../utils/pathfinder/EtherwarpPathfinder';
 import Pathfinder from '../../utils/pathfinder/PathFinder';
 import { Guis } from '../../utils/player/Inventory';
 import { manager } from '../../utils/SkyblockEvents';
@@ -24,6 +25,7 @@ const STATES = {
 
 const SUPPORTED_ORES = ['glacite', 'umber', 'tungsten', 'peridot', 'aquamarine', 'onyx', 'citrine'];
 const EMISSARY_LOCATION = [2, 121, 237];
+const TRAVEL_MODES = ['Walk', 'Etherwarp'];
 
 class GlaciteCommissionMacro extends ModuleBase {
     constructor() {
@@ -41,6 +43,7 @@ class GlaciteCommissionMacro extends ModuleBase {
         this.bindToggleKey();
 
         this.currentState = STATES.IDLE;
+        this.travelMode = TRAVEL_MODES[0];
         this.pauseTicks = 0;
         this.commissions = [];
         this.currentCommission = null;
@@ -68,7 +71,20 @@ class GlaciteCommissionMacro extends ModuleBase {
                 this.setState(STATES.CHOOSING);
                 this.delay(20);
             },
+            useEtherwarp: () => this.travelMode === 'Etherwarp',
         });
+
+        this.addMultiToggle(
+            'Travel Mode',
+            TRAVEL_MODES,
+            true,
+            (selected) => {
+                const enabled = Array.isArray(selected) ? selected.find((item) => item.enabled) : null;
+                this.travelMode = enabled?.name || TRAVEL_MODES[0];
+            },
+            'How the macro travels to tunnel veins.',
+            TRAVEL_MODES[0]
+        );
 
         this.createOverlay(
             [
@@ -158,6 +174,7 @@ class GlaciteCommissionMacro extends ModuleBase {
         this.noSupportedMessageAt = 0;
         this.commissionClaimer.cancelNpcRotation();
         this.stopTunnelMiner();
+        EtherwarpPathfinder.cancel(true);
         Pathfinder.resetPath(true);
     }
 
@@ -273,7 +290,7 @@ class GlaciteCommissionMacro extends ModuleBase {
         }
 
         const now = Date.now();
-        if (!Pathfinder.isPathing() && !MiningBot.enabled && now - this.lastTunnelRestartAt >= 5000) {
+        if (!Pathfinder.isPathing() && !EtherwarpPathfinder.isPathing() && !MiningBot.enabled && now - this.lastTunnelRestartAt >= 5000) {
             tunnelsMiner.restart();
             this.lastTunnelRestartAt = now;
         }
@@ -316,6 +333,7 @@ class GlaciteCommissionMacro extends ModuleBase {
 
     beginTunnelMiner() {
         tunnelsMiner.setSelectedOreNames(this.activeOreTypes);
+        tunnelsMiner.setTravelMode(this.travelMode);
         if (tunnelsMiner.enabled) {
             tunnelsMiner.restart();
         } else {

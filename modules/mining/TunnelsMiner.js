@@ -1,6 +1,7 @@
 import { isDeveloperModeEnabled } from '../../utils/DeveloperModeState';
 import { Vec3d } from '../../utils/Constants';
 import { ModuleBase } from '../../utils/ModuleBase';
+import { EtherwarpPathfinder } from '../../utils/pathfinder/EtherwarpPathfinder';
 import Pathfinder from '../../utils/pathfinder/PathFinder';
 import { Veins } from './GlaciteData';
 import { MiningBot } from './MiningBot';
@@ -23,6 +24,7 @@ class TunnelsMiner extends ModuleBase {
 
         this.oreTypes = Object.keys(Veins); // glacite,peridot,umber,tungsten,aquamarine,onyx,citrine
         this.selectedOres = [this.oreTypes[0]]; // glacite
+        this.travelMode = 'Walk';
         this.botManaged = false;
         this.botStartedWork = false;
         this.botIdleTicks = 0;
@@ -99,7 +101,11 @@ class TunnelsMiner extends ModuleBase {
     restart() {
         if (!this.enabled) return;
         this.stopAll();
-        this.startPathfind();
+        this.startPathfind(true);
+    }
+
+    setTravelMode(mode) {
+        this.travelMode = mode === 'Etherwarp' ? mode : 'Walk';
     }
 
     onTick() {
@@ -134,6 +140,7 @@ class TunnelsMiner extends ModuleBase {
     }
 
     stopAll() {
+        EtherwarpPathfinder.cancel(true);
         Pathfinder.resetPath();
         if (this.botManaged) {
             MiningBot.toggle(false, true);
@@ -173,6 +180,26 @@ class TunnelsMiner extends ModuleBase {
         }
         this.message(`&bPathing to best target (${ends.length} options)...`);
 
+        if (this.travelMode === 'Etherwarp') {
+            let walking = false;
+            const fallback = () => {
+                if (walking || !this.pendingTargets.length) return;
+                walking = true;
+                this.startWalkPath(ends);
+            };
+            const started = EtherwarpPathfinder.findPath(ends, {
+                silent: true,
+                onSuccess: () => this.onPathSuccess(),
+                onFail: fallback,
+            });
+            if (!started) fallback();
+            return;
+        }
+
+        this.startWalkPath(ends);
+    }
+
+    startWalkPath(ends) {
         Pathfinder.findPath(
             ends,
             (success) => {
@@ -306,6 +333,7 @@ class TunnelsMiner extends ModuleBase {
         }
 
         if (groundY === null) return false;
+        if (veinSet.has(this.posKey(start.x, groundY, start.z))) return false;
 
         const standPos = { x: start.x, y: groundY + 1, z: start.z };
         if (veinSet.has(this.posKey(standPos.x, standPos.y, standPos.z))) return false;

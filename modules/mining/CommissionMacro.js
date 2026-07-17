@@ -6,6 +6,7 @@ import { MacroState } from '../../utils/MacroState';
 import { MiningUtils } from '../../utils/MiningUtils';
 import { ModuleBase } from '../../utils/ModuleBase';
 import { finiteNumber } from '../../utils/NumberUtils';
+import { EtherwarpPathfinder } from '../../utils/pathfinder/EtherwarpPathfinder';
 import Pathfinder from '../../utils/pathfinder/PathFinder';
 import { Guis } from '../../utils/player/Inventory';
 import { manager } from '../../utils/SkyblockEvents';
@@ -27,6 +28,7 @@ const STATES = {
     REFUELING: 'Refueling Drill',
     CLAIMING: 'Claiming Rewards',
 };
+const TRAVEL_MODES = ['Walk', 'Etherwarp'];
 
 class CommissionMacro extends ModuleBase {
     constructor() {
@@ -42,6 +44,7 @@ class CommissionMacro extends ModuleBase {
         this.bindToggleKey();
 
         this.currentState = STATES.IDLE;
+        this.travelMode = TRAVEL_MODES[0];
         this.avoidanceRadius = 10;
         this.goblinWeaponSlot = 1;
         this.emissariesUnlocked = true;
@@ -85,7 +88,20 @@ class CommissionMacro extends ModuleBase {
             },
             onPathFailed: () => this.setState(STATES.CHOOSING),
             canInteract: () => !this.emissariesUnlocked || this.checkEmissaryUnlocked(),
+            useEtherwarp: () => this.travelMode === 'Etherwarp',
         });
+
+        this.addMultiToggle(
+            'Travel Mode',
+            TRAVEL_MODES,
+            true,
+            (selected) => {
+                const enabled = Array.isArray(selected) ? selected.find((item) => item.enabled) : null;
+                this.travelMode = enabled?.name || TRAVEL_MODES[0];
+            },
+            'How the macro travels to commission locations.',
+            TRAVEL_MODES[0]
+        );
 
         this.createOverlay(
             [
@@ -304,6 +320,7 @@ class CommissionMacro extends ModuleBase {
         MiningBot.toggle(false, true);
         CombatBot.clearExternalTargets();
         CombatBot.toggle(false);
+        EtherwarpPathfinder.cancel(true);
         Pathfinder.resetPath(true);
     }
 
@@ -528,6 +545,21 @@ class CommissionMacro extends ModuleBase {
         this.currentPathWaypoints = waypoints.slice();
         this.currentPathWaypoint = this.getClosestWaypoint(waypoints);
         this.setState(STATES.TRAVELING);
+        if (this.travelMode === 'Etherwarp') {
+            let walking = false;
+            const fallback = () => {
+                if (walking || this.currentState !== STATES.TRAVELING) return;
+                walking = true;
+                Pathfinder.findPath(waypoints, (success) => this.onPathComplete(success));
+            };
+            const started = EtherwarpPathfinder.findPath(waypoints, {
+                silent: true,
+                onSuccess: () => this.onPathComplete(true),
+                onFail: fallback,
+            });
+            if (!started) fallback();
+            return;
+        }
         Pathfinder.findPath(waypoints, (success) => this.onPathComplete(success));
     }
 
@@ -684,7 +716,7 @@ class CommissionMacro extends ModuleBase {
     }
 
     isTravelMiningPathing() {
-        return this.currentState === STATES.TRAVELING && this.currentCommission?.type === 'MINING' && Pathfinder.isPathing();
+        return this.travelMode === 'Walk' && this.currentState === STATES.TRAVELING && this.currentCommission?.type === 'MINING' && Pathfinder.isPathing();
     }
 
     handlePathingAvoidance() {
@@ -868,6 +900,7 @@ class CommissionMacro extends ModuleBase {
     onCommissionComplete() {
         if (this.currentState === STATES.REFUELING) return;
 
+        EtherwarpPathfinder.cancel(true);
         Pathfinder.resetPath();
         MiningBot.toggle(false, true);
 

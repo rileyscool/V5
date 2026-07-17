@@ -1,11 +1,12 @@
 import { MathUtils } from './Math';
+import { EtherwarpPathfinder } from './pathfinder/EtherwarpPathfinder';
 import Pathfinder from './pathfinder/PathFinder';
 import { Guis } from './player/Inventory';
 import { Keybind } from './player/Keybinding';
 import { Rotations } from './player/Rotations';
 
 export class CommissionClaimer {
-    constructor({ getLocations, ensureToolEquipped, isClaiming, delay, onClaimsExhausted, onPathStart, onPathFailed, canInteract }) {
+    constructor({ getLocations, ensureToolEquipped, isClaiming, delay, onClaimsExhausted, onPathStart, onPathFailed, canInteract, useEtherwarp }) {
         this.getLocations = getLocations;
         this.ensureToolEquipped = ensureToolEquipped;
         this.isClaiming = isClaiming;
@@ -14,6 +15,7 @@ export class CommissionClaimer {
         this.onPathStart = onPathStart || (() => {});
         this.onPathFailed = onPathFailed || (() => {});
         this.canInteract = canInteract || (() => true);
+        this.useEtherwarp = useEtherwarp || (() => false);
         this.npcRotationPending = false;
         this.npcRotationToken = 0;
     }
@@ -57,7 +59,7 @@ export class CommissionClaimer {
             return;
         }
 
-        if (MathUtils.distanceToPlayerPoint(target) <= 3 && !Pathfinder.isPathing()) {
+        if (MathUtils.distanceToPlayerPoint(target) <= 3 && !this.isPathing()) {
             if (!this.ensureToolEquipped()) return;
             if (Math.abs(Player.getMotionX()) + Math.abs(Player.getMotionZ()) >= 0.04) return;
 
@@ -68,7 +70,7 @@ export class CommissionClaimer {
                 Rotations.onComplete(() => {
                     if (!this.npcRotationPending || this.npcRotationToken !== token) return;
                     this.npcRotationPending = false;
-                    if (!this.isClaiming() || Pathfinder.isPathing()) return;
+                    if (!this.isClaiming() || this.isPathing()) return;
                     if (!this.canInteract()) return;
                     Keybind.leftClick();
                     this.delay(10);
@@ -81,13 +83,37 @@ export class CommissionClaimer {
     }
 
     pathToNpc(locations) {
-        if (Pathfinder.isPathing()) return;
+        if (this.isPathing()) return;
 
         this.onPathStart();
-        Pathfinder.findPath(locations, (success) => {
-            if (!this.isClaiming()) return;
-            if (!success) this.onPathFailed();
+        const walk = () => {
+            Pathfinder.findPath(locations, (success) => {
+                if (!this.isClaiming()) return;
+                if (!success) this.onPathFailed();
+            });
+        };
+        if (!this.useEtherwarp()) {
+            walk();
+            return;
+        }
+
+        let walking = false;
+        const fallback = () => {
+            if (walking || !this.isClaiming()) return;
+            walking = true;
+            walk();
+        };
+        const started = EtherwarpPathfinder.findPath(locations, {
+            silent: true,
+            goalRadius: 2,
+            onSuccess: fallback,
+            onFail: fallback,
         });
+        if (!started) fallback();
+    }
+
+    isPathing() {
+        return Pathfinder.isPathing() || EtherwarpPathfinder.isPathing();
     }
 
     getClosestLocation(locations) {
@@ -99,7 +125,7 @@ export class CommissionClaimer {
     }
 
     cancelNpcRotationIfPathing() {
-        if (Pathfinder.isPathing()) this.cancelNpcRotation();
+        if (this.isPathing()) this.cancelNpcRotation();
     }
 
     cancelNpcRotation() {
