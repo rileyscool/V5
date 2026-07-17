@@ -396,7 +396,7 @@ export const handleCategoryScroll = (
     setOptionsScrollY,
     optionsContentHeight
 ) => {
-    const SCROLL_SPEED = Math.max(1, Number(Categories.guiScrollSpeed) || 15);
+    const SCROLL_SPEED = Math.max(1, Number(Categories.guiScrollSpeed) || 15) * 2.5;
 
     if (Categories.currentPage === 'categories') {
         const directCat = Categories.categories.find((c) => c.name === Categories.selected);

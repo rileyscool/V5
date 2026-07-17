@@ -32,6 +32,7 @@ export const createCategoriesManager = (deps) => {
     let autoScrollRightActive = false;
     let autoScrollOptionsActive = false;
     let pendingHighlightComponent = null;
+    let lastDrawTime = Date.now();
     const macroToggleButton = new Button(
         '',
         0,
@@ -52,7 +53,7 @@ export const createCategoriesManager = (deps) => {
         { showContainer: false }
     );
 
-    const SCROLL_SMOOTHING_FACTOR = 0.2;
+    const SCROLL_SMOOTHING_FACTOR = 0.25;
     const AUTO_SCROLL_SMOOTHING_FACTOR = 0.06;
     const ICON_SIZE = 28;
     const HIGHLIGHT_PADDING = 2;
@@ -431,6 +432,10 @@ export const createCategoriesManager = (deps) => {
     };
 
     const draw = (mouseX, mouseY) => {
+        const now = Date.now();
+        const elapsedFrames = Math.max(0, now - lastDrawTime) / (1000 / 60);
+        lastDrawTime = now;
+
         if (pendingSettingsComponent && Categories.selected === 'Settings' && Categories.currentPage === 'categories' && Categories.transitionDirection === 0) {
             const targetScroll = getDirectComponentScrollY('Settings', pendingSettingsComponent);
             setTargetRightPanelScrollY(targetScroll);
@@ -502,7 +507,7 @@ export const createCategoriesManager = (deps) => {
         targetRightPanelScrollY = Math.max(0, Math.min(targetRightPanelScrollY, maxScroll));
 
         const prevScrollY = currentRightPanelScrollY;
-        const rightScrollFactor = autoScrollRightActive ? AUTO_SCROLL_SMOOTHING_FACTOR : SCROLL_SMOOTHING_FACTOR;
+        const rightScrollFactor = 1 - Math.pow(1 - (autoScrollRightActive ? AUTO_SCROLL_SMOOTHING_FACTOR : SCROLL_SMOOTHING_FACTOR), elapsedFrames);
         currentRightPanelScrollY += (targetRightPanelScrollY - currentRightPanelScrollY) * rightScrollFactor;
         if (autoScrollRightActive && Math.abs(targetRightPanelScrollY - currentRightPanelScrollY) < 0.5) {
             autoScrollRightActive = false;
@@ -518,7 +523,7 @@ export const createCategoriesManager = (deps) => {
             const optionsContentHeight = calculateOptionsContentHeight();
             const maxOptionsScroll = Math.max(0, optionsContentHeight - deps.rectangles.RightPanel.height);
             targetOptionsScrollY = Math.max(0, Math.min(targetOptionsScrollY, maxOptionsScroll));
-            const optionsScrollFactor = autoScrollOptionsActive ? AUTO_SCROLL_SMOOTHING_FACTOR : SCROLL_SMOOTHING_FACTOR;
+            const optionsScrollFactor = 1 - Math.pow(1 - (autoScrollOptionsActive ? AUTO_SCROLL_SMOOTHING_FACTOR : SCROLL_SMOOTHING_FACTOR), elapsedFrames);
             currentOptionsScrollY += (targetOptionsScrollY - currentOptionsScrollY) * optionsScrollFactor;
             if (autoScrollOptionsActive && Math.abs(targetOptionsScrollY - currentOptionsScrollY) < 0.5) {
                 autoScrollOptionsActive = false;
