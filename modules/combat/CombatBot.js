@@ -889,24 +889,24 @@ class Combat extends ModuleBase {
 
         const mobs = [];
 
-        World.getAllPlayers().forEach((player) => {
+        World.getAllEntities().forEach((entity) => {
             try {
-                const nameObj = player.getName();
+                const nameObj = entity.getName();
                 if (!nameObj) return;
 
-                const name = ChatLib.removeFormatting(nameObj);
-                const uuid = player.getUUID();
+                const name = ChatLib.removeFormatting(String(nameObj?.getString?.() ?? nameObj));
+                const uuid = entity.getUUID();
                 if (whitelist && whitelist.has(uuid)) return;
                 if (!config.names.some((mobName) => name.includes(mobName))) return;
-                if (player.isSpectator() || player.isInvisible() || player.isDead()) return;
-                if (!this.isVisibleOrRecent(player, config.checkVisibility)) return;
+                if (entity.isSpectator?.() || entity.isInvisible() || entity.isDead()) return;
+                if (!this.isVisibleOrRecent(entity, config.checkVisibility)) return;
 
-                const x = player.getX();
-                const y = player.getY();
-                const z = player.getZ();
+                const x = entity.getX();
+                const y = entity.getY();
+                const z = entity.getZ();
                 if (config.boundaryCheck && !config.boundaryCheck(x, y, z)) return;
 
-                mobs.push(player);
+                mobs.push(entity);
             } catch (e) {
                 console.error('V5 Caught error' + e + e.stack);
             }
