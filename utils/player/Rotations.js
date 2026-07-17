@@ -205,7 +205,8 @@ class RotationController {
         const precision = Number.isFinite(options?.precision) && options.precision >= 0 ? options.precision : null;
 
         const sameSource = this.isSameSource(nextRequest);
-        const shouldReset = !sameSource || !this.targetAngles || this.getTargetShift(nextTarget) > TARGET_SHIFT_RESET_DEGREES;
+        const shouldReset =
+            !sameSource || !this.targetAngles || (nextRequest.type !== 'entity' && this.getTargetShift(nextTarget) > TARGET_SHIFT_RESET_DEGREES);
 
         if (!this.request || !sameSource) {
             RotationGCD.syncFromPlayer();
@@ -263,7 +264,7 @@ class RotationController {
 
         try {
             const mcEntity = entity.toMC ? entity.toMC() : entity;
-            return !mcEntity?.isDead?.();
+            return !!mcEntity && !mcEntity.isDeadOrDying?.() && !mcEntity.isRemoved?.();
         } catch (e) {
             console.error('V5 Caught error' + e + e.stack);
             return false;
@@ -285,12 +286,6 @@ class RotationController {
 
     getStepRatio(distance, deltaTime) {
         if (distance <= 0) return 0;
-
-        if (this.request?.type === 'entity') {
-            const speed = RotationModule.ROTATION_SPEED * (this.request?.speedMultiplier ?? 1);
-            const step = speed * deltaTime;
-            return Math.min(distance, step) / distance;
-        }
 
         const timeAlive = this.startTime > 0 ? (Date.now() - this.startTime) / 1000 : 0;
         const warmup = this.request?.type === 'angles' ? 1 : Math.min(timeAlive * 4, 1);
@@ -321,7 +316,6 @@ class RotationController {
 
     onReachedTarget() {
         if (this.request?.type === 'entity') {
-            this.curveSeed = Math.random() * Math.PI * 2;
             this.lastTime = Date.now();
             return;
         }
