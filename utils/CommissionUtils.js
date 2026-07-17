@@ -50,7 +50,7 @@ export class CommissionClaimer {
 
         const closest = this.getClosestLocation(locations);
         const closestDist = MathUtils.fastDistance(Player.getX(), Player.getY(), Player.getZ(), ...closest);
-        const target = [closest[0] + 0.5, closest[1] + 2.2, closest[2] + 0.5];
+        const target = [closest[0] + 0.5, closest[1] + 1.8, closest[2] + 0.5];
 
         if (closest[1] - Player.getY() > 3 && closestDist < 10) {
             this.pathToNpc(locations);
