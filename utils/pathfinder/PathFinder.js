@@ -25,6 +25,7 @@ class Finder {
 
         this.currentEnd = null;
         this.currentCallback = null;
+        this.walkArrivalRadius = 2;
         this.recalculateAttempts = 0;
         this.recalculateRetryQueued = false;
         this.MAX_RECALCULATE_ATTEMPTS = 9;
@@ -110,12 +111,13 @@ class Finder {
         return goals;
     }
 
-    findPath(end, onComplete, isFly = false, startPoints = null, preserveRecalculateAttempts = false) {
+    findPath(end, onComplete, isFly = false, startPoints = null, preserveRecalculateAttempts = false, walkArrivalRadius = 2) {
         this.recalculateScheduleId++;
         this.currentEnd = end;
         this.currentStarts = startPoints;
         this.currentCallback = onComplete;
         this.isFly = isFly;
+        this.walkArrivalRadius = Number.isFinite(walkArrivalRadius) && walkArrivalRadius > 0 ? walkArrivalRadius : 2;
         this.clearPathCaches();
 
         const { points: starts, metadata: startMetadata } = this.createStartPoints(startPoints);
@@ -456,6 +458,7 @@ class Finder {
         const callback = this.currentCallback;
         const wasFromFile = this.calledFromFile;
         const attempts = this.recalculateAttempts;
+        const walkArrivalRadius = this.walkArrivalRadius;
         const scheduleId = ++this.recalculateScheduleId;
 
         this.resetPath(false);
@@ -471,7 +474,7 @@ class Finder {
             this.calledFromFile = wasFromFile;
             this.recalculateAttempts = attempts;
 
-            this.findPath(end, callback, this.isFly, starts, true);
+            this.findPath(end, callback, this.isFly, starts, true, walkArrivalRadius);
         });
     }
 
@@ -496,7 +499,7 @@ class Finder {
             const dz = pZ - (this.isFly ? destZ + 0.5 : destZ);
 
             const hDistSq = dx * dx + dz * dz;
-            const maxHorizontalDistance = this.isFly ? 1.25 : 2;
+            const maxHorizontalDistance = this.isFly ? 1.25 : this.walkArrivalRadius;
             if (hDistSq > maxHorizontalDistance * maxHorizontalDistance) continue;
 
             if (this.isFly) {

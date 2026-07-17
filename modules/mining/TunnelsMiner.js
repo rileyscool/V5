@@ -1,8 +1,11 @@
 import { isDeveloperModeEnabled } from '../../utils/DeveloperModeState';
+import { Vec3d } from '../../utils/Constants';
 import { ModuleBase } from '../../utils/ModuleBase';
 import Pathfinder from '../../utils/pathfinder/PathFinder';
 import { Veins } from './GlaciteData';
 import { MiningBot } from './MiningBot';
+
+const PATH_ARRIVAL_RADIUS = 0.75;
 
 class TunnelsMiner extends ModuleBase {
     constructor() {
@@ -22,6 +25,10 @@ class TunnelsMiner extends ModuleBase {
         this.selectedOres = [this.oreTypes[0]]; // glacite
         this.botManaged = false;
         this.botStartedWork = false;
+        this.botIdleTicks = 0;
+        this.activeMiningPosition = null;
+        this.pendingTargets = [];
+        this.exhaustedPositions = new Set();
         this.veinDataCache = new Map();
 
         this.edgeOffsets = [
@@ -32,12 +39,13 @@ class TunnelsMiner extends ModuleBase {
             [0, 0, 1],
             [0, 0, -1],
         ];
-        this.neighborOffsets = [
-            [1, 0, 0],
-            [-1, 0, 0],
-            [0, 0, 1],
-            [0, 0, -1],
-        ];
+        this.neighborOffsets = [];
+        for (let x = -4; x <= 4; x++) {
+            for (let z = -4; z <= 4; z++) {
+                if ((x || z) && Math.hypot(x, z) <= 4) this.neighborOffsets.push([x, 0, z]);
+            }
+        }
+        this.neighborOffsets.sort((a, b) => Math.hypot(a[0], a[2]) - Math.hypot(b[0], b[2]));
 
         this.addMultiToggle(
             'Ore Type',
@@ -59,15 +67,20 @@ class TunnelsMiner extends ModuleBase {
         ]);
 
         this.on('tick', () => this.onTick());
-        this.on('worldUnload', () => this.stopAll());
+        this.on('worldUnload', () => {
+            this.exhaustedPositions.clear();
+            this.stopAll();
+        });
     }
 
     onEnable() {
+        this.exhaustedPositions.clear();
         this.startPathfind();
     }
 
     onDisable() {
         this.stopAll();
+        this.exhaustedPositions.clear();
     }
 
     setSelectedOres(value) {
@@ -75,8 +88,11 @@ class TunnelsMiner extends ModuleBase {
     }
 
     setSelectedOreNames(ores) {
-        const nextOres = Array.isArray(ores) ? ores.filter((ore) => this.oreTypes.includes(ore)) : [];
-        this.selectedOres = [...new Set(nextOres)];
+        const nextOres = Array.isArray(ores) ? [...new Set(ores.filter((ore) => this.oreTypes.includes(ore)))] : [];
+        if (nextOres.some((ore) => !this.selectedOres.includes(ore)) || this.selectedOres.some((ore) => !nextOres.includes(ore))) {
+            this.exhaustedPositions.clear();
+        }
+        this.selectedOres = nextOres;
         return this.selectedOres;
     }
 
@@ -95,10 +111,7 @@ class TunnelsMiner extends ModuleBase {
         const hasActiveWork = MiningBot.isScanning() || MiningBot.currentTarget || MiningBot.foundLocations.length > 0;
         if (hasActiveWork) {
             this.botStartedWork = true;
-            return;
-        }
-
-        if (MiningBot.enabled && !this.botStartedWork) {
+            this.botIdleTicks = 0;
             return;
         }
 
@@ -106,10 +119,18 @@ class TunnelsMiner extends ModuleBase {
             return;
         }
 
+        if (!this.botStartedWork && ++this.botIdleTicks < 10) return;
+
+        if (this.activeMiningPosition)
+            this.exhaustedPositions.add(this.posKey(this.activeMiningPosition.x, this.activeMiningPosition.y, this.activeMiningPosition.z));
+        this.exhaustedPositions.add(this.posKey(Math.floor(Player.getX()), Math.floor(Player.getY()), Math.floor(Player.getZ())));
+
         MiningBot.toggle(false, true);
         this.botManaged = false;
         this.botStartedWork = false;
-        this.startPathfind();
+        this.botIdleTicks = 0;
+        this.activeMiningPosition = null;
+        this.startPathfind(true);
     }
 
     stopAll() {
@@ -120,33 +141,73 @@ class TunnelsMiner extends ModuleBase {
         }
         this.botManaged = false;
         this.botStartedWork = false;
+        this.botIdleTicks = 0;
+        this.activeMiningPosition = null;
+        this.pendingTargets = [];
     }
 
-    startPathfind() {
+    startPathfind(requireMovement = false) {
+        this.pendingTargets = [];
         const scan = this.scanForVeins(this.selectedOres);
         if (!scan?.targets?.length) {
             this.message('&cNo reachable veins found.');
             return;
         }
 
-        const ends = scan.targets.map((target) => [target.candidate.x, target.candidate.y - 1, target.candidate.z]);
-        this.message(`&bPathing to best target (${scan.targets.length} options)...`);
-
-        Pathfinder.findPath(ends, (success) => {
-            if (!success) {
-                this.message('&cPathfinding failed.');
-                return;
-            }
-
-            this.onPathSuccess();
+        this.pendingTargets = scan.targets.filter((target) => {
+            const { candidate } = target;
+            if (this.exhaustedPositions.has(this.posKey(candidate.x, candidate.y, candidate.z))) return false;
+            const end = [candidate.x + 0.5, candidate.y - 1, candidate.z + 0.5];
+            if (!requireMovement || !Player.getPlayer()?.onGround()) return true;
+            const heightDifference = Player.getY() - end[1];
+            return Math.hypot(Player.getX() - end[0], Player.getZ() - end[2]) > PATH_ARRIVAL_RADIUS || heightDifference < -0.1 || heightDifference > 5.5;
         });
+        const ends = this.pendingTargets.map((target) => {
+            const { candidate } = target;
+            return [candidate.x + 0.5, candidate.y - 1, candidate.z + 0.5];
+        });
+        if (!ends.length) {
+            this.pendingTargets = [];
+            this.message('&cNo new mining position found.');
+            return;
+        }
+        this.message(`&bPathing to best target (${ends.length} options)...`);
+
+        Pathfinder.findPath(
+            ends,
+            (success) => {
+                if (!success) {
+                    this.pendingTargets = [];
+                    this.message('&cPathfinding failed.');
+                    return;
+                }
+
+                this.onPathSuccess();
+            },
+            false,
+            null,
+            false,
+            PATH_ARRIVAL_RADIUS
+        );
     }
 
     onPathSuccess() {
+        this.activeMiningPosition = this.pendingTargets.reduce((closest, target) => {
+            if (!closest) return target.candidate;
+            const targetDistance = Math.hypot(
+                Player.getX() - (target.candidate.x + 0.5),
+                Player.getY() - target.candidate.y,
+                Player.getZ() - (target.candidate.z + 0.5)
+            );
+            const closestDistance = Math.hypot(Player.getX() - (closest.x + 0.5), Player.getY() - closest.y, Player.getZ() - (closest.z + 0.5));
+            return targetDistance < closestDistance ? target.candidate : closest;
+        }, null);
+        this.pendingTargets = [];
         MiningBot.toggle(true, true);
         this.forceTunnelMiningBotCosts();
         this.botManaged = true;
         this.botStartedWork = false;
+        this.botIdleTicks = 0;
     }
 
     scanForVeins(ores) {
@@ -162,9 +223,12 @@ class TunnelsMiner extends ModuleBase {
         validOres.forEach((ore) => {
             const veins = Veins[ore];
             veins.forEach((vein, index) => {
-                const { veinSet, edgeBlocks, veinBlocks } = this.getVeinData(ore, index, vein);
-                if (!this.isVeinValid(vein)) return;
+                const { veinBlocks } = this.getVeinData(ore, index, vein);
+                const remainingBlocks = veinBlocks.filter((block) => this.isOreBlock(block, ore));
+                if (!remainingBlocks.length) return;
 
+                const veinSet = new Set(remainingBlocks.map((block) => this.posKey(block.x, block.y, block.z)));
+                const edgeBlocks = this.getEdgeBlocks(remainingBlocks, veinSet);
                 const candidates = this.getVeinCandidates(edgeBlocks, veinSet, passableCache);
                 if (!candidates.length) return;
 
@@ -173,7 +237,7 @@ class TunnelsMiner extends ModuleBase {
                         ore,
                         veinIndex: index,
                         candidate,
-                        veinBlocks,
+                        veinBlocks: remainingBlocks,
                     });
                 });
             });
@@ -188,7 +252,8 @@ class TunnelsMiner extends ModuleBase {
 
     getEdgeBlocks(vein, veinSet) {
         const edges = [];
-        for (const [x, y, z] of vein) {
+        for (const block of vein) {
+            const { x, y, z } = Array.isArray(block) ? { x: block[0], y: block[1], z: block[2] } : block;
             for (const [dx, dy, dz] of this.edgeOffsets) {
                 const key = this.posKey(x + dx, y + dy, z + dz);
                 if (!veinSet.has(key)) {
@@ -202,17 +267,22 @@ class TunnelsMiner extends ModuleBase {
 
     getVeinCandidates(edgeBlocks, veinSet, passableCache) {
         const checked = new Map();
+        const accepted = new Set();
         const candidates = [];
 
         for (const edge of edgeBlocks) {
             for (const [dx, , dz] of this.neighborOffsets) {
                 const start = { x: edge.x + dx, y: edge.y, z: edge.z + dz };
                 const key = this.posKey(start.x, start.y, start.z);
-                if (checked.has(key)) continue;
-
-                const candidate = this.findStandPosition(start, veinSet, passableCache);
-                checked.set(key, candidate);
+                let candidate = checked.get(key);
+                if (candidate === undefined) {
+                    candidate = this.findStandPosition(start, veinSet, passableCache);
+                    checked.set(key, candidate);
+                }
                 if (!candidate?.valid) continue;
+                const candidateKey = this.posKey(candidate.pos.x, candidate.pos.y, candidate.pos.z);
+                if (accepted.has(candidateKey) || !this.canMineBlockFrom(candidate.pos, edge)) continue;
+                accepted.add(candidateKey);
                 candidates.push(candidate.pos);
             }
         }
@@ -245,6 +315,14 @@ class TunnelsMiner extends ModuleBase {
         return { valid: true, pos: standPos };
     }
 
+    canMineBlockFrom(standPos, block) {
+        const eyeHeight = Player.getPlayer()?.getEyeHeight?.() || 1.62;
+        const eyePos = new Vec3d(standPos.x + 0.5, standPos.y + eyeHeight, standPos.z + 0.5);
+        const maxReachSq = MiningBot.mineReach * MiningBot.mineReach;
+
+        return MiningBot.findVisibleAimPoint(block.x, block.y, block.z, eyePos, null, maxReachSq, false) !== null;
+    }
+
     isPassable(blockVec, passableCache) {
         const cacheKey = this.posKey(blockVec.x, blockVec.y, blockVec.z);
         if (passableCache?.has(cacheKey)) return passableCache.get(cacheKey);
@@ -274,17 +352,9 @@ class TunnelsMiner extends ModuleBase {
         return true;
     }
 
-    isVeinValid(vein) {
-        for (const [x, y, z] of vein) {
-            const block = World.getBlockAt(x, y, z);
-            const blockName = block?.type?.getRegistryName?.() || '';
-            if (this.isMined(blockName)) return false;
-        }
-        return true;
-    }
-
-    isMined(blockName) {
-        return blockName === 'minecraft:air' || blockName === 'minecraft:bedrock';
+    isOreBlock(block, ore) {
+        const blockName = World.getBlockAt(block.x, block.y, block.z)?.type?.getRegistryName?.() || '';
+        return MiningBot.tunnelOreCosts?.[ore]?.[blockName] != null;
     }
 
     forceTunnelMiningBotCosts() {
@@ -301,11 +371,9 @@ class TunnelsMiner extends ModuleBase {
         const cached = this.veinDataCache.get(key);
         if (cached?.veinRef === vein) return cached;
 
-        const veinSet = new Set(vein.map((block) => this.posKey(block[0], block[1], block[2])));
-        const edgeBlocks = this.getEdgeBlocks(vein, veinSet);
         const veinBlocks = vein.map((block) => ({ x: block[0], y: block[1], z: block[2] }));
 
-        const data = { veinSet, edgeBlocks, veinBlocks, veinRef: vein };
+        const data = { veinBlocks, veinRef: vein };
         this.veinDataCache.set(key, data);
         return data;
     }

@@ -584,6 +584,7 @@ class Bot extends ModuleBase {
 
     isTunnelMode() {
         if (this.COSTTYPE === this.tunnelCosts) return true;
+        if (this.selectedTypeName === 'Tunnel') return true;
         const selectedType = Array.isArray(this.TYPE) ? this.TYPE.find((option) => option.enabled)?.name : null;
         return selectedType === 'Tunnel';
     }
@@ -819,6 +820,7 @@ class Bot extends ModuleBase {
         sortedCandidates.sort((a, b) => a.cheapCost - b.cheapCost);
 
         const visibleTargets = [];
+        const checkFov = this.FOVPenalty && !this.isTunnelMode();
         let evaluatedCount = 0;
 
         for (const candidate of sortedCandidates) {
@@ -828,7 +830,7 @@ class Bot extends ModuleBase {
 
             evaluatedCount++;
 
-            const aimData = this.findVisibleAimPoint(candidate.x, candidate.y, candidate.z, eyePos, lookVec, maxReachSq, this.FOVPenalty);
+            const aimData = this.findVisibleAimPoint(candidate.x, candidate.y, candidate.z, eyePos, lookVec, maxReachSq, checkFov);
             if (!aimData) continue;
 
             const baseCost = this.calculateBlockCost(candidate.targetCost, aimData.dist, aimData.dot);
@@ -863,7 +865,7 @@ class Bot extends ModuleBase {
 
         const eyePos = Player.getPlayer().getEyePosition();
         const lookVec = Player.asPlayerMP().getLookVector();
-        const allowApproachTargets = this.MOVEMENT && !this.manualScan && this.approachScanReach > this.mineReach;
+        const allowApproachTargets = this.MOVEMENT && !this.manualScan && !this.isTunnelMode() && this.approachScanReach > this.mineReach;
         const mineReachSq = this.mineReach * this.mineReach;
 
         const scanned = this.collectScanTargets(targetCosts, eyePos, lookVec, this.mineReach, excludedBlock, true, false);
@@ -1237,7 +1239,9 @@ class Bot extends ModuleBase {
         }
 
         const cfg = this._movementHumanizer;
-        if (this.isTargetDirectlyUnderPlayer(this.currentTarget) || this.isTargetAbovePlayer(this.currentTarget)) {
+        const tunnelMode = this.isTunnelMode();
+        const isHighTarget = this.isTargetAbovePlayer(this.currentTarget);
+        if (this.isTargetDirectlyUnderPlayer(this.currentTarget) || (!tunnelMode && isHighTarget)) {
             Keybind.stopMovement();
             this.setSneak(true);
             Keybind.setKey('space', false);
@@ -1249,7 +1253,11 @@ class Bot extends ModuleBase {
         let moveForward = values.distanceFlat > cfg.moveInMax;
         let moveBack = values.distanceFlat < cfg.moveInMin;
 
-        const isAligned = yaw >= -cfg.stopYawThreshold && yaw <= cfg.stopYawThreshold && values.distance <= 4;
+        const isAligned =
+            yaw >= -cfg.stopYawThreshold &&
+            yaw <= cfg.stopYawThreshold &&
+            values.distance <= 4 &&
+            !(tunnelMode && isHighTarget && values.distanceFlat < cfg.moveInMin);
         const inDistanceBand = values.distanceFlat >= 2.5 && values.distanceFlat <= 3.25;
         if (isAligned || inDistanceBand) {
             moveRight = false;
