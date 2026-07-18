@@ -211,44 +211,71 @@ class NukerClass extends ModuleBase {
     }
 
     scanForBlock() {
-        const pPos = { x: Math.floor(Player.getX()), y: Math.floor(Player.getY()), z: Math.floor(Player.getZ()) };
         const pCords = this.cords();
-        const validBlocks = [];
+        if (!pCords) return null;
+
+        const pX = pCords[0];
+        const pY = pCords[1];
+        const pZ = pCords[2];
+        const x = Math.floor(Player.getX());
+        const y = Math.floor(Player.getY());
+        const z = Math.floor(Player.getZ());
         const scanReach = this.customReach;
+        const scanReachSq = scanReach * scanReach;
         const scanRadius = Math.ceil(scanReach);
-        const maxY = pPos.y + Math.max(this.heightLimit, scanRadius);
-        const minY = pPos.y - (this.nukeBelow ? 0 : scanRadius);
+        const maxY = y + Math.max(this.heightLimit, scanRadius);
+        const minY = y - (this.nukeBelow ? 0 : scanRadius);
 
         const targetTypes = this.customBlockList.map((b) => new BlockType(b.registryName));
+        const blocks = World.getBlocksInBox(x - scanRadius, minY, z - scanRadius, x + scanRadius, maxY, z + scanRadius, targetTypes);
+        let selected = null;
+        let selectedDistanceSq = Infinity;
+        let candidates = 0;
 
-        const blocks = World.getBlocksInBox(pPos.x - scanRadius, minY, pPos.z - scanRadius, pPos.x + scanRadius, maxY, pPos.z + scanRadius, targetTypes);
         for (const block of blocks) {
-            const posKey = `${block.x},${block.y},${block.z}`;
-            if (this.minedBlocks.has(posKey)) continue;
-            if (this.distanceToBlockBox(pCords, [block.x, block.y, block.z]).distance > scanReach) continue;
+            const blockX = block.x;
+            const blockY = block.y;
+            const blockZ = block.z;
+            if (this.minedBlocks.has(`${blockX},${blockY},${blockZ}`)) continue;
 
-            validBlocks.push(new BP(block.x, block.y, block.z));
+            let dx = 0;
+            let dy = 0;
+            let dz = 0;
+
+            if (pX < blockX) dx = blockX - pX;
+            else if (pX > blockX + 1) dx = pX - blockX - 1;
+
+            if (pY < blockY) dy = blockY - pY;
+            else if (pY > blockY + 1) dy = pY - blockY - 1;
+
+            if (pZ < blockZ) dz = blockZ - pZ;
+            else if (pZ > blockZ + 1) dz = pZ - blockZ - 1;
+
+            const distanceSq = dx * dx + dy * dy + dz * dz;
+            if (distanceSq > scanReachSq) continue;
+
+            if (this.targetMode === 'Closest') {
+                if (distanceSq < selectedDistanceSq) {
+                    selected = block;
+                    selectedDistanceSq = distanceSq;
+                }
+            } else if (this.targetMode === 'Lowest' || this.targetMode === 'Highest') {
+                const better = !selected || (this.targetMode === 'Lowest' ? blockY < selected.y : blockY > selected.y);
+
+                if (better) {
+                    selected = block;
+                    candidates = 1;
+                } else if (blockY === selected.y) {
+                    candidates++;
+                    if (Math.random() < 1 / candidates) selected = block;
+                }
+            } else {
+                candidates++;
+                if (Math.random() < 1 / candidates) selected = block;
+            }
         }
 
-        if (validBlocks.length === 0) return null;
-
-        if (this.targetMode === 'Closest') {
-            return validBlocks.sort(
-                (a, b) =>
-                    this.distanceToBlockBox(pCords, [a.getX(), a.getY(), a.getZ()]).distance -
-                    this.distanceToBlockBox(pCords, [b.getX(), b.getY(), b.getZ()]).distance
-            )[0];
-        } else if (this.targetMode === 'Lowest') {
-            let minY = Math.min(...validBlocks.map((b) => b.getY()));
-            let lowest = validBlocks.filter((b) => b.getY() === minY);
-            return lowest[Math.floor(Math.random() * lowest.length)];
-        } else if (this.targetMode === 'Highest') {
-            let maxY = Math.max(...validBlocks.map((b) => b.getY()));
-            let highest = validBlocks.filter((b) => b.getY() === maxY);
-            return highest[Math.floor(Math.random() * highest.length)];
-        }
-
-        return validBlocks[Math.floor(Math.random() * validBlocks.length)];
+        return selected ? new BP(selected.x, selected.y, selected.z) : null;
     }
 
     isHoldingMiningTool() {
@@ -281,14 +308,6 @@ class NukerClass extends ModuleBase {
             dy = from[1] - to[1],
             dz = from[2] - to[2];
         return { distance: Math.hypot(dx, dy, dz) };
-    }
-
-    distanceToBlockBox(from, to) {
-        if (!from || !to) return { distance: Infinity };
-        const clampedX = Math.max(to[0], Math.min(from[0], to[0] + 1));
-        const clampedY = Math.max(to[1], Math.min(from[1], to[1] + 1));
-        const clampedZ = Math.max(to[2], Math.min(from[2], to[2] + 1));
-        return this.distance(from, [clampedX, clampedY, clampedZ]);
     }
 
     onGround() {
