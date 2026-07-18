@@ -16,6 +16,7 @@ let connectedAtMs = 0;
 let reconnectScheduled = false;
 let nextSocketGeneration = 0;
 let activeSocketGeneration = 0;
+const connectionKey = java.util.UUID.randomUUID().toString().replace(/-/g, '');
 const STABLE_CONNECTION_MS = 10000;
 const MAX_RECONNECT_DELAY_TICKS = 20 * 60;
 
@@ -116,6 +117,7 @@ function connectWebSocket() {
     ws = socket;
     connectedAtMs = 0;
     socket.socket?.addHeader?.('Authorization', `Bearer ${token}`);
+    socket.socket?.addHeader?.('X-Connection-Key', connectionKey);
     let disconnectHandled = false;
     const handleDisconnectOnce = (payload) => {
         if (!isCurrentSocket(socket, socketGeneration)) return;
