@@ -2,7 +2,6 @@ import { isDeveloperModeEnabled } from '../../utils/DeveloperModeState';
 import { Vec3d } from '../../utils/Constants';
 import { ModuleBase } from '../../utils/ModuleBase';
 import { ClientboundBlockUpdatePacket, ClientboundLevelChunkWithLightPacket } from '../../utils/Packets';
-import { manager } from '../../utils/SkyblockEvents';
 
 class StructureESP extends ModuleBase {
     constructor() {
@@ -33,9 +32,7 @@ class StructureESP extends ModuleBase {
             this.render();
         });
 
-        manager.subscribe('warp', () => {
-            if (!this.enabled) return;
-            console.log('Warp detected! Resetting module data...');
+        this.on('worldUnload', () => {
             StructureFinder.clear();
         });
 
@@ -44,13 +41,35 @@ class StructureESP extends ModuleBase {
         });
     }
 
+    onDisable() {
+        StructureFinder.clear();
+    }
+
     render() {
         try {
             const blocks = StructureFinder.getRenderBlocksArray();
-            if (!blocks || blocks.length < 3) return;
+            if (!blocks?.length) return;
+            const labels = StructureFinder.getRenderLabelsArray();
+            const playerX = Player.getX();
+            const playerY = Player.getY() + 1.6;
+            const playerZ = Player.getZ();
+            const maxDistance = Math.max(16, (Client.getMinecraft().options.getEffectiveRenderDistance() - 1) * 16);
 
             for (let i = 0; i + 2 < blocks.length; i += 3) {
-                RenderUtils.drawFilledBox(new Vec3d(blocks[i], blocks[i + 1], blocks[i + 2]), new RenderColor(0, 255, 200, 100), false);
+                const name = String(labels[i / 3]);
+                const x = blocks[i] + 0.5;
+                const y = blocks[i + 1];
+                const z = blocks[i + 2] + 0.5;
+                const dx = x - playerX;
+                const dy = y - playerY;
+                const dz = z - playerZ;
+                const distance = Math.hypot(dx, dy, dz);
+                const scale = distance > maxDistance ? maxDistance / distance : 1;
+                const pos = new Vec3d(playerX + dx * scale, playerY + dy * scale, playerZ + dz * scale);
+                const color = name === 'Fairy Grotto' ? new RenderColor(180, 70, 255, 110) : new RenderColor(0, 255, 200, 100);
+
+                RenderUtils.drawSizedBox(pos, 8, 8, 8, color, true, 1, false);
+                RenderUtils.drawText(name, pos.add(0, 8.5, 0), 7.5, true, false, true);
             }
         } catch (e) {
             console.error('V5 Caught error' + e + e.stack);
