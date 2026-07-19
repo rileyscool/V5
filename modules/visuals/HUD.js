@@ -124,7 +124,7 @@ class HUD extends ModuleBase {
 
         return [
             { label: 'FPS', value: String(fps), color: 0xffffffff },
-            { label: 'Ping', value: `${ping}ms`, color: (0xff000000 | ServerInfo.getPingColor(ping)) >>> 0 },
+            { label: 'Ping', value: `123ms`, color: (0xff000000 | ServerInfo.getPingColor(ping)) >>> 0 },
             { label: 'TPS', value: tps.toFixed(2), color: (0xff000000 | ServerInfo.getTpsColor(tps)) >>> 0 },
         ];
     }
@@ -138,9 +138,9 @@ class HUD extends ModuleBase {
         const lines = this.getStatsLines();
         const separator = ' | ';
         const separatorWidth = getTextWidth(separator, fontSize);
-        const gap = 2 * s;
+        const gaps = [2 * s, s, 2 * s];
         const valueSlots = ['999', '999ms', '20.00'];
-        const slotWidths = lines.map((l, index) => getTextWidth(`${l.label}:`, fontSize) + gap + getTextWidth(valueSlots[index], fontSize));
+        const slotWidths = lines.map((l, index) => getTextWidth(`${l.label}:`, fontSize) + gaps[index] + getTextWidth(valueSlots[index], fontSize));
         const totalWidth = slotWidths.reduce((total, width) => total + width, 0) + separatorWidth * (lines.length - 1);
 
         o.width = pad * 2 + totalWidth;
@@ -228,16 +228,16 @@ class HUD extends ModuleBase {
 
         const separator = ' | ';
         const separatorWidth = getTextWidth(separator, fontSize);
-        const gap = 2 * s;
+        const gaps = [2 * s, s, 2 * s];
         const valueSlots = ['999', '999ms', '20.00'];
-        const slotWidths = lines.map((l, index) => getTextWidth(`${l.label}:`, fontSize) + gap + getTextWidth(valueSlots[index], fontSize));
+        const slotWidths = lines.map((l, index) => getTextWidth(`${l.label}:`, fontSize) + gaps[index] + getTextWidth(valueSlots[index], fontSize));
 
         lines.forEach((l, index) => {
             const label = `${l.label}:`;
             const value = String(l.value);
 
             drawText(label, x, centerY, fontSize, labelColor, 17);
-            drawText(value, x + getTextWidth(label, fontSize) + gap, centerY, fontSize, l.color, 17);
+            drawText(value, x + getTextWidth(label, fontSize) + gaps[index], centerY, fontSize, l.color, 17);
 
             x += slotWidths[index];
 
