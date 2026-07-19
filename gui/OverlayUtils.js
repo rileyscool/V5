@@ -837,13 +837,10 @@ class OverlayUtils {
         const lines = this.getHudStatsLines();
         const separator = ' | ';
         const separatorWidth = getTextWidth(separator, fontSize);
-        const gap = 3 * s;
-        let totalWidth = 0;
-
-        lines.forEach((l, index) => {
-            totalWidth += getTextWidth(`${l.label}:`, fontSize) + gap + getTextWidth(String(l.value), fontSize);
-            if (index < lines.length - 1) totalWidth += separatorWidth;
-        });
+        const gaps = [2 * s, s, 2 * s];
+        const valueSlots = ['999', '999ms', '20.00'];
+        const slotWidths = lines.map((l, index) => getTextWidth(`${l.label}:`, fontSize) + gaps[index] + getTextWidth(valueSlots[index], fontSize));
+        const totalWidth = slotWidths.reduce((total, width) => total + width, 0) + separatorWidth * (lines.length - 1);
 
         const width = pad * 2 + totalWidth;
         const height = pad * 2 + fontSize;
@@ -871,11 +868,13 @@ class OverlayUtils {
         let x = clamped.x + pad;
 
         lines.forEach((l, index) => {
-            drawText(`${l.label}:`, x, centerY, fontSize, labelColor, 17);
-            x += getTextWidth(`${l.label}:`, fontSize) + gap;
+            const label = `${l.label}:`;
+            const value = String(l.value);
 
-            drawText(String(l.value), x, centerY, fontSize, l.color, 17);
-            x += getTextWidth(String(l.value), fontSize);
+            drawText(label, x, centerY, fontSize, labelColor, 17);
+            drawText(value, x + getTextWidth(label, fontSize) + gaps[index], centerY, fontSize, l.color, 17);
+
+            x += slotWidths[index];
 
             if (index < lines.length - 1) {
                 drawText(separator, x, centerY, fontSize, separatorColor, 17);
