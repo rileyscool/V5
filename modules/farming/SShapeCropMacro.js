@@ -1,4 +1,6 @@
 import { FarmingMacro } from './FarmingMacro';
+import { farmingSettings } from './FarmingSettings';
+import { Utils } from '../../utils/Utils';
 
 const STATES = {
     LEFT: 'Left',
@@ -6,26 +8,51 @@ const STATES = {
     SWITCHING_LANE: 'Switching lane',
 };
 class SShapeCropMacro extends FarmingMacro {
-    constructor(name = 'S-Shape Crop Macro', commandPrefix = 'farming sshape', pitch = 0) {
+    constructor() {
         super(
             {
-                name,
+                name: 'S-Shape Macro',
                 description: 'Simple horizonal S-Shape crop macro.',
             },
-            commandPrefix
+            'farming sshape'
         );
 
-        this.pitch = pitch;
+        this.pitchMin = this.pitchMax = 0;
+        this.laneChangeKey = 'w';
+        this.alwaysHoldLaneChangeKey = false;
         this.state = STATES.LEFT;
         this.lastDirection = STATES.LEFT;
         this.addLaneSwitchDelaySettings();
+        this.addMultiToggle(
+            'Lane Change Direction',
+            ['Forward', 'Backward'],
+            true,
+            (value) => (this.laneChangeKey = value.find((option) => option.enabled)?.name === 'Backward' ? 's' : 'w'),
+            null,
+            'Forward'
+        );
+        this.addToggle('Always Hold Lane Change Key', (value) => (this.alwaysHoldLaneChangeKey = value));
+        const pitch = this.addRangeSlider(
+            'Pitch',
+            -90,
+            90,
+            { low: this.pitchMin, high: this.pitchMax },
+            (value) => {
+                this.pitchMin = value.low;
+                this.pitchMax = value.high;
+            },
+            'Random pitch.'
+        );
+        pitch.step = 0.01;
+        pitch.precision = 2;
     }
 
     onFarmStart(player) {
         this.state = this.lastDirection;
         this.ignoreTicks = 10;
         this.yaw = this.snapYaw(player.getYRot(), 0);
-        this.rotateTo(this.yaw, this.pitch);
+        const pitch = farmingSettings.useMousemat ? (this.pitchMin + this.pitchMax) / 2 : Utils.randomFloat(this.pitchMin, this.pitchMax);
+        this.rotateTo(this.yaw, pitch);
     }
 
     updateFarmState(player) {
@@ -33,6 +60,11 @@ class SShapeCropMacro extends FarmingMacro {
         if (this.consumeIgnoreTicks(player)) return;
 
         if (!this.isStationaryForTicks(player, 2)) return;
+        if (this.alwaysHoldLaneChangeKey) {
+            this.state = this.lastDirection === STATES.RIGHT ? STATES.LEFT : STATES.RIGHT;
+            this.lastDirection = this.state;
+            return;
+        }
         this.state = STATES.SWITCHING_LANE;
     }
 
@@ -44,12 +76,10 @@ class SShapeCropMacro extends FarmingMacro {
     }
 
     invokeFarmState() {
-        if (this.state === STATES.LEFT) return this.hold('a');
-        if (this.state === STATES.RIGHT) return this.hold('d');
-        this.hold('w');
+        if (this.state === STATES.LEFT) return this.hold(`a${this.alwaysHoldLaneChangeKey ? this.laneChangeKey : ''}`);
+        if (this.state === STATES.RIGHT) return this.hold(`d${this.alwaysHoldLaneChangeKey ? this.laneChangeKey : ''}`);
+        this.hold(this.laneChangeKey);
     }
 }
 
 new SShapeCropMacro();
-new SShapeCropMacro('S-Shape Cactus Macro', 'farming sshape cactus');
-new SShapeCropMacro('S-Shape Melon Macro', 'farming sshape melon', 26.4);

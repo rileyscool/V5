@@ -40,7 +40,7 @@ class CycleMacro extends FarmingMacro {
             yawOffset.precision = 2;
         }
         if (config.adjustablePitch) {
-            this.addRangeSlider(
+            const pitch = this.addRangeSlider(
                 'Pitch',
                 -90,
                 90,
@@ -51,6 +51,8 @@ class CycleMacro extends FarmingMacro {
                 },
                 'Random pitch.'
             );
+            pitch.step = 0.01;
+            pitch.precision = 2;
         }
         if ([this.stationaryDelay, this.switchDelay].includes(LANE_DELAY)) this.addLaneSwitchDelaySettings();
     }
