@@ -1,3 +1,4 @@
+import { OverlayManager } from '../../gui/OverlayUtils';
 import { ModuleBase } from '../../utils/ModuleBase';
 import { MacroState } from '../../utils/MacroState';
 import { NukerUtils } from '../../utils/NukerUtils';
@@ -33,18 +34,20 @@ class LushLilacEtherwarpNuker extends ModuleBase {
         this.scanToken = 0;
         this.lastScanAt = 0;
         this.status = 'Scanning';
-        this.blocksNuked = 0;
-        this.createOverlay([
-            {
-                title: 'Status',
-                data: {
-                    State: () => this.status,
-                    Targets: () => this.targets.length,
-                    'Forest Whispers': () => this.blocksNuked * 100,
-                    'Forest Whispers/hr': () => this.getHourlyForestWhispers(),
+        this.createOverlay(
+            [
+                {
+                    title: 'Status',
+                    data: {
+                        State: () => this.status,
+                        Targets: () => this.targets.length,
+                        'Forest Whispers': () => OverlayManager.getTrackedValue(this.oid, 'blocksNuked', 0) * 100,
+                        'Forest Whispers/hr': () => this.getHourlyForestWhispers(),
+                    },
                 },
-            },
-        ]);
+            ],
+            { sessionTrackedValues: { blocksNuked: 0 } }
+        );
         this.on('tick', () => this.tick());
         this.on('worldUnload', () => this.onWorldUnload());
     }
@@ -65,7 +68,7 @@ class LushLilacEtherwarpNuker extends ModuleBase {
             const target = this.closest(inRange);
             const blockPos = NukerUtils.createBlockPosition([target.x, target.y, target.z]);
             NukerUtils.sendBreakPackets(blockPos, NukerUtils.closestDirection(blockPos));
-            this.blocksNuked++;
+            OverlayManager.incrementTrackedValue(this.oid, 'blocksNuked');
             this.blacklistedTargets.set(this.key(target), now + TARGET_BLACKLIST_MS);
             this.startPath(this.closest(targets.filter((candidate) => this.key(candidate) !== this.key(target))), now);
             return;
@@ -135,7 +138,7 @@ class LushLilacEtherwarpNuker extends ModuleBase {
 
     getHourlyForestWhispers() {
         const elapsedMs = MacroState.getModuleElapsedMs(this.name);
-        return elapsedMs > 0 ? Math.round((this.blocksNuked * 100 * 3600000) / elapsedMs) : 0;
+        return elapsedMs > 0 ? Math.round((OverlayManager.getTrackedValue(this.oid, 'blocksNuked', 0) * 100 * 3600000) / elapsedMs) : 0;
     }
 
     rewarp() {
@@ -173,10 +176,6 @@ class LushLilacEtherwarpNuker extends ModuleBase {
         this.waitingForGalateaWorld = false;
         this.rewarping = false;
         this.status = 'Scanning';
-    }
-
-    onEnable() {
-        this.blocksNuked = 0;
     }
 
     onDisable() {
