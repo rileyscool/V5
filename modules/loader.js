@@ -3,6 +3,7 @@ import './mining/CommissionMacro';
 import './mining/ExcavatorMacro';
 import './mining/GlaciteCommissionMacro';
 import './mining/LobbyHopper';
+import './mining/MudwormMacro';
 import './mining/Nuker';
 import './mining/OreMacro';
 import './mining/PinglessMining';
