@@ -1,7 +1,8 @@
 import { ScheduleTask } from '../ScheduleTask';
 import { Sign } from '../Sign';
+import { Utils } from '../Utils';
 import { Guis } from './Inventory';
-import { Keybind } from './Keybinding';
+import { farmingDelays } from '../../modules/farming/FarmingDelays';
 
 const CLICK_COOLDOWN_MS = 3_050;
 
@@ -58,15 +59,15 @@ class MousematController {
         Guis.setItemSlot(slot);
         const selectedRotation = this.getSelectedRotation(slot);
         if (selectedRotation && selectedRotation.yaw === Number(rotation.yaw) && selectedRotation.pitch === Number(rotation.pitch)) {
-            this.snap(rotation, 2);
+            this.snap(rotation, this.getActionDelay());
             return true;
         }
 
-        ScheduleTask(2, () => {
+        ScheduleTask(this.getActionDelay(), () => {
             if (this.rotation !== rotation) return;
 
             rotation.waitingForSign = true;
-            Keybind.rightClick();
+            Client.rightClick();
         });
         return true;
     }
@@ -78,12 +79,16 @@ class MousematController {
         this.stop();
         const rotation = (this.rotation = { originalSlot: Player.getHeldItemIndex(), ...(this.getSelectedRotation(slot) || {}) });
         Guis.setItemSlot(slot);
-        this.snap(rotation, 2);
+        this.snap(rotation, this.getActionDelay());
         return true;
     }
 
     onComplete(callback) {
         if (typeof callback === 'function') this.callbacks.push(callback);
+    }
+
+    getActionDelay() {
+        return Utils.randomInt(farmingDelays.mousematActionDelayMin, farmingDelays.mousematActionDelayMax);
     }
 
     complete(rotation) {
@@ -106,7 +111,7 @@ class MousematController {
         const rotation = this.rotation;
         if (!rotation) return;
         if (rotation.waitingForClose) {
-            if (!Client.isInGui()) this.snap(rotation, 2);
+            if (!Client.isInGui()) this.snap(rotation, this.getActionDelay());
             return;
         }
         if (!rotation.waitingForSign) return;
@@ -138,7 +143,7 @@ class MousematController {
             const cooldown = this.lastClickAt + CLICK_COOLDOWN_MS - Date.now();
             if (!retry && cooldown > 0) return ScheduleTask(Math.ceil(cooldown / 50), click);
 
-            Keybind.leftClick();
+            Client.leftClick();
             this.lastClickAt = Date.now();
             ScheduleTask(checkRotation);
         };

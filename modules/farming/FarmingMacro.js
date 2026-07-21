@@ -1,20 +1,24 @@
 import { ModuleBase } from '../../utils/ModuleBase';
-import { Keybind } from '../../utils/player/Keybinding';
 import { Mousemat } from '../../utils/player/Mousemat';
 import { Rotations } from '../../utils/player/Rotations';
 import { ScheduleTask } from '../../utils/ScheduleTask';
 import { TabListUtils } from '../../utils/TabListUtils';
 import { Mouse } from '../../utils/Ungrab';
 import { Utils } from '../../utils/Utils';
+import { Guis } from '../../utils/player/Inventory';
 import { farmingSettings } from './FarmingSettings';
+import { farmingDelays } from './FarmingDelays';
 import { visitorMacro } from './VisitorMacro';
 import { getNearbyPest } from '../visuals/PestESP';
 
 const REWARP_RETRY_MS = 10_000;
 const MAX_REWARP_ATTEMPTS = 3;
-const MAX_PEST_TRACK_DISTANCE = 12;
+const MAX_PEST_TRACK_DISTANCE = 14;
 const PEST_STALL_GRACE_TICKS = 20;
 const GUI_RESUME_GRACE_TICKS = 5;
+const SPRAY_CHECK_COOLDOWN_MS = 10_000;
+const TAB_CHECK_GRACE_MS = 10_000;
+const MISSING_SPRAY_MATERIAL_REGEX = /^You don't have any .+!$/;
 const FARMING = 'Farming';
 const PEST = 'Pest';
 const RESTORING_PEST = 'Restoring Pest';
@@ -39,6 +43,11 @@ export class FarmingMacro extends ModuleBase {
         ]);
 
         this.on('tick', () => this.handleTick());
+        this.on('chat', (event) => {
+            if (farmingSettings.useSprayonator && MISSING_SPRAY_MATERIAL_REGEX.test(event.message?.getUnformattedText?.() || '')) {
+                this.sprayonatorUnavailable = true;
+            }
+        });
     }
 
     onEnable() {
@@ -55,6 +64,9 @@ export class FarmingMacro extends ModuleBase {
             }
         }
         this.farmingRotation = null;
+        this.nextSprayCheckAt = 0;
+        this.sprayonatorUnavailable = false;
+        this.sprayonatorAction = null;
         this.mode = FARMING;
         this.stallGraceTicks = 0;
         Mouse.ungrab();
@@ -62,21 +74,23 @@ export class FarmingMacro extends ModuleBase {
         const player = Player.getPlayer();
         if (!player) return;
 
+        this.farmingSlot = Player.getHeldItemIndex();
         this.startFarming(player);
     }
 
     onDisable() {
-        if (this.rewarpActionStarted) visitorMacro.toggle(false);
+        if (visitorMacro.enabled && visitorMacro.isParentManaged) visitorMacro.toggle(false);
         Mousemat.stop();
         Rotations.stop();
-        Keybind.unpressKeys();
+        Client.unpressKeys();
         Mouse.regrab();
         this.mode = FARMING;
-        this.rewarpActionStarted = false;
         this.pestTarget = null;
         this.pestRotation = null;
         this.pestFarmState = null;
         this.stallGraceTicks = 0;
+        if (this.sprayonatorAction) Guis.setItemSlot(this.sprayonatorOriginalSlot);
+        this.sprayonatorAction = null;
         farmingSettings.restoreSlot();
     }
 
@@ -92,8 +106,7 @@ export class FarmingMacro extends ModuleBase {
         if (Client.isInGui()) {
             this.stationaryTicks = 0;
             this.stallGraceTicks = Math.max(this.stallGraceTicks, GUI_RESUME_GRACE_TICKS);
-            Keybind.unpressKeys();
-            return ScheduleTask(1, Keybind.setKey('leftclick', false));
+            return;
         }
         if (Mousemat.active) return;
 
@@ -103,17 +116,19 @@ export class FarmingMacro extends ModuleBase {
             case PEST:
                 return this.handlePest(player);
             case RESTORING_PEST:
-                return Keybind.unpressKeys();
+                return Client.unpressKeys();
             case REWARPING:
                 return this.handleRewarp(player);
         }
     }
 
     handleFarming(player) {
+        if (this.sprayonatorAction) return;
         if (farmingSettings.killNearbyPests && this.handlePest(player)) return;
+        if (this.trySprayonator()) return;
 
         if (!farmingSettings.looping && this.isAtPoint(player, this.points.end)) return this.beginRewarp();
-        if (farmingSettings.looping && farmingSettings.runVisitorMacro && TabListUtils.readVisitors().length >= farmingSettings.minimumVisitors) {
+        if (farmingSettings.looping && this.shouldRunVisitorMacro()) {
             ChatLib.command('sethome');
             return this.beginRewarp({ x: player.getX(), y: player.getY(), z: player.getZ() });
         }
@@ -131,27 +146,61 @@ export class FarmingMacro extends ModuleBase {
         this.invokeFarmState();
     }
 
+    trySprayonator() {
+        const now = Date.now();
+        if (this.sprayonatorUnavailable || !farmingSettings.useSprayonator || now < this.nextSprayCheckAt || now < this.nextTabCheckAt || !this.hasNoSpray()) {
+            return false;
+        }
+
+        const slot = Guis.findItemInHotbar('Sprayonator');
+        if (slot < 0) return false;
+
+        this.sprayonatorOriginalSlot = this.farmingSlot;
+        const action = {};
+        this.sprayonatorAction = action;
+        Client.unpressKeys();
+        Guis.setItemSlot(slot);
+        ScheduleTask(Utils.randomInt(farmingDelays.sprayonatorActionDelayMin, farmingDelays.sprayonatorActionDelayMax), () => {
+            if (this.sprayonatorAction !== action) return;
+            Client.rightClick();
+            ScheduleTask(Utils.randomInt(farmingDelays.sprayonatorActionDelayMin, farmingDelays.sprayonatorActionDelayMax), () => {
+                if (this.sprayonatorAction !== action) return;
+                Guis.setItemSlot(this.sprayonatorOriginalSlot);
+                this.nextSprayCheckAt = Date.now() + SPRAY_CHECK_COOLDOWN_MS;
+                this.sprayonatorAction = null;
+            });
+        });
+        return true;
+    }
+
+    hasNoSpray() {
+        return TabListUtils.getNames().some((line) => /\bSpray:\s*None\b/.test(TabListUtils.stripFormatting(line?.getName?.() ?? line)));
+    }
+
     beginRewarp(rewarpStartPoint = this.points.start) {
         this.rewarpStartPoint = rewarpStartPoint;
         this.rewarpAttempts = 0;
         this.nextRewarpAt = Date.now() + Utils.randomInt(farmingSettings.delayMin, farmingSettings.delayMax);
-        Keybind.unpressKeys();
+        Client.unpressKeys();
         this.mode = REWARPING;
 
-        if (!farmingSettings.runVisitorMacro || TabListUtils.readVisitors().length < farmingSettings.minimumVisitors) return;
+        if (!this.shouldRunVisitorMacro()) return;
 
         this.nextRewarpAt = 0;
         if (visitorMacro.enabled) return;
-        this.rewarpActionStarted = true;
         visitorMacro.toggle(true, true);
     }
 
+    shouldRunVisitorMacro() {
+        if (Date.now() < this.nextTabCheckAt) return false;
+        return (
+            farmingSettings.shouldRunPhilipBonus() || (farmingSettings.runVisitorMacro && TabListUtils.readVisitors().length >= farmingSettings.minimumVisitors)
+        );
+    }
+
     handleRewarp(player) {
-        if (this.nextRewarpAt === 0) {
-            if (visitorMacro.enabled) return;
-            this.rewarpActionStarted = false;
-        }
-        Keybind.unpressKeys();
+        if (this.nextRewarpAt === 0 && visitorMacro.enabled) return;
+        Client.unpressKeys();
         if (this.isAtPoint(player, this.rewarpStartPoint)) {
             this.mode = FARMING;
             this.startFarming(player);
@@ -179,7 +228,7 @@ export class FarmingMacro extends ModuleBase {
             if (!this.pestTarget) return false;
         }
 
-        Keybind.unpressKeys();
+        Client.unpressKeys();
         if (this.mode === FARMING) {
             this.pestRotation = { yaw: player.getYRot(), pitch: player.getXRot() };
             this.pestFarmState = {
@@ -193,7 +242,7 @@ export class FarmingMacro extends ModuleBase {
             farmingSettings.originalSlot = Player.getHeldItemIndex();
         }
         if (!farmingSettings.selectVacuum()) return true;
-        Keybind.setKey('rightclick', true);
+        Client.setKey('rightclick', true);
         Rotations.trackEntity(this.pestTarget);
         return true;
     }
@@ -214,7 +263,7 @@ export class FarmingMacro extends ModuleBase {
 
         this.mode = RESTORING_PEST;
         Rotations.stop();
-        Keybind.unpressKeys();
+        Client.unpressKeys();
         farmingSettings.restoreSlot();
         if (!rotation || !this.enabled) return;
 
@@ -222,7 +271,7 @@ export class FarmingMacro extends ModuleBase {
             const player = Player.getPlayer();
             if (this.enabled && player) this.resumeFarming(player, farmState, rotation);
         };
-        ScheduleTask(() => {
+        ScheduleTask(Utils.randomInt(farmingDelays.pestRestoreDelayMin, farmingDelays.pestRestoreDelayMax), () => {
             if (!farmingSettings.useMousemat) {
                 if (!this.rotateTo(rotation.yaw, rotation.pitch, resume)) resume();
                 return;
@@ -237,6 +286,7 @@ export class FarmingMacro extends ModuleBase {
     }
 
     resumeFarming(player, farmState, rotation) {
+        this.nextTabCheckAt = Date.now() + TAB_CHECK_GRACE_MS;
         if (!farmingSettings.useMousemat) {
             this.startFarming(player);
             Rotations.lookAtAngles(rotation.yaw, rotation.pitch);
@@ -250,6 +300,7 @@ export class FarmingMacro extends ModuleBase {
     }
 
     startFarming(player) {
+        this.nextTabCheckAt = Date.now() + TAB_CHECK_GRACE_MS;
         this.stationaryTicks = 0;
         this.updatePosition(player);
         this.onFarmStart(player);
@@ -267,7 +318,7 @@ export class FarmingMacro extends ModuleBase {
             return started;
         }
 
-        Keybind.unpressKeys();
+        Client.unpressKeys();
         Rotations.stop();
         if (!Mousemat.rotateTo(yaw, pitch)) {
             this.message(`&cNo Mousemat found in hotbar.`);
@@ -279,9 +330,9 @@ export class FarmingMacro extends ModuleBase {
     }
 
     hold(key = '') {
-        ['a', 'd', 'w', 's', 'shift'].forEach((movement) => Keybind.setKey(movement, key.includes(movement)));
-        Keybind.setKey('leftclick', true);
-        Keybind.setKey('sprint', false);
+        ['a', 'd', 'w', 's', 'shift'].forEach((movement) => Client.setKey(movement, key.includes(movement)));
+        Client.setKey('leftclick', true);
+        Client.setKey('sprint', false);
     }
 
     saveRewarpPoint(name) {

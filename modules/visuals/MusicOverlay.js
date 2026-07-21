@@ -51,7 +51,7 @@ class Music extends ModuleBase {
         }).setFps(4);
 
         this.on('renderOverlay', () => {
-            if (!this.data || (this.data && this.data.song !== 'None')) {
+            if (this.data?.song !== 'None') {
                 this.renderOverlay();
             }
         });
