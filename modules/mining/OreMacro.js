@@ -19,7 +19,6 @@ const MINE_REACH_SQ = 4.49 * 4.49;
 const ETHERWARP_EDGE_INSET = 0.1;
 const ETHERWARP_FACE_DEPTH = 0.01;
 const ETHERWARP_RAY_CLEARANCE = 0.06;
-const ETHERWARP_RAY_BATCH_SIZE = 96;
 const DEPLOYABLE_DETECTION_RADIUS = 4;
 const DEPLOYABLE_DETECTION_RADIUS_SQ = DEPLOYABLE_DETECTION_RADIUS * DEPLOYABLE_DETECTION_RADIUS;
 const DEPLOYABLE_ENTITY_NAMES = ['power orb', 'glacite lantern'];
@@ -652,7 +651,7 @@ class OreMiner extends ModuleBase {
     beginTeleportRotation(waypoint) {
         const { x, y, z } = waypoint.pos;
         const visible = this.getEtherwarpVisiblePoints(x, y, z);
-        if (!visible.length && ++this.waitTicks < Math.ceil(ETHERWARP_FACE_OFFSETS.length / ETHERWARP_RAY_BATCH_SIZE)) return;
+        if (!visible.length && ++this.waitTicks < Math.ceil(ETHERWARP_FACE_OFFSETS.length / 96)) return;
 
         if (!visible.length && this.teleportStrafing) {
             if (this.startEtherwarpStrafe(waypoint)) return;
@@ -1090,8 +1089,8 @@ class OreMiner extends ModuleBase {
     getEtherwarpVisiblePoints(x, y, z) {
         const eyeCoords = getEtherwarpEyeCoords(true);
         const crouchedEye = eyeCoords ? { x: eyeCoords[0], y: eyeCoords[1], z: eyeCoords[2] } : null;
-        const visible = this.raytraceVisiblePoints(x, y, z, crouchedEye, 12, ETHERWARP_RAY_BATCH_SIZE, this.etherwarpRayCursor);
-        this.etherwarpRayCursor = (this.etherwarpRayCursor + ETHERWARP_RAY_BATCH_SIZE) % ETHERWARP_FACE_OFFSETS.length;
+        const visible = this.raytraceVisiblePoints(x, y, z, crouchedEye, 12, 96, this.etherwarpRayCursor);
+        this.etherwarpRayCursor = (this.etherwarpRayCursor + 96) % ETHERWARP_FACE_OFFSETS.length;
         return visible;
     }
 
