@@ -651,6 +651,8 @@ class OreMiner extends ModuleBase {
     beginTeleportRotation(waypoint) {
         const { x, y, z } = waypoint.pos;
         const visible = this.getEtherwarpVisiblePoints(x, y, z);
+        if (!visible.length && ++this.waitTicks < Math.ceil(ETHERWARP_FACE_OFFSETS.length / 96)) return;
+
         if (!visible.length && this.teleportStrafing) {
             if (this.startEtherwarpStrafe(waypoint)) return;
         }
@@ -697,7 +699,8 @@ class OreMiner extends ModuleBase {
         }
     }
 
-    orderTeleportAimPoints(points) {
+    orderTeleportAimPoints(visible) {
+        const points = visible.map((entry) => entry.point);
         for (let index = points.length - 1; index > 0; index--) {
             const swapIndex = Math.floor(Math.random() * (index + 1));
             [points[index], points[swapIndex]] = [points[swapIndex], points[index]];
